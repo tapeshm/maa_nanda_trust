@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Worker Dev</title>
+    <link href="/assets/app.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@2.0.1" defer></script>
+    <!-- You can add Editor.js from a CDN or install via pnpm and serve it -->
+</head>
+<body class="bg-gray-900 text-white font-sans p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-cyan-400 mb-4">
+            Cloudflare Dev Environment
+        </h1>
+        <p class="text-lg text-gray-300 mb-6">
+            Your Hono and HTMX application is running.
+        </p>
+
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4">HTMX Demo</h2>
+            <button
+                hx-get="/api/hello"
+                hx-swap="innerHTML"
+                hx-target="#response-div"
+                class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded transition-colors"
+            >
+                Click me to fetch from API
+            </button>
+            <div id="response-div" class="mt-4 p-4 bg-gray-700 rounded">
+                <!-- API response will be loaded here -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>

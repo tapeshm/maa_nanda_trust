@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workerd/main/src/workerd/io/worker.jsonc",
+  "name": "hono-htmx-project",
+  "main": "src/index.tsx",
+  "compatibility_date": "2025-08-08",
+  "logpush": false,
+  "vars": {
+    "ENV": "development"
+  },
+  // Local-only bindings for development with `wrangler dev`
+  "dev": {
+    "ip": "0.0.0.0",
+    "port": 8787,
+    "inspector_port": 9229,
+    "local_protocol": "http",
+    "host": "localhost"
+  },
+  // KV Namespace binding
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "mock-kv-id-for-prod"
+    }
+  ],
+  // R2 Bucket binding
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "r2-bucket",
+      "preview_bucket_name": "preview-r2-bucket"
+    }
+  ],
+  // D1 Database binding
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "d1-database",
+      "database_id": "mock-d1-id-for-prod",
+      "preview_database_id": "mock-d1-id-for-preview"
+    }
+  ]
+}

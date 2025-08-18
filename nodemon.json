@@ -1,0 +1,22 @@
+{
+  "watch": ["src", "app", "workers", "public", "wrangler.jsonc"],
+  "ext": "ts,tsx,js,jsx,css,html,wasm",
+  "ignore": [
+    ".git",
+    "node_modules",
+    "dist",
+    ".wrangler",
+    ".cache",
+    "build",
+    ".pnpm-store"
+  ],
+  "delay": "250", 
+  "restartable": "rs",
+  "execMap": { "ts": "node" },
+  "signal": "SIGTERM",
+  "legacyWatch": true,
+  "env": {
+    "CHOKIDAR_USEPOLLING": "true",
+    "CHOKIDAR_INTERVAL": "500"
+  }
+}

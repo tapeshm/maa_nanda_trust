@@ -1,0 +1,37 @@
+name = "temple-trust"
+# The compatibility date should be the current date to pin the Workers runtime.
+compatibility_date = "2025-08-08"
+
+# The entry point of your Worker.  This file is compiled by esbuild via
+# `npm run build` or automatically by Wrangler in `dev` and `deploy` modes.
+main = "src/index.tsx"
+
+[vars]
+  # Administrative credentials used for Basic Auth.  Set these in your Cloudflare
+  # dashboard or via `npx wrangler secret put` before deploying.  Do NOT commit
+  # real credentials to version control.
+  ADMIN_USERNAME = "admin"
+  ADMIN_PASSWORD = "changeme"
+  # Secret key used for protecting R2 operations when using custom headers.
+  AUTH_KEY_SECRET = "generate-a-secret-key"
+
+[[d1_databases]]
+  # Bind the D1 database to the Worker.  Replace `<DATABASE_ID>` with the ID of
+  # your D1 database as shown in the Cloudflare dashboard.  The binding name
+  # (`DB`) must match the identifier used in your code.
+  binding = "DB"
+  database_id = "<DATABASE_ID>"
+
+[[r2_buckets]]
+  # Bind the R2 bucket to the Worker.  Replace `<BUCKET_NAME>` with your bucket
+  # name.  The binding name (`R2`) must match the identifier used in your code.
+  binding = "R2"
+  bucket_name = "<BUCKET_NAME>"
+  # Optionally specify a preview bucket name to use during local development.
+  # preview_bucket_name = "<PREVIEW_BUCKET_NAME>"
+
+[[kv_namespaces]]
+  # Bind the KV namespace.  Replace `<KV_NAMESPACE_ID>` with your KV namespace
+  # ID.  The binding name (`KV`) must match the identifier used in your code.
+  binding = "KV"
+  id = "<KV_NAMESPACE_ID>"

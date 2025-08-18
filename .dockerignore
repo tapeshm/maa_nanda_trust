@@ -1,0 +1,39 @@
+# ───────────── node / pnpm artifacts ─────────────
+node_modules/
+.pnpm-store/
+.pnpm/
+package-lock.json # not used in pnpm projects
+
+# ───────────── Wrangler state (local D1/KV) ───────
+.wrangler/state/
+.wrangler/tmp/
+
+# ───────────── build / output / caches ────────────
+dist/
+build/
+public/assets/app.css     # Tailwind output – generated inside container
+coverage/
+*.log
+npm-debug.log*
+
+# ───────────── OS / Editor cruft ──────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~                        # temp files
+
+# ───────────── Env / secrets (never bake) ─────────
+*.env
+.env.*
+wrangler.toml.local
+.git-crypt
+
+# ───────────── Images / media (if uploaded) ───────
+uploads/
+tmp/
+
+# ───────────── Git & Docker meta (keep .dockerignore itself) ─
+.git
+.gitmodules

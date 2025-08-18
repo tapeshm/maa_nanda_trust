@@ -1,0 +1,31 @@
+{
+  "name": "temple-trust",
+  "version": "1.0.0",
+  "description": "Temple Trust website running on Cloudflare Workers using Hono, D1, R2 and KV.",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail 'pnpm:watch:css' 'pnpm:dev:resilient'",
+    "watch:css": "pnpm exec  tailwindcss -i ./src/styles/input.css -o ./public/assets/app.css --watch",
+    "dev:wrangler": "wrangler dev --ip 0.0.0.0 --port 8787",
+    "dev:resilient": "nodemon --config nodemon.json --exec sh -c 'wrangler dev --ip 0.0.0.0 --port 8787 || true'",
+    "generate-types": "wrangler types",
+    "type-check": "generate-types && tsc",
+    "deploy": "wrangler deploy",
+    "migrate": "wrangler d1 migrations apply DB"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "",
+    "bcryptjs": "",
+    "hono": "^4.9.0",
+    "htmx.org": "",
+    "zod": ""
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "",
+    "concurrently": "",
+    "nodemon": "",
+    "tailwindcss": "",
+    "typescript": "",
+    "wrangler": ""
+  }
+}
