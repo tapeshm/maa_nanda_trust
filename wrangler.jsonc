@@ -3,6 +3,10 @@
   "name": "hono-htmx-project",
   "main": "src/index.tsx",
   "compatibility_date": "2025-08-08",
+  "assets": {
+    "directory": "public",
+    "binding": "STATIC_ASSETS",
+  },
   "logpush": false,
   "vars": {
     "ENV": "development"

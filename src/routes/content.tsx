@@ -3,6 +3,7 @@
 import { Hono } from 'hono'
 import type { Bindings } from '../bindings'
 import Layout from '../templates/layout'
+import LandingPage from '../templates/landingPage'
 import Page from '../templates/page'
 import { renderEditorJS } from '../utils/editor'
 import {
@@ -46,7 +47,14 @@ async function renderSlugPage(c: any, slug: string): Promise<Response> {
 }
 
 // Home page
-app.get('/', (c) => renderSlugPage(c, 'home'))
+// app.get('/', (c) => renderSlugPage(c, 'home'))
+app.get('/', (c) => {
+  return c.html(
+    <Layout title="Home">
+      <LandingPage />
+    </Layout>
+  )
+})
 
 // About page
 app.get('/about', (c) => renderSlugPage(c, 'about'))

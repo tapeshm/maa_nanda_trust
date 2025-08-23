@@ -11,14 +11,18 @@
     "generate-types": "wrangler types",
     "type-check": "generate-types && tsc",
     "deploy": "wrangler deploy",
-    "migrate": "wrangler d1 migrations apply DB"
+    "migrate": "wrangler d1 migrations apply DB --local",
+    "seed-users": "wrangler d1 execute DB --file d1/seed-users.sql --local"
   },
   "dependencies": {
     "@hono/zod-validator": "",
     "bcryptjs": "",
     "hono": "^4.9.0",
     "htmx.org": "",
-    "zod": ""
+    "zod": "",
+    "jose": "",
+    "@supabase/supabase-js": "",
+    "@supabase/ssr": ""
   },
   "devDependencies": {
     "@tailwindcss/cli": "",
@@ -26,6 +30,8 @@
     "nodemon": "",
     "tailwindcss": "",
     "typescript": "",
-    "wrangler": ""
+    "wrangler": "",
+    "dotenv": "",
+    "vitest": ""
   }
 }
