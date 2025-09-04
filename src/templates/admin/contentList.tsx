@@ -44,12 +44,12 @@ const ContentListPage: FC<{ pages: ContentRecord[] }> = ({ pages }) => {
                 {new Date(p.updated_at).toLocaleDateString()}
               </td>
               <td class="px-4 py-2 text-sm whitespace-nowrap">
-                <a
-                  href={`/admin/content/${p.slug}`}
-                  class="text-blue-600 hover:underline"
-                >
-                  Edit
-                </a>
+                <div class="flex items-center gap-3">
+                  <a href={`/admin/content/${p.slug}`} class="text-blue-600 hover:underline">Edit</a>
+                  <form method="post" action={`/admin/content/${p.slug}/delete`} onSubmit="return confirm('Delete this page?');">
+                    <button type="submit" class="text-red-600 hover:underline">Delete</button>
+                  </form>
+                </div>
               </td>
             </tr>
           ))}

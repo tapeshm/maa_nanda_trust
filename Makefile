@@ -3,6 +3,9 @@
 # Use the shell from the environment, or default to bash
 SHELL := /bin/bash
 
+# Use a consistent env file for Compose
+COMPOSE := docker compose --env-file .dev.vars
+
 # Ensure UID/GID are exported for Docker Compose to use.
 # This makes the setup portable across different machines.
 export UID := $(shell id -u)
@@ -22,27 +25,30 @@ help:
 	@echo "  add       - Add a new production dependency. Usage: make add PKG=hono"
 	@echo "  add-dev   - Add a new development dependency. Usage: make add-dev PKG=typescript"
 	@echo "  rm        - Remove a dependency. Usage: make rm PKG=hono"
+	@echo ""
+	@echo "Note: Supabase CLI runs on the host now (not in container)."
+	@echo "      Use: 'supabase start', 'supabase status', 'supabase stop', etc."
 
 up:
 	@echo "🚀 Starting development environment..."
-	@docker compose up --build -d
+	@$(COMPOSE) up --build -d
 
 down:
 	@echo "🔥 Shutting down development environment..."
-	@docker compose down
+	@$(COMPOSE) down
 
 
 stop:
 	@echo "🔥 Stopping development environment..."
-	@docker compose stop
+	@$(COMPOSE) stop
 
 logs:
 	@echo "🔎 Tailing logs for the 'dev' container..."
-	@docker compose logs -f dev
+	@$(COMPOSE) logs -f dev
 
 shell:
 	@echo "💻 Entering container shell..."
-	@docker compose exec --user devuser dev /bin/bash
+	@$(COMPOSE) exec --user devuser dev /bin/bash
 
 # Check if PKG variable is set for dependency management commands
 add add-dev rm: _chk_pkg
@@ -53,15 +59,17 @@ endif
 
 add:
 	@echo "📦 Adding production dependency: $(PKG)..."
-	@docker compose exec --user devuser dev pnpm add $(PKG)
+	@$(COMPOSE) exec --user devuser dev pnpm add $(PKG)
 	@echo "✅ Added $(PKG). package.json and pnpm-lock.yaml have been updated."
 
 add-dev:
 	@echo "📦 Adding dev dependency: $(PKG)..."
-	@docker compose exec --user devuser dev pnpm add -D $(PKG)
+	@$(COMPOSE) exec --user devuser dev pnpm add -D $(PKG)
 	@echo "✅ Added $(PKG). package.json and pnpm-lock.yaml have been updated."
 
 rm:
 	@echo "🗑️ Removing dependency: $(PKG)..."
-	@docker compose exec --user devuser dev pnpm remove $(PKG)
+	@$(COMPOSE) exec --user devuser dev pnpm remove $(PKG)
 	@echo "✅ Removed $(PKG)."
+
+# (Supabase CLI helpers removed; use host 'supabase' command directly.)

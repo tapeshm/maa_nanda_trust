@@ -2,7 +2,7 @@ import type { Bindings } from '../bindings'
 
 /**
  * Types representing rows returned from the database.  These correspond
- * directly to the schema defined in `migrations/schema.sql`.
+ * directly to the schema defined in `migrations/*.sql`.
  */
 export interface ContentRecord {
   id: number
@@ -78,6 +78,15 @@ export async function upsertContent(
        updated_at = CURRENT_TIMESTAMP`,
   )
     .bind(slug, title, json)
+    .run()
+}
+
+/**
+ * Delete a content block by slug. No-op if the row does not exist.
+ */
+export async function deleteContent(env: Bindings, slug: string): Promise<void> {
+  await env.DB.prepare('DELETE FROM content_blocks WHERE slug = ?')
+    .bind(slug)
     .run()
 }
 

@@ -11,7 +11,7 @@ const AdminLayout: FC<{ title: string } & PropsWithChildren> = ({
   children,
 }) => {
   return (
-    <Layout title={title} admin={true}>
+    <Layout title={title} admin={true} signedIn={true}>
       {children}
     </Layout>
   )

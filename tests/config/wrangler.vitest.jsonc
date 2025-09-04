@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workerd/main/src/workerd/io/worker.jsonc",
+  "name": "vitest-worker-stub",
+  "main": "./worker-stub.ts",
+  "compatibility_date": "2025-08-08",
+  "vars": {
+    "ENV": "test"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "kv-for-tests"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "r2-for-tests",
+      "preview_bucket_name": "r2-for-tests-preview"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "d1-for-tests",
+      "database_id": "d1-for-tests",
+      "preview_database_id": "d1-for-tests"
+    }
+  ]
+}

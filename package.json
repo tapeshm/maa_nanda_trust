@@ -4,15 +4,19 @@
   "description": "Temple Trust website running on Cloudflare Workers using Hono, D1, R2 and KV.",
   "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail 'pnpm:watch:css' 'pnpm:dev:resilient'",
+    "dev": "concurrently --kill-others-on-fail 'pnpm:watch:css' 'pnpm:watch:js' 'pnpm:dev:resilient'",
     "watch:css": "pnpm exec  tailwindcss -i ./src/styles/input.css -o ./public/assets/app.css --watch",
+    "watch:js": "vite build --watch",
+    "build:js": "vite build",
     "dev:wrangler": "wrangler dev --ip 0.0.0.0 --port 8787",
     "dev:resilient": "nodemon --config nodemon.json --exec sh -c 'wrangler dev --ip 0.0.0.0 --port 8787 || true'",
     "generate-types": "wrangler types",
     "type-check": "generate-types && tsc",
     "deploy": "wrangler deploy",
     "migrate": "wrangler d1 migrations apply DB --local",
-    "seed-users": "wrangler d1 execute DB --file d1/seed-users.sql --local"
+    "seed-users": "wrangler d1 execute DB --file d1/seed-users.sql --local",
+    "add:users": "node scripts/add-users.mjs",
+    "test": "vitest"
   },
   "dependencies": {
     "@hono/zod-validator": "",
@@ -22,9 +26,15 @@
     "zod": "",
     "jose": "",
     "@supabase/supabase-js": "",
-    "@supabase/ssr": ""
+    "@supabase/ssr": "",
+    "@editorjs/editorjs": "",
+    "@editorjs/header": "",
+    "@editorjs/paragraph": "",
+    "@editorjs/marker": "",
+    "@editorjs/inline-code": ""
   },
   "devDependencies": {
+    "vite": "",
     "@tailwindcss/cli": "",
     "concurrently": "",
     "nodemon": "",
@@ -32,6 +42,7 @@
     "typescript": "",
     "wrangler": "",
     "dotenv": "",
-    "vitest": ""
+    "vitest": "",
+    "@cloudflare/vitest-pool-workers": ""
   }
 }

@@ -4,8 +4,10 @@ import { zValidator } from '@hono/zod-validator'
 
 import type { Bindings } from '../bindings'
 import FinancePage from '../templates/finance'
+import Layout from '../templates/layout'
+import AdminLayout from '../templates/adminLayout'
 import { listFinance, insertFinance } from '../utils/db'
-import { adminAuth } from '../middleware/auth'
+import { supabaseAuth, requireTrustee, extractRolesFromClaims } from '../middleware/auth'
 
 /**
  * Schema for validating finance record submissions.  We accept form
@@ -35,23 +37,36 @@ const financeSchema = z.object({
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-// Public listing of all finance records.  This route is mounted at
-// `/finance` on the main router.  It renders a read‑only list using
-// FinancePage with editable=false.
-app.get('/', async (c) => {
+// Wrapper to apply Supabase auth based on runtime env variables
+const useSupabaseAuth = (c: any, next: any) =>
+  supabaseAuth({
+    projectUrl: (c.env as any).SUPABASE_URL,
+    publishableKey: (c.env as any).SUPABASE_PUBLISHABLE_KEY,
+    jwksUri: (c.env as any).JWKS_URL,
+  })(c, next)
+
+// Public listing of all finance records wrapped in the shared layout.
+app.get('/', useSupabaseAuth, async (c) => {
   const records = await listFinance(c.env)
+  const roles = extractRolesFromClaims(c.get('auth')?.claims || null)
+  const isAdmin = roles.has('admin') || roles.has('trustee')
+  const signedIn = !!(c.get('auth')?.userId)
   return c.html(
-    <FinancePage records={records} editable={false} />,
+    <Layout title="Finance" admin={isAdmin} signedIn={signedIn}>
+      <FinancePage records={records} editable={false} />
+    </Layout>,
   )
 })
 
 // Admin view of finance records.  Requires basic auth.  The same
 // FinancePage component is used but with editable=true so the form is
 // displayed.  We wrap it in the admin layout in the parent router.
-app.get('/admin', adminAuth, async (c) => {
+app.get('/admin', useSupabaseAuth, requireTrustee, async (c) => {
   const records = await listFinance(c.env)
   return c.html(
-    <FinancePage records={records} editable={true} />,
+    <AdminLayout title="Finance">
+      <FinancePage records={records} editable={true} />
+    </AdminLayout>,
   )
 })
 
@@ -59,7 +74,7 @@ app.get('/admin', adminAuth, async (c) => {
 // request containing the fields defined by financeSchema.  On success it
 // returns only the updated table body so HTMX can swap the HTML without
 // refreshing the entire page.  We protect this route with basic auth.
-app.post('/', adminAuth, zValidator('form', financeSchema), async (c) => {
+app.post('/', useSupabaseAuth, requireTrustee, zValidator('form', financeSchema), async (c) => {
   const data = c.req.valid('form')
   // Insert new record
   await insertFinance(c.env, {

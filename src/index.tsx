@@ -1,7 +1,6 @@
 /** @jsxImportSource hono/jsx */
 
 import { Hono } from 'hono'
-import { hash } from 'bcryptjs'
 import type { Bindings } from './bindings'
 import routes from './routes'
 import { securityMiddleware } from './middleware/secure'

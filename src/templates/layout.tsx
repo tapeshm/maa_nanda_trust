@@ -1,16 +1,25 @@
 import type { FC, PropsWithChildren } from 'hono/jsx'
 
+type Hero = {
+  title: string
+  subtitle?: string
+  primaryCta?: { href: string; label: string }
+  secondaryCta?: { href: string; label: string }
+  imageLight?: string
+  imageDark?: string
+  announcement?: { text: string; href: string; label: string }
+}
+
 /**
- * Layout component used by both public and admin pages.  It defines the
- * document structure, loads Tailwind CSS from a CDN and HTMX for
- * progressive enhancement, and renders a navigation bar.  Passing
- * `admin={true}` will include a link to the admin dashboard.
+ * Shared layout: mobile‑friendly header, dark/light toggle, optional hero.
+ * Use `hero` to render a reference‑style hero above page content.
  */
-const Layout: FC<{ title: string; admin?: boolean } & PropsWithChildren> = ({
-  title,
-  admin = false,
-  children,
-}) => {
+const Layout: FC<{
+  title: string
+  admin?: boolean
+  signedIn?: boolean
+  hero?: Hero | null
+} & PropsWithChildren> = ({ title, admin = false, signedIn = false, hero = null, children }) => {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About' },
@@ -19,121 +28,123 @@ const Layout: FC<{ title: string; admin?: boolean } & PropsWithChildren> = ({
     { href: '/finance', label: 'Finance' },
   ]
 
+  const heroDefaults: Hero = {
+    title: 'Welcome to Temple Trust',
+    subtitle:
+      'Preserving our spiritual heritage and serving the community through devotion, education, and culture.',
+    primaryCta: { href: '/about', label: 'Learn more' },
+    secondaryCta: { href: '/finance', label: 'Support us →' },
+    imageLight:
+      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2830&q=80&blend=ffffff&sat=-100&exp=15&blend-mode=overlay',
+    imageDark:
+      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2830&q=80&blend=111827&sat=-100&exp=15&blend-mode=multiply',
+  }
+
+  const h = hero ? { ...heroDefaults, ...hero } : null
+
   return (
-    <html lang="en" >
+    <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{title}</title>
-        {/* TailwindCSS via CDN.  Using the CDN build avoids a build step and
-            keeps the Worker lightweight. */}
+        {/* Tailwind via CDN */}
         <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-        {/* HTMX for minimal client‑side dynamics */}
+        {/* HTMX */}
         <script src="https://unpkg.com/htmx.org@1.9.11"></script>
-        {/* Tailwind Elements for enhanced components */}
+        {/* Tailwind Elements (dialog for mobile menu) */}
         <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-        {/* Dark mode toggle - loaded early to prevent FOUC */}
+        {/* Dark mode toggle */}
         <script src="/js/theme-toggle.js"></script>
       </head>
-      <body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
-        <header class="bg-white dark:bg-gray-900 shadow">
-          <nav aria-label="Global" class="mx-auto max-w-9xl px-4 sm:px-6 lg:px-8">
-            <div class="flex h-16 items-center justify-between">
-              {/* Logo/Brand */}
-              <div class="flex items-center">
-                <a href="/" class="flex items-center">
-                  <span class="text-xl font-semibold text-gray-900 dark:text-white">
-                    Temple Trust
-                  </span>
+      <body class="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white">
+        {/* Header */}
+        <header class={h ? 'absolute inset-x-0 top-0 z-50' : 'bg-white dark:bg-gray-900 shadow'}>
+          <nav aria-label="Global" class="mx-auto max-w-7xl flex items-center justify-between p-4 sm:p-6 lg:px-8">
+            {/* Brand */}
+            <div class="flex items-center lg:flex-1">
+              <a href="/" class="-m-1.5 p-1.5 flex items-center">
+                <span class="sr-only">Temple Trust</span>
+                <span class="text-lg font-semibold">Temple Trust</span>
+              </a>
+            </div>
+
+            {/* Mobile controls */}
+            <div class="flex items-center gap-2 lg:hidden">
+              <button
+                data-theme-toggle
+                type="button"
+                title="Toggle dark mode"
+                class="rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                {/* Sun (shown in dark mode to switch to light) */}
+                <svg class="h-5 w-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75v1.5M12 18.75v1.5M4.72 4.72l1.06 1.06m12.5 12.5l1.06 1.06M3.75 12h1.5m13.5 0h1.5M4.72 19.28l1.06-1.06m12.5-12.5l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
+                </svg>
+                {/* Moon (shown in light mode to switch to dark) */}
+                <svg class="h-5 w-5 block dark:hidden" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.752 15.002A9.718 9.718 0 0112 21.75 9.75 9.75 0 1113.002 2.248a8.25 8.25 0 008.75 12.754z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                command="show-modal"
+                commandfor="mobile-menu"
+                class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-600 dark:text-gray-300"
+              >
+                <span class="sr-only">Open main menu</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" class="h-6 w-6">
+                  <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Desktop navigation */}
+            <div class="hidden lg:flex lg:gap-x-10">
+              {navLinks.map(({ href, label }) => (
+                <a href={href} class="text-sm font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400">
+                  {label}
                 </a>
-              </div>
+              ))}
+            </div>
 
-              {/* Mobile menu button */}
-              <div class="flex lg:hidden">
-                <button
-                  type="button"
-                  command="show-modal"
-                  commandfor="mobile-menu"
-                  class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <span class="sr-only">Open main menu</span>
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    aria-hidden="true"
-                    class="h-6 w-6"
-                  >
-                    <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Desktop navigation */}
-              <div class="hidden lg:flex lg:gap-x-8">
-                {navLinks.map(({ href, label }) => (
-                  <a href={href} class="text-sm font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400">
-                    {label}
-                  </a>
-                ))}
-              </div>
-
-              {/* Right side actions (desktop) */}
-              <div class="hidden lg:flex lg:items-center lg:gap-x-6">
-                <button
-                  data-theme-toggle
-                  type="button"
-                  class="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                  title="Toggle dark mode"
-                >
-                  <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
-                  </svg>
-                  <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                  </svg>
-                </button>
-                {admin ? (
-                  <a href="/logout" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300">
-                    Log out <span aria-hidden="true">&rarr;</span>
-                  </a>
-                ) : (
-
-                  <a href="/login" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300">
-                    Log in <span aria-hidden="true">&rarr;</span>
-                  </a>
-                )}
-              </div>
+            {/* Right side (desktop) */}
+            <div class="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-6">
+              <button
+                data-theme-toggle
+                type="button"
+                title="Toggle dark mode"
+                class="rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                {/* Sun (shown in dark mode) */}
+                <svg class="h-5 w-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75v1.5M12 18.75v1.5M4.72 4.72l1.06 1.06m12.5 12.5l1.06 1.06M3.75 12h1.5m13.5 0h1.5M4.72 19.28l1.06-1.06m12.5-12.5l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
+                </svg>
+                {/* Moon (shown in light mode) */}
+                <svg class="h-5 w-5 block dark:hidden" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.752 15.002A9.718 9.718 0 0112 21.75 9.75 9.75 0 1113.002 2.248a8.25 8.25 0 008.75 12.754z" />
+                </svg>
+              </button>
+              {signedIn ? (
+                <a href="/logout" class="text-sm font-semibold text-gray-900 dark:text-white">Log out <span aria-hidden="true">→</span></a>
+              ) : (
+                <a href="/login" class="text-sm font-semibold text-gray-900 dark:text-white">Log in <span aria-hidden="true">→</span></a>
+              )}
             </div>
           </nav>
 
           {/* Mobile menu dialog */}
           <el-dialog>
             <dialog id="mobile-menu" class="backdrop:bg-transparent lg:hidden">
-              <div tabindex="0" class="fixed inset-0 focus:outline-none">
+              <div tabIndex={0} class="fixed inset-0 focus:outline-none">
                 <el-dialog-panel class="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white p-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10 dark:bg-gray-900 dark:sm:ring-gray-100/10">
                   <div class="flex items-center justify-between">
                     <a href="/" class="-m-1.5 p-1.5">
-                      <span class="text-xl font-semibold text-gray-900 dark:text-white">
-                        Temple Trust
-                      </span>
+                      <span class="text-lg font-semibold">Temple Trust</span>
                     </a>
-                    <button
-                      type="button"
-                      command="close"
-                      commandfor="mobile-menu"
-                      class="-m-2.5 rounded-md p-2.5 text-gray-700 dark:text-gray-400"
-                    >
+                    <button type="button" command="close" commandfor="mobile-menu" class="-m-2.5 rounded-md p-2.5 text-gray-700 dark:text-gray-300">
                       <span class="sr-only">Close menu</span>
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        aria-hidden="true"
-                        class="h-6 w-6"
-                      >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" class="h-6 w-6">
                         <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" />
                       </svg>
                     </button>
@@ -154,28 +165,25 @@ const Layout: FC<{ title: string; admin?: boolean } & PropsWithChildren> = ({
                           class="-mx-3 flex items-center gap-3 rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5"
                           title="Toggle dark mode"
                         >
-                          <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
+                          {/* Sun (shown in dark mode) */}
+                          <svg class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75v1.5M12 18.75v1.5M4.72 4.72l1.06 1.06m12.5 12.5l1.06 1.06M3.75 12h1.5m13.5 0h1.5M4.72 19.28l1.06-1.06m12.5-12.5l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
                           </svg>
-                          <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                          {/* Moon (shown in light mode) */}
+                          <svg class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21.752 15.002A9.718 9.718 0 0112 21.75 9.75 9.75 0 1113.002 2.248a8.25 8.25 0 008.75 12.754z" />
                           </svg>
                           <span class="hidden dark:inline">Light mode</span>
                           <span class="dark:hidden">Dark mode</span>
                         </button>
                       </div>
-                      {admin ? (
+                      {signedIn ? (
                         <div class="py-6">
-                          <a href="/logout" class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">
-                            Log out
-                          </a>
+                          <a href="/logout" class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">Log out</a>
                         </div>
                       ) : (
-
                         <div class="py-6">
-                          <a href="/login" class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">
-                            Log in
-                          </a>
+                          <a href="/login" class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">Log in</a>
                         </div>
                       )}
                     </div>
@@ -186,9 +194,66 @@ const Layout: FC<{ title: string; admin?: boolean } & PropsWithChildren> = ({
           </el-dialog>
         </header>
 
-        <main class="mx-auto max-w-9xl px-4 py-8 sm:px-6 lg:px-8">
-          {children}
-        </main>
+        {/* Optional hero */}
+        {h ? (
+          <div class="relative isolate overflow-hidden pt-20 sm:pt-24">
+            {/* Background images */}
+            <img src={h.imageDark} alt="" class="absolute inset-0 -z-10 h-full w-full object-cover opacity-90 hidden dark:block" />
+            <img src={h.imageLight} alt="" class="absolute inset-0 -z-10 h-full w-full object-cover opacity-10 dark:hidden" />
+
+            {/* Top gradient */}
+            <div aria-hidden="true" class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
+              <div
+                class="relative left-1/2 aspect-[1155/678] w-[36rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-orange-400 to-indigo-400 opacity-20 sm:w-[72rem]"
+                style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"
+              />
+            </div>
+
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+              <div class="mx-auto max-w-2xl py-20 sm:py-32 lg:py-40 text-center">
+                {h.announcement ? (
+                  <div class="hidden sm:mb-8 sm:flex sm:justify-center">
+                    <div class="relative rounded-full px-3 py-1 text-sm leading-6 text-gray-700 ring-1 ring-gray-900/10 hover:ring-gray-900/20 dark:text-gray-300 dark:ring-white/10 dark:hover:ring-white/20">
+                      {h.announcement.text}{' '}
+                      <a href={h.announcement.href} class="font-semibold text-indigo-600 dark:text-indigo-400">
+                        <span aria-hidden="true" class="absolute inset-0" />
+                        {h.announcement.label} <span aria-hidden>→</span>
+                      </a>
+                    </div>
+                  </div>
+                ) : null}
+
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl dark:text-white">{h.title}</h1>
+                {h.subtitle ? (
+                  <p class="mt-6 text-lg leading-8 text-gray-700 dark:text-gray-300">{h.subtitle}</p>
+                ) : null}
+                <div class="mt-10 flex items-center justify-center gap-x-6">
+                  {h.primaryCta ? (
+                    <a href={h.primaryCta.href} class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-400">
+                      {h.primaryCta.label}
+                    </a>
+                  ) : null}
+                  {h.secondaryCta ? (
+                    <a href={h.secondaryCta.href} class="text-sm font-semibold text-gray-900 dark:text-white">
+                      {h.secondaryCta.label}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom gradient */}
+            <div aria-hidden="true" class="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]">
+              <div
+                class="relative left-1/2 aspect-[1155/678] w-[36rem] -translate-x-1/2 bg-gradient-to-tr from-orange-400 to-indigo-400 opacity-20 sm:w-[72rem]"
+                style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* Main content */}
+        <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
       </body>
     </html>
   )

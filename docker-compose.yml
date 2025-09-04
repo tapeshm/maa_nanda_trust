@@ -21,6 +21,8 @@ services:
     environment:
       UID: ${UID:-1000}
       GID: ${GID:-1000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       r2:
         condition: service_healthy
@@ -36,9 +38,6 @@ services:
       - minio_data:/data
     env_file:
       - .dev.vars
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s

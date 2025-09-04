@@ -19,5 +19,5 @@
     "types": ["./worker-configuration.d.ts"],
     "rootDir": "./src"
   },
-  "include": ["./worker-configuration.d.ts", "src/**/*"]
+  "include": ["./worker-configuration.d.ts", "env.d.ts", "src/**/*"]
 }

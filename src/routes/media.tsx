@@ -2,8 +2,9 @@ import { Hono } from 'hono'
 
 import type { Bindings } from '../bindings'
 import { listMedia, insertMedia } from '../utils/db'
-import { adminAuth } from '../middleware/auth'
+import { supabaseAuth, requireTrustee } from '../middleware/auth'
 import MediaAdminPage from '../templates/mediaAdmin'
+import AdminLayout from '../templates/adminLayout'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -30,9 +31,13 @@ app.get('/:key', async (c) => {
 // Admin view of media library.  Shows a list of uploaded files and an
 // upload form.  Requires basic auth.  When mounted at `/media` on the
 // router this becomes `/media/admin`.
-app.get('/admin', adminAuth, async (c) => {
+app.get('/admin', useSupabaseAuth, requireTrustee, async (c) => {
   const records = await listMedia(c.env)
-  return c.html(<MediaAdminPage records={records} />)
+  return c.html(
+    <AdminLayout title="Media Library">
+      <MediaAdminPage records={records} />
+    </AdminLayout>
+  )
 })
 
 // Upload a new media file to R2.  Expects a multipart/form-data
@@ -40,7 +45,7 @@ app.get('/admin', adminAuth, async (c) => {
 // UUID as the object key, uploads the file to R2 with HTTP metadata
 // including the original filename and MIME type, and stores a record in
 // the database.  After uploading we redirect back to the admin page.
-app.post('/upload', adminAuth, async (c) => {
+app.post('/upload', useSupabaseAuth, requireTrustee, async (c) => {
   const body = await c.req.parseBody()
   const file = body['file'] as unknown
   if (!file || !(file instanceof File)) {
@@ -71,3 +76,10 @@ app.post('/upload', adminAuth, async (c) => {
 })
 
 export default app
+// Wrapper to apply Supabase auth based on runtime env variables
+const useSupabaseAuth = (c: any, next: any) =>
+  supabaseAuth({
+    projectUrl: (c.env as any).SUPABASE_URL,
+    publishableKey: (c.env as any).SUPABASE_PUBLISHABLE_KEY,
+    jwksUri: (c.env as any).JWKS_URL,
+  })(c, next)

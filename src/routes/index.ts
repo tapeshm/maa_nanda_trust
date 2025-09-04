@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { Bindings } from '../bindings'
 import content from './content'
+import auth from './auth'
 import finance from './finance'
 import media from './media'
 import admin from './admin'
@@ -11,12 +12,14 @@ import admin from './admin'
  */
 const routes = new Hono<{ Bindings: Bindings }>()
 
+// Auth first so /login and /logout are not swallowed by content slug route
+routes.route('/', auth)
 // Public pages and content
 routes.route('/', content)
-// Finance listing and submission
-routes.route('/finance', finance)
-// Media upload and serving
-routes.route('/media', media)
+// // Finance listing and submission
+// routes.route('/finance', finance)
+// // Media upload and serving
+// routes.route('/media', media)
 // Admin dashboard and management
 routes.route('/admin', admin)
 

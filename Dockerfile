@@ -6,7 +6,7 @@ ARG GID=1000
 
 # 1. As ROOT: Install packages and create the user
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  tini gosu \
+  tini gosu ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 RUN groupadd -g $GID -o devgroup && \
   useradd -u $UID -g $GID -o -s /bin/bash devuser

@@ -3,19 +3,12 @@ import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 
 import type { Bindings } from '../bindings'
-import { adminAuth } from '../middleware/auth'
+import { supabaseAuth, requireAdmin } from '../middleware/auth'
 import AdminLayout from '../templates/adminLayout'
 import Dashboard from '../templates/admin/dashboard'
 import ContentListPage from '../templates/admin/contentList'
-import ContentEditorPage from '../templates/admin/contentEditor'
 import ErrorPage from '../templates/error'
-import {
-  listContent,
-  getContent,
-  upsertContent,
-  listFinance,
-  listMedia,
-} from '../utils/db'
+import { listContent, getContent, upsertContent, listFinance, listMedia, deleteContent } from '../utils/db'
 
 /**
  * Schema for validating content submission.  The JSON field is the
@@ -32,9 +25,34 @@ const contentSchema = z.object({
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-// Apply basic auth to all admin routes.  This ensures that the user
-// must authenticate before any admin handler runs.
-app.use('*', adminAuth)
+// Apply Supabase auth and require an admin/trustee role for all admin routes.
+const useSupabaseAuth = (c: any, next: any) => {
+  const projectUrl = (c.env as any).SUPABASE_URL
+  const publishableKey = (c.env as any).SUPABASE_PUBLISHABLE_KEY
+  const jwksUri = (c.env as any).JWKS_URL
+  const hmacJwtSecret = (c.env as any).SUPABASE_JWT_SECRET
+  const expectedIssuerEnv = (c.env as any).SUPABASE_ISSUER as string | undefined
+  let issuer = expectedIssuerEnv
+  if (!issuer && projectUrl) {
+    try {
+      const u = new URL(projectUrl)
+      issuer = `${u.origin}/auth/v1`
+      if (hmacJwtSecret && u.hostname !== '127.0.0.1') {
+        issuer = `http://127.0.0.1:${u.port || '54321'}/auth/v1`
+      }
+    } catch {}
+  }
+  return supabaseAuth({
+    projectUrl,
+    publishableKey,
+    jwksUri,
+    hmacJwtSecret,
+    expected: issuer ? { issuer } : undefined,
+  })(c, next)
+}
+
+app.use('*', useSupabaseAuth)
+app.use('*', requireAdmin)
 
 // Dashboard overview.  Aggregates counts and totals from the database
 // and renders the dashboard component inside the admin layout.
@@ -74,38 +92,10 @@ app.get('/content', async (c) => {
 })
 
 // Form for creating a new page.  We pass empty blocks array and empty slug.
-app.get('/content/new', (c) => {
-  return c.html(
-    <AdminLayout title="Create Page">
-      <ContentEditorPage slug="" title="" blocks={[]} isNew={true} />
-    </AdminLayout>,
-  )
-})
+// Removed Editor.js-based new content form
 
 // Edit an existing page
-app.get('/content/:slug', async (c) => {
-  const slug = c.req.param('slug')
-  const record = await getContent(c.env, slug)
-  if (!record) {
-    return c.html(
-      <AdminLayout title="Not Found">
-        <ErrorPage message="Page not found" status={404} />
-      </AdminLayout>,
-      404,
-    )
-  }
-  const blocks = JSON.parse(record.json)
-  return c.html(
-    <AdminLayout title={`Edit ${record.title}`}>
-      <ContentEditorPage
-        slug={record.slug}
-        title={record.title}
-        blocks={blocks}
-        isNew={false}
-      />
-    </AdminLayout>,
-  )
-})
+// Removed Editor.js-based edit page route
 
 // Create or update a content page.  We expect slug, title and json
 // fields from a form submission.  After saving we clear the cached
@@ -120,3 +110,11 @@ app.post('/content', zValidator('form', contentSchema), async (c) => {
 })
 
 export default app
+
+// Delete a content page by slug
+app.post('/content/:slug/delete', async (c) => {
+  const slug = c.req.param('slug')
+  await deleteContent(c.env, slug)
+  await c.env.KV.delete(`page:${slug}`)
+  return c.redirect('/admin/content', 303)
+})

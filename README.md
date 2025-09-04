@@ -138,8 +138,43 @@ Before running the application you need to have the [Wrangler](https://developer
    After verifying locally, deploy to Cloudflare with:
 
    ```bash
-   npm run deploy
-   ```
+npm run deploy
+```
+
+## Integration tests
+
+- Local Supabase (HS256):
+  - `.dev.vars` is already configured to point to your local Supabase via `host.docker.internal:54321`.
+  - Ensure Supabase is running on the host: `supabase start`.
+  - Seed local users by setting `ADMIN_USERS` in `.dev.vars` and running `pnpm add:users`.
+  - Tests:
+    - `tests/integration/supabase-health.integration.spec.ts` checks `/auth/v1/health`.
+    - `tests/integration/auth-app-context.integration.spec.ts` initializes the middleware and signs in using the app context client.
+
+- Hosted Supabase (JWKS, asymmetric):
+  - In `.dev.vars`, provide:
+    - `SUPABASE_HOSTED_URL` (already populated with your project URL)
+    - `SUPABASE_HOSTED_ANON_KEY` (already populated with your anon key)
+    - `SUPABASE_HOSTED_EMAIL` and `SUPABASE_HOSTED_PASSWORD` for a test user
+  - Run `pnpm test` — the hosted test `tests/integration/auth-middleware-hosted.integration.spec.ts` will:
+    - Sign in to the hosted project, obtain a real JWT
+    - Verify against the real JWKS endpoint and assert JWKS caching
+  - If any hosted vars are missing, the test is skipped.
+
+Notes
+- Local Supabase uses HS256 (shared secret) by default, so JWKS verification isn’t applicable locally.
+- Hosted Supabase uses asymmetric keys; the JWKS-based path is the primary verification flow tested.
+
+## Auth debugging
+
+- Toggle verbose middleware logs by setting `DEBUG_AUTH` in `.dev.vars`:
+  - `DEBUG_AUTH="1"` to enable (development/tests)
+  - `DEBUG_AUTH="0"` to disable (recommended for production)
+- Local verification:
+  - For local Supabase (HS256), set `SUPABASE_JWT_SECRET` in `.dev.vars` (default matches the CLI output from `supabase status`).
+  - Middleware automatically detects HS* tokens and verifies with the shared secret.
+- Hosted verification:
+  - For hosted Supabase (ES256/RS256), middleware fetches JWKS and verifies tokens with the public key; cache is used when available.
 
 ## Security considerations
 
