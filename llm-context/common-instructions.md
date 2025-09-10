@@ -51,11 +51,21 @@ that satisfies the spec. No stealth refactors or tooling changes unless explicit
 4. **Execute Steps in Order** (see §9 gates):
 
    * Apply the **minimal** code changes within `allowed_paths`.
+   * If a step provides `hints`, incorporate them directly into the plan and implementation; prefer the hinted tools/methods. If any hint conflicts with `acceptance_criteria`, `constraints`, or `allowed_paths`, stop and log a **Blocking Issue** instead of substituting alternatives.
    * Insert/Reuse **anchors** (schema in §5).
    * Run **format → lint → build/typecheck → tests → coverage** (ordered, §9).
    * On success, record **exact file line ranges**, commit (one commit per step), and append to the report.
    * On failure, **rollback the step**, log diagnostics as **Failed**, and **stop the run**.
 5. **Finalize**: Append run summary, artifact index, and coverage deltas.
+
+### Clarification & Planning Protocol (Pre-Execution)
+
+* After reviewing `llm-context/project-input/*.md`, the agent MUST draft a concise execution plan strictly aligned to the provided steps and constraints before making any code changes.
+* If there is any ambiguity or confusion about a step or the overall feature, the agent MUST pause and ask the user targeted, close‑ended questions via the chat interface before proceeding.
+  - Prefer multiple‑choice (MCQ) or yes/no questions that are specific and mutually exclusive; include an "Other/Unsure" choice only when necessary.
+  - Batch related questions together to minimize rounds of clarification.
+* Do NOT start implementation until the blocking ambiguities are resolved via the user’s answers. If chat is unavailable, log a **Blocking Issue** and stop the run (per §7 and the Escalation principle).
+* Once sufficient clarity is obtained, continue with the planned execution and apply the quality gates in §9.
 
 ---
 
@@ -125,6 +135,7 @@ steps:                               # REQUIRED, ordered, unique ids
     title: <what to build>
     rationale: <why>
     depends_on: []                  # optional
+    hints: []                       # optional; list of implementation hints the agent MUST follow if provided
     changes:
       - create: "src/..."
       - modify: "src/..."
@@ -327,6 +338,9 @@ steps:
     title: <what to build>
     rationale: <why>
     depends_on: []
+    hints:
+      - "use hono middleware to handle the cookies"
+      - "use supabase client helper functions"
     changes:
       - create: "src/..."
       - modify: "src/..."
