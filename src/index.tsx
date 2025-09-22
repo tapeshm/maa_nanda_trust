@@ -13,6 +13,25 @@ import { csrfProtect, ensureCsrf } from './middleware/csrf'
 import Layout from './templates/layout'
 import ErrorPage from './templates/error'
 
+type EnvLike = Record<string, unknown> | undefined
+
+export function resolveAuthIssuer(env: EnvLike): string | undefined {
+  const supaUrl = env?.SUPABASE_URL
+  if (!supaUrl || typeof supaUrl !== 'string') return undefined
+  try {
+    const u = new URL(supaUrl)
+    const host = u.hostname
+    const devLocal = String(env?.DEV_SUPABASE_LOCAL ?? '0') === '1'
+    const localHosts = ['127.0.0.1', 'localhost', 'host.docker.internal', '0.0.0.0']
+    if (devLocal && localHosts.includes(host)) {
+      u.hostname = '127.0.0.1'
+    }
+    return `${u.origin}/auth/v1`
+  } catch {
+    return undefined
+  }
+}
+
 /**
  * Entry point for the Worker.  This file creates the Hono app,
  * applies global middlewares such as security headers and CSRF
@@ -32,19 +51,7 @@ app.use('*', csrfProtect())
 // Attach auth context for all requests so Layout can reflect signed-in state
 app.use('*', (c, next) => {
   const env = c.env as any
-  const supaUrl = env?.SUPABASE_URL as string | undefined
-  let issuer: string | undefined
-  if (supaUrl) {
-    try {
-      const u = new URL(supaUrl)
-      const host = u.hostname
-      const hasHs256 = !!env?.SUPABASE_JWT_SECRET || String(env?.DEV_SUPABASE_LOCAL ?? '0') === '1'
-      if (hasHs256 && !['127.0.0.1', 'localhost'].includes(host)) {
-        u.hostname = '127.0.0.1'
-      }
-      issuer = `${u.origin}/auth/v1`
-    } catch {}
-  }
+  const issuer = resolveAuthIssuer(env)
   return attachAuthContext(issuer ? { expected: { issuer } } : undefined)(c, next)
 })
 
