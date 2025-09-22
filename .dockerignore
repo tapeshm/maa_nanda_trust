@@ -11,7 +11,7 @@ package-lock.json # not used in pnpm projects
 # ───────────── build / output / caches ────────────
 dist/
 build/
-public/assets/app.css     # Tailwind output – generated inside container
+dist/client/assets/app.css     # Tailwind output – generated inside container
 coverage/
 *.log
 npm-debug.log*

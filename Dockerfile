@@ -14,6 +14,14 @@ RUN groupadd -g $GID -o devgroup && \
 # 2. As ROOT: Enable corepack
 RUN corepack enable
 
+# Optional: include Codex CLI at build time for convenience
+ARG INSTALL_CODEX=0
+RUN if [ "$INSTALL_CODEX" = "1" ]; then \
+      npm i -g @openai/codex@latest; \
+    else \
+      echo "Skipping Codex install (INSTALL_CODEX=$INSTALL_CODEX)"; \
+    fi
+
 # As ROOT: Create a skeleton home directory and pnpm store for devuser
 RUN mkdir -p /home/devuser/.local/share/pnpm && \
   chown -R devuser:devgroup /home/devuser

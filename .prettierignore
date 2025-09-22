@@ -1,0 +1,29 @@
+# Ignore everything by default to avoid reformatting legacy files.
+*
+
+# Re-include new or updated sources for this feature.
+!src/
+src/*
+!src/frontend/
+src/frontend/*
+!src/frontend/editor/
+!src/frontend/editor/**
+!src/frontend/ui.ts
+!src/templates/layout.tsx
+!src/utils/
+src/utils/*
+!src/utils/assets.ts
+
+!tests/
+tests/*
+!tests/frontend/
+tests/frontend/*
+!tests/frontend/editor/
+!tests/frontend/editor/**
+!tests/utils/
+tests/utils/*
+!tests/utils/assets.test.ts
+
+!package.json
+!vite.config.ts
+!env.d.ts

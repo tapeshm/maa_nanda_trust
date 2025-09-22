@@ -11,17 +11,19 @@ COMPOSE := docker compose --env-file .dev.vars
 export UID := $(shell id -u)
 export GID := $(shell id -g)
 
-.PHONY: help up down logs shell add add-dev rm
+.PHONY: help up up-codex rebuild-codex down logs shell add add-dev rm
 
-help:
-	@echo "Usage: make [target]"
-	@echo ""
-	@echo "Targets:"
-	@echo "  up        - Start the development services in the background."
-	@echo "  down      - Stop and remove the development services."
-	@echo "  stop      - Stop the development services."
-	@echo "  logs      - Tail the logs of the 'dev' service."
-	@echo "  shell     - Get an interactive shell inside the 'dev' container."
+	help:
+		@echo "Usage: make [target]"
+		@echo ""
+		@echo "Targets:"
+		@echo "  up        - Start the development services in the background."
+		@echo "  up-codex  - Build with Codex CLI and start services."
+		@echo "  rebuild-codex - Rebuild dev image with Codex CLI ignoring cache and restart."
+		@echo "  down      - Stop and remove the development services."
+		@echo "  stop      - Stop the development services."
+		@echo "  logs      - Tail the logs of the 'dev' service."
+		@echo "  shell     - Get an interactive shell inside the 'dev' container."
 	@echo "  add       - Add a new production dependency. Usage: make add PKG=hono"
 	@echo "  add-dev   - Add a new development dependency. Usage: make add-dev PKG=typescript"
 	@echo "  rm        - Remove a dependency. Usage: make rm PKG=hono"
@@ -32,6 +34,16 @@ help:
 up:
 	@echo "🚀 Starting development environment..."
 	@$(COMPOSE) up --build -d
+
+up-codex:
+	@echo "🧰 Building image with Codex CLI (INSTALL_CODEX=1) and starting..."
+	@$(COMPOSE) build --build-arg INSTALL_CODEX=1 dev
+	@$(COMPOSE) up -d
+
+rebuild-codex:
+	@echo "🔄 Rebuilding image with Codex CLI (INSTALL_CODEX=1) ignoring cache..."
+	@$(COMPOSE) build --pull --no-cache --build-arg INSTALL_CODEX=1 dev
+	@$(COMPOSE) up -d --force-recreate
 
 down:
 	@echo "🔥 Shutting down development environment..."

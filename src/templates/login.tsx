@@ -1,6 +1,11 @@
 import type { FC } from 'hono/jsx'
 
-const LoginPage: FC<{ error?: string | null; email?: string; redirectTo?: string }> = ({ error, email = '', redirectTo = '/' }) => {
+const LoginPage: FC<{ error?: string | null; email?: string; redirectTo?: string; csrfToken: string }> = ({
+  error,
+  email = '',
+  redirectTo = '/',
+  csrfToken,
+}) => {
   return (
     <div class="max-w-md mx-auto">
       <h1 class="text-2xl font-semibold mb-6 text-center">Log in</h1>
@@ -11,6 +16,7 @@ const LoginPage: FC<{ error?: string | null; email?: string; redirectTo?: string
       ) : null}
       <form method="post" action="/login" class="space-y-4">
         <input type="hidden" name="redirect_to" value={redirectTo} />
+        <input type="hidden" name="csrf_token" value={csrfToken} />
         <div>
           <label class="block text-sm font-medium mb-1" htmlFor="email">Email</label>
           <input

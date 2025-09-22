@@ -1,10 +1,9 @@
 {
-  "watch": ["src", "app", "workers", "public", "wrangler.jsonc"],
+  "watch": ["src", "app", "workers", "wrangler.jsonc", "dist"],
   "ext": "ts,tsx,js,jsx,css,html,wasm",
   "ignore": [
     ".git",
     "node_modules",
-    "dist",
     ".wrangler",
     ".cache",
     "build",

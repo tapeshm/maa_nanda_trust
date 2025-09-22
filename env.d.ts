@@ -14,3 +14,12 @@ declare module 'cloudflare:test' {
   interface ProvidedEnv extends Env {}
 }
 
+declare module '../../dist/client/.vite/manifest.json' {
+  interface ManifestEntry {
+    file: string
+    css?: string[]
+  }
+
+  const manifest: Record<string, ManifestEntry>
+  export default manifest
+}

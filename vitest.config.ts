@@ -1,6 +1,11 @@
 import path from "node:path";
 import dotenv from "dotenv";
-import { defineWorkersConfig, readD1Migrations } from "@cloudflare/vitest-pool-workers/config";
+process.env.HOME ??= path.join(__dirname, ".home");
+process.env.USERPROFILE ??= process.env.HOME;
+process.env.WRANGLER_CONFIG_DIR ??= path.join(__dirname, ".wrangler");
+process.env.VPW_LOG_LEVEL ??= "debug";
+
+const { defineWorkersConfig, readD1Migrations } = await import("@cloudflare/vitest-pool-workers/config");
 
 export default defineWorkersConfig(async () => {
   // Load local env for tests that integrate with Supabase

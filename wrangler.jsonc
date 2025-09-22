@@ -4,7 +4,7 @@
   "main": "src/index.tsx",
   "compatibility_date": "2025-08-08",
   "assets": {
-    "directory": "public",
+    "directory": "dist/client",
     "binding": "STATIC_ASSETS",
   },
   "logpush": false,
@@ -16,7 +16,7 @@
     "ip": "0.0.0.0",
     "port": 8787,
     "inspector_port": 9229,
-    "local_protocol": "http",
+    "local_protocol": "https",
     "host": "localhost"
   },
   // KV Namespace binding

@@ -1,0 +1,26 @@
+// [D3:auth.step-02:csp-config]
+import type { Context } from 'hono'
+
+/** Build a CSP string based on environment. */
+export function buildCsp(c: Context): string {
+  const env = (c.env as any) || {}
+  const mode = String(env.ENV || 'development')
+  const isDev = mode !== 'production'
+
+  const directives: Record<string, string[]> = {
+    'default-src': ["'self'"],
+    'base-uri': ["'self'"],
+    'object-src': ["'none'"],
+    'frame-ancestors': ["'self'"],
+    'img-src': ["'self'", 'data:'],
+    'font-src': ["'self'"],
+    'connect-src': ["'self'"],
+    'script-src': isDev ? ["'self'", "'unsafe-inline'"] : ["'self'"],
+    'style-src': isDev ? ["'self'", "'unsafe-inline'"] : ["'self'"],
+  }
+
+  return Object.entries(directives)
+    .map(([k, v]) => `${k} ${v.join(' ')}`)
+    .join('; ')
+}
+

@@ -77,6 +77,9 @@ steps:
           - "sets HSTS and CSP headers"
           - "auth responses have Cache-Control: no-store, Pragma: no-cache, and Expires: 0"
           - "dev vs prod CSP differences are applied"
+          - "sets X-Content-Type-Options: nosniff"
+          - "sets Referrer-Policy"
+          - "sets Permissions-Policy"
 
   - id: step-03
     title: "JWKS fetcher with edge caching & forced re-fetch"
@@ -95,6 +98,7 @@ steps:
         type: unit
         cases:
           - "caches JWKS and honors TTL"
+          - "caps JWKS cache TTL to ≤ 9 minutes"
           - "forces single re-fetch on kid mismatch then retries verify"
           - "rejects non-RS256 tokens"
           - "enforces issuer and skew"
@@ -184,6 +188,7 @@ steps:
           - "unauth HTMX → 401 + HX-Redirect"
           - "near-expiry path triggers refresh pipeline"
           - "valid token attaches claims"
+          - "rejects Authorization header or query tokens; only cookies accepted"
 
   - id: step-08
     title: "Single refresh attempt pipeline (race-aware)"
@@ -224,6 +229,7 @@ steps:
         cases:
           - "clears cookies even if Supabase call fails"
           - "returns 302 for non-HTMX, 200 for HTMX"
+          - "invokes Supabase sign-out endpoint (best-effort)"
 
   - id: step-10
     title: "Rate limiting & precise CORS for auth endpoints"
@@ -241,6 +247,8 @@ steps:
         cases:
           - "enforces rate limit on /login"
           - "rejects disallowed origins with credentials"
+          - "enforces rate limit on /logout"
+          - "sets Vary: Origin on CORS responses"
 
   - id: step-11
     title: "CSRF protection for state-changing routes"
@@ -303,6 +311,35 @@ steps:
           - "cookies Secure=true in both dev (HTTPS) and prod"
           - "JWKS fetch not called in dev mode"
           - "dev HS256 refused when SUPABASE_URL is non-local (fails closed)"
+
+  - id: step-14
+    title: "Role-based route guards (requireAdmin, requireTrustee)"
+    rationale: "Enforce role-specific access to protected routes using JWT claims parsed by the auth middleware."
+    depends_on: ["step-07", "step-12"]
+    changes:
+      - modify: "src/middleware/auth.ts"
+      - modify: "src/types/auth.ts"
+    hints:
+      - "Extract roles from access token claims (e.g., 'role', 'roles', or a custom app_roles field). Support: a single string (comma/space-separated) or an array of strings."
+      - "Normalize roles to lowercase strings; ignore non-string values."
+      - "Authorization continues to rely only on `__Host-*` cookies. Do not accept Authorization headers or query parameters."
+      - "Semantics: Missing required role ⇒ 403. For full-page GET respond with 302 redirect to '/', for HTMX/XHR respond with 403 JSON."
+      - "Optionally treat 'admin' as including 'trustee' (admin ⇒ trustee)."
+    acceptance_criteria:
+      - "Implements extractRolesFromClaims(claims) → Set<string> with normalized roles."
+      - "Exports requireAdmin and requireTrustee middlewares that assume requireAuth has already attached claims."
+      - "When role missing: HTMX/XHR → 403 JSON { ok: false, error: 'forbidden' }; full-page GET → 302 to '/'; other requests → 403 JSON."
+      - "When role present: proceeds to next handler."
+      - "Does not log token contents or PII."
+    tests:
+      - path: "tests/auth/roles.test.ts"
+        type: integration
+        cases:
+          - "requireAdmin denies when roles missing (403/302 semantics)"
+          - "requireAdmin allows when role includes admin"
+          - "requireTrustee allows when role includes trustee"
+          - "HTMX forbidden returns 403 JSON without redirect"
+          - "no tokens or secrets logged in dev mode"
 ---
 
 ## Overview (Human Context)

@@ -1,24 +1,25 @@
 import { defineConfig } from 'vite'
+import { resolve } from 'node:path'
 
-// Build Editor.js frontend bundle into public/assets so Workers can serve it
+// Build browser bundles with a manifest so the worker can resolve hashed assets.
 export default defineConfig({
   build: {
-    outDir: 'public',
-    emptyOutDir: false,
+    manifest: true,
+    outDir: 'dist/client',
     assetsDir: 'assets',
+    emptyOutDir: false,
     sourcemap: true,
-    appType: 'custom',
     rollupOptions: {
       input: {
-        editor: 'src/frontend/editor.ts',
+        ui: resolve(__dirname, 'src/frontend/ui.ts'),
+        editor: resolve(__dirname, 'src/frontend/editor/index.ts'),
       },
       output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
     target: 'esnext',
   },
 })
-

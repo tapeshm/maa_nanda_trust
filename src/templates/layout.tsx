@@ -1,4 +1,5 @@
 import type { FC, PropsWithChildren } from 'hono/jsx'
+import { resolveAsset } from '../utils/assets'
 
 type Hero = {
   title: string
@@ -19,21 +20,18 @@ const Layout: FC<{
   admin?: boolean
   signedIn?: boolean
   hero?: Hero | null
-} & PropsWithChildren> = ({ title, admin = false, signedIn = false, hero = null, children }) => {
+  csrfToken?: string
+} & PropsWithChildren> = ({ title, admin: _admin = false, signedIn = false, hero = null, csrfToken, children }) => {
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/about', label: 'About' },
-    { href: '/activities', label: 'Activities' },
-    { href: '/gallery', label: 'Gallery' },
-    { href: '/finance', label: 'Finance' },
-  ]
+  ];
 
   const heroDefaults: Hero = {
     title: 'Welcome to Temple Trust',
     subtitle:
       'Preserving our spiritual heritage and serving the community through devotion, education, and culture.',
-    primaryCta: { href: '/about', label: 'Learn more' },
-    secondaryCta: { href: '/finance', label: 'Support us →' },
+    primaryCta: { href: '/', label: 'Learn more' },
+    secondaryCta: { href: '/', label: 'Support us →' },
     imageLight:
       'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2830&q=80&blend=ffffff&sat=-100&exp=15&blend-mode=overlay',
     imageDark:
@@ -42,20 +40,24 @@ const Layout: FC<{
 
   const h = hero ? { ...heroDefaults, ...hero } : null
 
+  // [D3:editor-tiptap.step-01:ui-asset] Resolve hashed UI bundle from the manifest.
+  const uiAsset = resolveAsset('ui')
+  void _admin
+
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{title}</title>
-        {/* Tailwind via CDN */}
-        <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-        {/* HTMX */}
-        <script src="https://unpkg.com/htmx.org@1.9.11"></script>
-        {/* Tailwind Elements (dialog for mobile menu) */}
-        <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-        {/* Dark mode toggle */}
-        <script src="/js/theme-toggle.js"></script>
+        {/* Tailwind (local build output) */}
+        <link rel="stylesheet" href="/assets/app.css" />
+        {/* HTMX + Tailwind Elements + theme toggle via UI bundle */}
+        {uiAsset.styles.map((href) => (
+          <link rel="stylesheet" href={href} key={href} />
+        ))}
+        <script src={uiAsset.script} type="module" defer></script>
+        {/* Tailwind Elements previously loaded from CDN; now bundled locally via Vite. */}
       </head>
       <body class="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white">
         {/* Header */}
@@ -126,7 +128,15 @@ const Layout: FC<{
                 </svg>
               </button>
               {signedIn ? (
-                <a href="/logout" class="text-sm font-semibold text-gray-900 dark:text-white">Log out <span aria-hidden="true">→</span></a>
+                <form method="post" action="/logout" class="inline">
+                  <input type="hidden" name="csrf_token" value={csrfToken ?? ''} />
+                  <button
+                    type="submit"
+                    class="text-sm font-semibold text-gray-900 dark:text-white"
+                  >
+                    Log out <span aria-hidden="true">→</span>
+                  </button>
+                </form>
               ) : (
                 <a href="/login" class="text-sm font-semibold text-gray-900 dark:text-white">Log in <span aria-hidden="true">→</span></a>
               )}
@@ -179,7 +189,15 @@ const Layout: FC<{
                       </div>
                       {signedIn ? (
                         <div class="py-6">
-                          <a href="/logout" class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">Log out</a>
+                          <form method="post" action="/logout">
+                            <input type="hidden" name="csrf_token" value={csrfToken ?? ''} />
+                            <button
+                              type="submit"
+                              class="-mx-3 block w-full text-left rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5"
+                            >
+                              Log out
+                            </button>
+                          </form>
                         </div>
                       ) : (
                         <div class="py-6">

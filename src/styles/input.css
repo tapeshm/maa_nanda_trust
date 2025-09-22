@@ -1,3 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4 CSS-driven config */
+@import "tailwindcss";
+
+/* Scan sources (relative to this file) */
+@source "../**/*.ts";
+@source "../**/*.tsx";
+@source "../templates/**/*.tsx";
+@source "../frontend/**/*.ts";
+
+/* Plugins */
+@plugin "@tailwindcss/typography";
