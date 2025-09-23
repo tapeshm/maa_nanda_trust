@@ -91,7 +91,7 @@ steps:
       - "Share common extensions via a helper and append Image only for the full profile."
       - "Set editorProps.attributes.class to `prose max-w-none focus:outline-none` and disable built-in CSS via injectCSS."
       - "Use Placeholder extension with default text `Start writing…`."
-      - "Adjust tailwind.config.js: set content globs to ['src/**/*.tsx','src/**/*.ts','src/templates/**/*.tsx','src/frontend/**/*.ts'] and enable `@tailwindcss/typography`."
+      - "Adjust tailwind config: src/styles/input.css set content globs to ['src/**/*.tsx','src/**/*.ts','src/templates/**/*.tsx','src/frontend/**/*.ts'] and enable `@tailwindcss/typography`."
       - "Do not include an HTML/Raw HTML extension; avoid raw HTML injection features."
     changes:
       - create: "src/frontend/editor/factory.ts"

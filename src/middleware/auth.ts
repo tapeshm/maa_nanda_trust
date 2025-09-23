@@ -22,6 +22,27 @@ function unauth(c: Parameters<MiddlewareHandler>[0]) {
 
 export const requireAuth = (): MiddlewareHandler => {
   return async (c, next) => {
+    const resolveIssuerFromEnv = (env: Record<string, unknown> | undefined): string | undefined => {
+      try {
+        const supaUrlRaw = env?.SUPABASE_URL
+        if (!supaUrlRaw || typeof supaUrlRaw !== 'string') return undefined
+        const u = new URL(supaUrlRaw)
+        const host = u.hostname
+        const devLocal = String(env?.DEV_SUPABASE_LOCAL ?? '0') === '1'
+        const localHosts = ['127.0.0.1', 'localhost', 'host.docker.internal', '0.0.0.0']
+        if (devLocal && localHosts.includes(host)) {
+          u.hostname = '127.0.0.1'
+        }
+        return `${u.origin}/auth/v1`
+      } catch {
+        return undefined
+      }
+    }
+
+    const expectedIssuer = resolveIssuerFromEnv(c.env as any)
+    const envOverride = expectedIssuer
+      ? ({ ...(c.env as any), AUTH_JWT_ISS: expectedIssuer } as any)
+      : ((c.env as any) as any)
     let refreshed = false
     // Only accept cookies for app authorization; ignore Authorization header or query params
     let token = getCookie(c, ACCESS_COOKIE_NAME)
@@ -31,14 +52,16 @@ export const requireAuth = (): MiddlewareHandler => {
       if (!refresh) return required ? unauth(c) : undefined
       try {
         const pair = await refreshAccess(c.env, refresh)
-        const newClaims = await verifyAccessJwt(pair.access_token, c.env)
+        const newClaims = await verifyAccessJwt(pair.access_token, envOverride)
         setAccessCookie(c, pair.access_token)
         setRefreshCookie(c, pair.refresh_token)
         token = pair.access_token
         try {
           const uid = (newClaims as any)?.sub || (newClaims as any)?.user_id || (newClaims as any)?.id || null
           c.set('auth', { token: pair.access_token, claims: newClaims as any, userId: uid ? String(uid) : null })
-        } catch { }
+        } catch {
+          /* no-op */
+        }
         logAuthEvent(c as any, 'auth.refresh_ok')
         refreshed = true
         return undefined
@@ -73,12 +96,14 @@ export const requireAuth = (): MiddlewareHandler => {
     }
 
     try {
-      const claims = await verifyAccessJwt(token, c.env)
+      const claims = await verifyAccessJwt(token, envOverride)
       try {
         const prev = (c.get('auth') as any) || { token: null, claims: null, userId: null }
         const uid = (claims as any)?.sub || (claims as any)?.user_id || (claims as any)?.id || null
         c.set('auth', { ...prev, token, claims, userId: uid ? String(uid) : null })
-      } catch { }
+      } catch {
+        /* no-op */
+      }
       logAuthEvent(c as any, 'auth.verify_ok')
       const now = Math.floor(Date.now() / 1000)
       const near = (claims.exp ?? 0) - now <= 60
@@ -86,7 +111,9 @@ export const requireAuth = (): MiddlewareHandler => {
         try {
           const prev = (c.get('auth') as any) || { token: null, claims: null, userId: null }
           c.set('auth', { ...prev, token, claims, userId: (prev?.userId as any) ?? (claims as any)?.sub ?? null, nearExpiry: true } as any)
-        } catch { }
+        } catch {
+          /* no-op */
+        }
         const res = await attemptRefresh(false)
         if (res) return res
       }

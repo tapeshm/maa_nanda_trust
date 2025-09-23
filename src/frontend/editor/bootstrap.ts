@@ -1,4 +1,5 @@
 import type { EditorFactory, EditorInstance, EditorProfile } from './types'
+import { readInitialContent } from './content'
 import { registerDefaultEditorProfiles } from './factory'
 
 const DEFAULT_PROFILE: EditorProfile = 'basic'
@@ -40,7 +41,9 @@ function mountEditor(root: HTMLElement): Promise<void> {
 
   entry.mountPromise = (async () => {
     try {
-      const instance = await factory(root, { profile, root })
+      // [D3:editor-tiptap.step-03:hydrate] Pass SSR-provided initial content to the factory.
+      const initialContent = readInitialContent(root)
+      const instance = await factory(root, { profile, root, initialContent })
       entry.instance = instance
     } catch (error) {
       mountedEditors.delete(root)

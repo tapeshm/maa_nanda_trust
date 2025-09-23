@@ -2,15 +2,24 @@ import { Editor } from '@tiptap/core'
 
 import type { EditorFactory, EditorInstance, EditorProfile } from './types'
 import { extensionsList } from '../../utils/editor/extensions'
-
-export const EDITOR_CLASSNAME = 'prose max-w-none focus:outline-none'
+import { EDITOR_CLASSNAME } from './styles'
 
 // [D3:editor-tiptap.step-02:create-editor] Instantiate a Tiptap editor with shared configuration.
-export function createEditor(element: HTMLElement, profile: EditorProfile): EditorInstance {
+export function createEditor(
+  element: HTMLElement,
+  profile: EditorProfile,
+  content?: import('./types').JSONContent,
+): EditorInstance {
+  // Progressive enhancement: ensure element is contenteditable prior to Tiptap mount
+  // so users can focus and type even if hydration is delayed.
+  // (Handled by Tiptap via editorProps; avoid hardcoding here to keep concerns separate.)
+
   const editor = new Editor({
     element,
     extensions: extensionsList(profile),
     injectCSS: false,
+    // [D3:editor-tiptap.step-03:content] Hydrate from SSR JSON when available.
+    content,
     editorProps: {
       attributes: {
         class: EDITOR_CLASSNAME,
@@ -23,7 +32,7 @@ export function createEditor(element: HTMLElement, profile: EditorProfile): Edit
 
 // [D3:editor-tiptap.step-02:create-factory] Build a factory compatible with the bootstrap registry.
 export function createEditorFactory(profile: EditorProfile): EditorFactory {
-  return (element) => createEditor(element, profile)
+  return (element, ctx) => createEditor(element, profile, ctx.initialContent)
 }
 
 // [D3:editor-tiptap.step-02:register-node] Convenience helper for registering default profiles.

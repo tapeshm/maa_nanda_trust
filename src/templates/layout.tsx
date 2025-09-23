@@ -21,10 +21,12 @@ const Layout: FC<{
   signedIn?: boolean
   hero?: Hero | null
   csrfToken?: string
-} & PropsWithChildren> = ({ title, admin: _admin = false, signedIn = false, hero = null, csrfToken, children }) => {
+  extraHead?: any
+} & PropsWithChildren> = ({ title, admin: _admin = false, signedIn = false, hero = null, csrfToken, extraHead, children }) => {
   const navLinks = [
     { href: '/', label: 'Home' },
-  ];
+  ]
+  const links = signedIn ? [...navLinks, { href: '/admin', label: 'Admin' }] : navLinks
 
   const heroDefaults: Hero = {
     title: 'Welcome to Temple Trust',
@@ -58,6 +60,7 @@ const Layout: FC<{
         ))}
         <script src={uiAsset.script} type="module" defer></script>
         {/* Tailwind Elements previously loaded from CDN; now bundled locally via Vite. */}
+        {extraHead}
       </head>
       <body class="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white">
         {/* Header */}
@@ -103,7 +106,7 @@ const Layout: FC<{
 
             {/* Desktop navigation */}
             <div class="hidden lg:flex lg:gap-x-10">
-              {navLinks.map(({ href, label }) => (
+              {links.map(({ href, label }) => (
                 <a href={href} class="text-sm font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400">
                   {label}
                 </a>
@@ -162,7 +165,7 @@ const Layout: FC<{
                   <div class="mt-6 flow-root">
                     <div class="-my-6 divide-y divide-gray-500/10 dark:divide-gray-500/25">
                       <div class="space-y-2 py-6">
-                        {navLinks.map(({ href, label }) => (
+                        {links.map(({ href, label }) => (
                           <a href={href} class="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">
                             {label}
                           </a>
