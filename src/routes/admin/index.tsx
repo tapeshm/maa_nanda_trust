@@ -4,8 +4,13 @@ import { Hono } from 'hono'
 import type { Bindings } from '../../bindings'
 import { ensureCsrf } from '../../middleware/csrf'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
-import EditorPage from '../../templates/admin/editorPage'
+import EditorPage, { type JSONContent } from '../../templates/admin/editorPage'
 import Layout from '../../templates/layout'
+import upload from './upload'
+import saveContent from './saveContent'
+import { getEditorDocument } from '../../models/editorDocuments'
+import { renderFallbackHtml } from '../../utils/editor/render'
+import { logEditorSuccess } from '../../observability/editorLogs'
 
 // [D3:editor-tiptap.step-04:admin-router] Router for admin editor pages.
 const admin = new Hono<{ Bindings: Bindings }>()
@@ -25,7 +30,7 @@ admin.get('/', requireAuth(), requireAdmin, (c) => {
   )
 })
 
-admin.get('/:slug/:id', requireAuth(), requireAdmin, (c) => {
+admin.get('/:slug/:id', requireAuth(), requireAdmin, async (c) => {
   const csrfToken = ensureCsrf(c)
   // Generate a per-response nonce for CSP to allow inline JSON payload scripts.
   const bytes = new Uint8Array(16)
@@ -38,17 +43,57 @@ admin.get('/:slug/:id', requireAuth(), requireAdmin, (c) => {
   }
 
   const { slug, id } = c.req.param()
+  const existing = await getEditorDocument(c.env, slug, id)
+  let initialPayload: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
+  if (existing) {
+    try {
+      initialPayload = JSON.parse(existing.contentJson) as JSONContent
+    } catch {
+      initialPayload = { type: 'doc', content: [{ type: 'paragraph' }] }
+    }
+  }
+  const initialPayloads = { editor_main: initialPayload }
+  const initialHtml = existing
+    ? {
+        editor_main:
+          existing.contentHtml && existing.contentHtml.length > 0
+            ? existing.contentHtml
+            : renderFallbackHtml(initialPayload, {
+                profile: existing.profile,
+                slug: existing.slug,
+                documentId: existing.documentId,
+              }),
+      }
+    : {
+        editor_main: '',
+      }
+  const etags = existing ? { editor_main: existing.updatedAt } : undefined
+
+  logEditorSuccess(c, 'editor.mount', {
+    route: '/admin/:slug/:id',
+    slug,
+    documentId: id,
+    profile: existing?.profile ?? 'full',
+    status: existing ? 'existing' : 'new',
+  })
+
   return c.html(
     <EditorPage
       title={`Edit ${slug} ${id}`}
       csrfToken={csrfToken}
       editors={[
-        { id: 'editor_main', profile: 'full' },
+        { id: 'editor_main', profile: 'full', documentId: id },
       ]}
-      initialPayloads={{ editor_main: { type: 'doc', content: [{ type: 'paragraph' }] } }}
+      initialPayloads={initialPayloads}
+      initialHtml={initialHtml}
+      etags={etags}
       nonce={nonce}
-    />,
+      slug={slug}
+      />,
   )
 })
+
+admin.route('/', upload)
+admin.route('/', saveContent)
 
 export default admin

@@ -8,6 +8,7 @@ import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME } from '../utils/constants'
 import { verifyAccessJwt } from '../auth/verify'
 import { refreshAccess, SupabaseAuthError } from '../auth/supabaseTokens'
 import { logAuthEvent } from '../observability/authLogs'
+import { resolveAuthIssuer } from '../utils/authIssuer'
 
 function unauth(c: Parameters<MiddlewareHandler>[0]) {
   if (isHtmx(c)) {
@@ -22,24 +23,7 @@ function unauth(c: Parameters<MiddlewareHandler>[0]) {
 
 export const requireAuth = (): MiddlewareHandler => {
   return async (c, next) => {
-    const resolveIssuerFromEnv = (env: Record<string, unknown> | undefined): string | undefined => {
-      try {
-        const supaUrlRaw = env?.SUPABASE_URL
-        if (!supaUrlRaw || typeof supaUrlRaw !== 'string') return undefined
-        const u = new URL(supaUrlRaw)
-        const host = u.hostname
-        const devLocal = String(env?.DEV_SUPABASE_LOCAL ?? '0') === '1'
-        const localHosts = ['127.0.0.1', 'localhost', 'host.docker.internal', '0.0.0.0']
-        if (devLocal && localHosts.includes(host)) {
-          u.hostname = '127.0.0.1'
-        }
-        return `${u.origin}/auth/v1`
-      } catch {
-        return undefined
-      }
-    }
-
-    const expectedIssuer = resolveIssuerFromEnv(c.env as any)
+    const expectedIssuer = resolveAuthIssuer(c.env as any)
     const envOverride = expectedIssuer
       ? ({ ...(c.env as any), AUTH_JWT_ISS: expectedIssuer } as any)
       : ((c.env as any) as any)

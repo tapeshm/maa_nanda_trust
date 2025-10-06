@@ -2,6 +2,7 @@
 import type { Context } from 'hono'
 import { buildAuthHeaders, getSupabaseUrl } from '../config/supabase'
 import { readEnv } from '../utils/env'
+import { logger } from '../observability/logger'
 
 type EnvLike = unknown
 
@@ -84,13 +85,26 @@ async function supabaseTokenRequest(envOrCtx: Context | EnvLike, url: string, bo
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(bodyObj) })
   const json: any = await res.json().catch(() => ({} as any))
   if (!res.ok) {
+    logger.warn('supabase.token_request.failed', {
+      url,
+      status: res.status,
+      code: json?.error ?? json?.code,
+      description: json?.error_description ?? json?.msg ?? json?.message,
+    })
     throw classifyError(res.status, json)
   }
   const access_token = json?.access_token
   const refresh_token = json?.refresh_token
   if (!access_token || !refresh_token) {
+    logger.error('supabase.token_request.missing_tokens', {
+      url,
+      status: res.status,
+      hasAccess: !!access_token,
+      hasRefresh: !!refresh_token,
+    })
     throw new SupabaseAuthError('Missing tokens in response', { status: res.status, code: json?.error, retryable: false, category: 'other' })
   }
+  logger.debug('supabase.token_request.success', { url, status: res.status })
   return { access_token, refresh_token }
 }
 

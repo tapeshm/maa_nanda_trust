@@ -18,7 +18,7 @@ export function buildCsp(c: Context): string {
     'base-uri': ["'self'"],
     'object-src': ["'none'"],
     'frame-ancestors': ["'self'"],
-    'img-src': ["'self'", 'data:'],
+    'img-src': ["'self'"],
     'font-src': ["'self'"],
     'connect-src': ["'self'"],
     'script-src': isDev ? ["'self'", "'unsafe-inline'"] : ["'self'"],

@@ -1,5 +1,5 @@
 {
-  "watch": ["src", "app", "workers", "wrangler.jsonc", "dist"],
+  "watch": ["src", "app", "workers", "wrangler.jsonc", "dist", "dist/client/.vite/manifest.json"],
   "ext": "ts,tsx,js,jsx,css,html,wasm",
   "ignore": [
     ".git",

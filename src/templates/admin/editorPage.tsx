@@ -1,14 +1,23 @@
 /** @jsxImportSource hono/jsx */
 import type { FC } from 'hono/jsx'
+import { raw } from 'hono/html'
 import Layout from '../layout'
 import { resolveAsset } from '../../utils/assets'
+import {
+  MENUBAR_CLASSNAME,
+  MENUBAR_BUTTON_CLASSNAME,
+  IMAGE_PANEL_CLASSNAME,
+  IMAGE_PANEL_GROUP_CLASSNAME,
+  IMAGE_PANEL_BUTTON_ROW_CLASSNAME,
+} from '../../frontend/editor/styles'
 
 type EditorSpec = {
   id: string
   profile?: 'basic' | 'full'
+  documentId?: string
 }
 
-type JSONContent = {
+export type JSONContent = {
   type: 'doc'
   content?: any[]
 }
@@ -19,8 +28,11 @@ const EditorPage: FC<{
   csrfToken: string
   editors: EditorSpec[]
   initialPayloads?: Record<string, JSONContent>
+  initialHtml?: Record<string, string>
+  etags?: Record<string, string>
+  slug: string
   nonce?: string
-}> = ({ title, csrfToken, editors, initialPayloads = {}, nonce }) => {
+}> = ({ title, csrfToken, editors, initialPayloads = {}, initialHtml = {}, etags = {}, slug, nonce }) => {
   const asset = resolveAsset('editor')
 
   const head = (
@@ -32,23 +44,285 @@ const EditorPage: FC<{
     </>
   )
 
+  // [D3:editor-tiptap.step-05:hx-headers] Preserve double quotes in hx-headers for HTMX.
+  const csrfHeaderJson = JSON.stringify({ 'X-CSRF-Token': csrfToken })
+  const hxHeaders = raw(`'${csrfHeaderJson.replace(/'/g, '&#39;')}'`)
+
   return (
     <Layout title={title} signedIn={true} csrfToken={csrfToken} extraHead={head}>
       <main class="mx-auto max-w-5xl px-4 py-8">
         <h1 class="text-2xl font-semibold mb-4">{title}</h1>
 
-        {editors.map(({ id, profile = 'basic' }) => {
-          const payload = initialPayloads[id] ?? { type: 'doc', content: [] }
-          const scriptId = `${id}__content`
-          return (
-            <section class="mb-8" id={`${id}__section`}>
-              <div id={id} data-editor data-editor-profile={profile} />
-              <script id={scriptId} type="application/json" nonce={nonce}>
-                {JSON.stringify(payload)}
-              </script>
-            </section>
-          )
-        })}
+        <form
+          method="post"
+          hx-post="/admin/save-content"
+          hx-headers={hxHeaders}
+          data-editor-form
+          class="space-y-8"
+        >
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="csrf_token" value={csrfToken} />
+
+          {editors.map(({ id, profile = 'basic', documentId }) => {
+            const payload = initialPayloads[id] ?? { type: 'doc', content: [] }
+            const scriptId = `${id}__content`
+            const serialized = JSON.stringify(payload)
+            const htmlValue = initialHtml[id] ?? ''
+            const etag = etags[id]
+            const docId = documentId ?? id
+            const imagePanelId = `${id}__image-panel`
+            const imageAltId = `${id}__alt-input`
+            const imageAltCounterId = `${imageAltId}__counter`
+            const sizeHeadingId = `${imagePanelId}__size`
+            const alignHeadingId = `${imagePanelId}__align`
+            const panelHeadingId = `${imagePanelId}__heading`
+
+            return (
+              <section class="space-y-2" id={`${id}__section`}>
+                <div
+                  id={`${id}__toolbar`}
+                  class={MENUBAR_CLASSNAME}
+                  data-editor-toolbar
+                  data-editor-for={id}
+                >
+                  <button
+                    type="button"
+                    class={MENUBAR_BUTTON_CLASSNAME}
+                    data-editor-command="bold"
+                    aria-pressed="false"
+                  >
+                    Bold
+                  </button>
+                  <button
+                    type="button"
+                    class={MENUBAR_BUTTON_CLASSNAME}
+                    data-editor-command="italic"
+                    aria-pressed="false"
+                  >
+                    Italic
+                  </button>
+                  <button
+                    type="button"
+                    class={MENUBAR_BUTTON_CLASSNAME}
+                    data-editor-command="heading-2"
+                    aria-pressed="false"
+                  >
+                    H2
+                  </button>
+                  <button
+                    type="button"
+                    class={MENUBAR_BUTTON_CLASSNAME}
+                    data-editor-command="heading-3"
+                    aria-pressed="false"
+                  >
+                    H3
+                  </button>
+                  <button
+                    type="button"
+                    class={MENUBAR_BUTTON_CLASSNAME}
+                    data-editor-command="bullet-list"
+                    aria-pressed="false"
+                  >
+                    Bullets
+                  </button>
+                  <button
+                    type="button"
+                    class={MENUBAR_BUTTON_CLASSNAME}
+                    data-editor-command="ordered-list"
+                    aria-pressed="false"
+                  >
+                    Ordered
+                  </button>
+                  {profile === 'full' ? (
+                    <button
+                      type="button"
+                      class={MENUBAR_BUTTON_CLASSNAME}
+                      data-editor-command="image"
+                      aria-pressed="false"
+                      title="Insert image"
+                    >
+                      Image
+                    </button>
+                  ) : null}
+                </div>
+                {profile === 'full' ? (
+                  <>
+                    <input
+                      id={`${id}__image-input`}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      class="hidden"
+                    />
+                    <div
+                      id={imagePanelId}
+                      class={IMAGE_PANEL_CLASSNAME}
+                      data-editor-image-panel
+                      aria-hidden="true"
+                      aria-labelledby={panelHeadingId}
+                      hidden
+                    >
+                      <p id={panelHeadingId} class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        Image tools
+                      </p>
+                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
+                        <label class="flex flex-col gap-1 text-sm text-zinc-700" htmlFor={imageAltId}>
+                          <span class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                            Alternative text
+                          </span>
+                          <input
+                            id={imageAltId}
+                            name="image_alt"
+                            type="text"
+                            placeholder="Describe the image"
+                            class="block w-full rounded-md border border-gray-300 bg-blue-50 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            maxLength={250}
+                            aria-describedby={imageAltCounterId}
+                            data-editor-image-alt
+                          />
+                        </label>
+                        <p
+                          id={imageAltCounterId}
+                          data-editor-image-alt-counter
+                          class="text-xs text-zinc-500"
+                          aria-live="polite"
+                        >
+                          0 / 250
+                        </p>
+                      </div>
+                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
+                        <p id={sizeHeadingId} class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                          Size
+                        </p>
+                        <div
+                          class={IMAGE_PANEL_BUTTON_ROW_CLASSNAME}
+                          role="group"
+                          aria-labelledby={sizeHeadingId}
+                          data-editor-image-size-group
+                        >
+                          <button
+                            type="button"
+                            class={MENUBAR_BUTTON_CLASSNAME}
+                            data-editor-image-size="small"
+                            aria-pressed="false"
+                          >
+                            Small
+                          </button>
+                          <button
+                            type="button"
+                            class={MENUBAR_BUTTON_CLASSNAME}
+                            data-editor-image-size="medium"
+                            aria-pressed="false"
+                          >
+                            Medium
+                          </button>
+                          <button
+                            type="button"
+                            class={MENUBAR_BUTTON_CLASSNAME}
+                            data-editor-image-size="large"
+                            aria-pressed="false"
+                          >
+                            Large
+                          </button>
+                          <button
+                            type="button"
+                            class={MENUBAR_BUTTON_CLASSNAME}
+                            data-editor-image-size="original"
+                            aria-pressed="false"
+                          >
+                            Original
+                          </button>
+                        </div>
+                      </div>
+                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
+                        <p id={alignHeadingId} class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                          Alignment
+                        </p>
+                        <div
+                          class={IMAGE_PANEL_BUTTON_ROW_CLASSNAME}
+                          role="group"
+                          aria-labelledby={alignHeadingId}
+                          data-editor-image-align-group
+                        >
+                          <button
+                            type="button"
+                            class={MENUBAR_BUTTON_CLASSNAME}
+                            data-editor-image-align="start"
+                            aria-pressed="false"
+                          >
+                            Left
+                          </button>
+                          <button
+                            type="button"
+                            class={MENUBAR_BUTTON_CLASSNAME}
+                            data-editor-image-align="center"
+                            aria-pressed="false"
+                          >
+                            Center
+                          </button>
+                          <button
+                            type="button"
+                            class={MENUBAR_BUTTON_CLASSNAME}
+                            data-editor-image-align="end"
+                            aria-pressed="false"
+                          >
+                            Right
+                          </button>
+                        </div>
+                      </div>
+                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
+                        <button
+                          type="button"
+                          class={MENUBAR_BUTTON_CLASSNAME}
+                          data-editor-image-caption
+                          aria-pressed="false"
+                          aria-labelledby={panelHeadingId}
+                        >
+                          Edit caption
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+                <div
+                  id={id}
+                  data-editor
+                  data-editor-profile={profile}
+                  data-editor-toolbar-id={`${id}__toolbar`}
+                  data-editor-image-input-id={profile === 'full' ? `${id}__image-input` : undefined}
+                  data-editor-alt-id={profile === 'full' ? imageAltId : undefined}
+                  data-editor-image-panel-id={profile === 'full' ? imagePanelId : undefined}
+                />
+                <script id={scriptId} type="application/json" nonce={nonce}>
+                  {serialized}
+                </script>
+                <input
+                  type="hidden"
+                  name={`content_json[${id}]`}
+                  data-editor-field={id}
+                  value={serialized}
+                />
+                <input
+                  type="hidden"
+                  name={`content_html[${id}]`}
+                  data-editor-html-field={id}
+                  value={htmlValue}
+                />
+                <input type="hidden" name={`profile[${id}]`} value={profile} />
+                <input type="hidden" name={`document_id[${id}]`} value={docId} />
+                {etag ? <input type="hidden" name={`etag[${id}]`} value={etag} /> : null}
+              </section>
+            )
+          })}
+
+          <div class="flex justify-end gap-3">
+            <button
+              type="submit"
+              class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Save changes
+            </button>
+          </div>
+        </form>
       </main>
     </Layout>
   )

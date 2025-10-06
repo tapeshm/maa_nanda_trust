@@ -1,12 +1,14 @@
 /** @jsxImportSource hono/jsx */
 import { Hono } from 'hono'
 import type { Bindings } from '../bindings'
-import { exchangeLogin, type LoginCredentials } from '../auth/supabaseTokens'
+import { exchangeLogin, type LoginCredentials, SupabaseAuthError } from '../auth/supabaseTokens'
 import { setAccessCookie, setRefreshCookie } from '../auth/cookies'
 import Layout from '../templates/layout'
 import LoginPage from '../templates/login'
 import { ensureCsrf, issueCsrf, getCsrfParsedBody } from '../middleware/csrf'
 import { isHtmx } from '../utils/request'
+import { logger } from '../observability/logger'
+import { getCorrelationId } from '../observability/authLogs'
 
 const login = new Hono<{ Bindings: Bindings }>()
 
@@ -31,6 +33,23 @@ function sanitizeRedirect(target: string | null, requestUrl: string): string {
   } catch {
     return fallback
   }
+}
+
+function maskIdentifier(value: string): string {
+  if (!value) return ''
+  const at = value.indexOf('@')
+  if (at === -1) {
+    if (value.length <= 3) return '*'.repeat(value.length)
+    return `${value[0]}***${value[value.length - 1]}`
+  }
+  const local = value.slice(0, at)
+  const domain = value.slice(at + 1)
+  if (!local) return `*@${domain}`
+  if (local.length <= 2) {
+    const first = local[0] ?? '*'
+    return `${first}***@${domain}`
+  }
+  return `${local[0]}***${local[local.length - 1]}@${domain}`
 }
 
 // Render the login form
@@ -73,6 +92,9 @@ login.post('/login', async (c) => {
 
   const queryRedirect = getFirstCandidate(c.req.query('redirect') as string | undefined, c.req.query('redirect_to') as string | undefined)
   const redirectTo = sanitizeRedirect(redirectCandidate ?? queryRedirect, c.req.url)
+  const rid = getCorrelationId(c as any)
+  const maskedEmail = maskIdentifier(creds.email)
+  logger.info('auth.login.attempt', { rid, email: maskedEmail, htmx: isHtmx(c), redirectTo })
 
   try {
     const { access_token, refresh_token } = await exchangeLogin(c.env, creds)
@@ -82,11 +104,22 @@ login.post('/login', async (c) => {
     // Issue CSRF token for state-changing routes
     issueCsrf(c)
 
+    logger.info('auth.login.success', { rid, email: maskedEmail })
+
     if (isHtmx(c)) {
       return c.json({ ok: true })
     }
     return c.redirect(redirectTo, 302)
   } catch (err: any) {
+    const isSupabaseError = err instanceof SupabaseAuthError
+    logger.warn('auth.login.failed', {
+      rid,
+      email: maskedEmail,
+      status: isSupabaseError ? err.status : undefined,
+      code: isSupabaseError ? err.code : undefined,
+      category: isSupabaseError ? err.category : undefined,
+      reason: err?.message,
+    })
     // Do not log token contents; return generic error
     if (isHtmx(c)) {
       return c.json({ ok: false, error: 'login_failed' }, 401)

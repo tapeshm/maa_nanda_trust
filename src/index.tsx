@@ -12,25 +12,9 @@ import { rateLimit } from './middleware/rateLimit'
 import { csrfProtect, ensureCsrf } from './middleware/csrf'
 import Layout from './templates/layout'
 import ErrorPage from './templates/error'
+import { resolveAuthIssuer } from './utils/authIssuer'
 
 type EnvLike = Record<string, unknown> | undefined
-
-export function resolveAuthIssuer(env: EnvLike): string | undefined {
-  const supaUrl = env?.SUPABASE_URL
-  if (!supaUrl || typeof supaUrl !== 'string') return undefined
-  try {
-    const u = new URL(supaUrl)
-    const host = u.hostname
-    const devLocal = String(env?.DEV_SUPABASE_LOCAL ?? '0') === '1'
-    const localHosts = ['127.0.0.1', 'localhost', 'host.docker.internal', '0.0.0.0']
-    if (devLocal && localHosts.includes(host)) {
-      u.hostname = '127.0.0.1'
-    }
-    return `${u.origin}/auth/v1`
-  } catch {
-    return undefined
-  }
-}
 
 /**
  * Entry point for the Worker.  This file creates the Hono app,
@@ -92,3 +76,5 @@ app.onError((err, c) => {
 })
 
 export default app
+
+export { resolveAuthIssuer } from './utils/authIssuer'

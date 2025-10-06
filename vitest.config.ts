@@ -17,6 +17,10 @@ export default defineWorkersConfig(async () => {
   return {
     test: {
       setupFiles: ["./tests/setup/apply-migrations.ts"],
+      reporters: [
+        ["json", { outputFile: "tmp/vitest-report.json" }],
+        "default",
+      ],
       poolOptions: {
         workers: {
           // Use the real app wrangler config so tests exercise real bindings.

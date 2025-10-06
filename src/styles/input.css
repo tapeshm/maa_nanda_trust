@@ -1,7 +1,7 @@
 /* Tailwind v4 CSS-driven config */
-@import "tailwindcss";
+@import "tailwindcss" source("../");   /* set base scan root relative to this file */
 
-/* Scan sources (relative to this file) */
+/* Explicit extra sources (all must be quoted, paths are relative to this CSS) */
 @source "../**/*.ts";
 @source "../**/*.tsx";
 @source "../templates/**/*.tsx";
@@ -9,3 +9,66 @@
 
 /* Plugins */
 @plugin "@tailwindcss/typography";
+
+/* Do not safelist custom selectors here; Tailwind keeps these declarations. */
+
+
+.editor-figure {
+  display: flow-root;
+  margin-block: 1rem;
+  max-width: 100%;
+}
+
+.editor-figure--size-original {
+  width: auto;
+  max-width: 100%;
+}
+
+.editor-figure--size-large {
+  width: 75%;
+  max-width: 75%;
+}
+
+.editor-figure--size-medium {
+  width: 50%;
+  max-width: 50%;
+}
+
+.editor-figure--size-small {
+  width: 33.3333%;
+  max-width: 33.3333%;
+}
+
+.editor-figure--align-start { float: inline-start; margin-inline-start: 0; margin-inline-end: 1.5rem; }
+.editor-figure--align-center { float: none; margin-inline: auto; }
+.editor-figure--align-end { float: inline-end; margin-inline-start: 1.5rem; margin-inline-end: 0; }
+
+.editor-image { width: 100%; max-width: 100%; height: auto; display: block; }
+.editor-figcaption { margin-top: 0.5rem; font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
+.editor-figcaption:empty { display: none; }
+
+.editor-figure + * {
+  clear: both;
+}
+
+@media (max-width: 768px) {
+  .editor-figure {
+    width: 100% !important;
+    max-width: 100% !important;
+    float: none !important;
+    margin-inline: auto !important;
+  }
+
+  .editor-figure--size-large,
+  .editor-figure--size-medium,
+  .editor-figure--size-small {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .editor-figure--align-start,
+  .editor-figure--align-end {
+    margin-inline-start: auto !important;
+    margin-inline-end: auto !important;
+  }
+}

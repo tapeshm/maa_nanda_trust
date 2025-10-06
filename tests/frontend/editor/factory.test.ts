@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { EDITOR_CLASSNAME } from '../../../src/frontend/editor/styles'
 
 const starterKit = { name: 'starter-kit' }
 const placeholderConfigured = { name: 'placeholder' }
 const placeholderConfigure = vi.fn(() => placeholderConfigured)
-const imageExtension = { name: 'image' }
+const imageFigureExtension = { name: 'imageFigure' }
 
 const editorConstructor = vi.fn()
 
@@ -17,12 +18,27 @@ vi.mock('@tiptap/extension-placeholder', () => ({
   },
 }))
 
-vi.mock('@tiptap/extension-image', () => ({
-  default: imageExtension,
+vi.mock('../../src/utils/editor/extensions/imageFigure', () => ({
+  default: imageFigureExtension,
+  IMAGE_FIGURE_NODE_NAME: 'imageFigure',
+  IMAGE_FIGURE_SIZES: ['original', 'large', 'medium', 'small'],
+  IMAGE_FIGURE_ALIGNS: ['start', 'center', 'end'],
+  ensureCaptionId: (value: unknown) => (typeof value === 'string' ? value : 'imgcap-mockvalue'),
+  normalizeImageFigureAttrs: (attrs: any) => ({
+    src: attrs.src ?? '/media/example.png',
+    alt: attrs.alt ?? '',
+    width: attrs.width ?? null,
+    height: attrs.height ?? null,
+    size: attrs.size ?? 'medium',
+    align: attrs.align ?? 'center',
+    captionId: attrs.captionId ?? 'imgcap-mockvalue',
+  }),
 }))
 
-vi.mock('@tiptap/core', () => ({
-  Editor: class EditorStub {
+vi.mock('@tiptap/core', async () => {
+  const actual = await vi.importActual<typeof import('@tiptap/core')>('@tiptap/core')
+
+  class EditorStub {
     options: unknown
 
     constructor(options: unknown) {
@@ -31,8 +47,13 @@ vi.mock('@tiptap/core', () => ({
     }
 
     destroy = vi.fn()
-  },
-}))
+  }
+
+  return {
+    ...actual,
+    Editor: EditorStub,
+  }
+})
 
 describe('createEditor factory profiles', () => {
   beforeEach(async () => {
@@ -56,7 +77,8 @@ describe('createEditor factory profiles', () => {
     createEditor({} as HTMLElement, 'full')
 
     const [options] = editorConstructor.mock.calls.at(-1) ?? []
-    expect(options?.extensions).toEqual([starterKit, placeholderConfigured, imageExtension])
+    expect(options?.extensions?.slice(0, 2)).toEqual([starterKit, placeholderConfigured])
+    expect(options?.extensions?.[2]?.name).toBe('imageFigure')
   })
 
   it('editorProps apply Tailwind prose classes and disable CSS injection', async () => {
@@ -66,7 +88,7 @@ describe('createEditor factory profiles', () => {
 
     const [options] = editorConstructor.mock.calls.at(-1) ?? []
     expect(options?.injectCSS).toBe(false)
-    expect(options?.editorProps?.attributes?.class).toBe('prose max-w-none focus:outline-none')
+    expect(options?.editorProps?.attributes?.class).toBe(EDITOR_CLASSNAME)
   })
 
   it('placeholder defaults to "Start writing…"', async () => {

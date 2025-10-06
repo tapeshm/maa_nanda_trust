@@ -101,7 +101,10 @@ describe('editor content hydration', () => {
     const seen: unknown[] = []
     registerEditorProfile('basic', async (_root, ctx) => {
       seen.push(ctx.initialContent)
-      return { destroy() {} }
+      return {
+        destroy() {},
+        getJSON: () => ctx.initialContent,
+      }
     })
 
     initEditors()
@@ -119,7 +122,10 @@ describe('editor content hydration', () => {
     let contentA: unknown
     registerEditorProfile('basic', async (_root, ctx) => {
       contentA = ctx.initialContent
-      return { destroy() {} }
+      return {
+        destroy() {},
+        getJSON: () => ctx.initialContent,
+      }
     })
 
     initEditors()
@@ -141,7 +147,10 @@ describe('editor content hydration', () => {
     let contentB: unknown
     registerEditorProfile('basic', async (_root, ctx) => {
       contentB = ctx.initialContent
-      return { destroy() {} }
+      return {
+        destroy() {},
+        getJSON: () => ctx.initialContent,
+      }
     })
 
     initEditors()
