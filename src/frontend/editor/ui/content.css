@@ -62,25 +62,24 @@
   }
 
   .editor-figure .editor-image {
-    width: 100%;
     height: auto;
     display: block;
   }
 
   .editor-figure--size-s .editor-image {
-    max-width: 33.33%;
+    width: 33.33%;
   }
 
   .editor-figure--size-m .editor-image {
-    max-width: 50%;
+    width: 50%;
   }
 
   .editor-figure--size-l .editor-image {
-    max-width: 75%;
+    width: 75%;
   }
 
   .editor-figure--size-xl .editor-image {
-    max-width: 100%;
+    width: 100%;
   }
 
   /* [D3:editor-tiptap.step-14:image-figure-alignment] Alignment classes for imageFigure nodes */
