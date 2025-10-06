@@ -68,11 +68,14 @@ const EditorPage: FC<{
 
             return (
               <section class="space-y-2" id={`${id}__section`}>
+                {/* [D3:editor-tiptap.step-13:toolbar-a11y] Add role and aria-labelledby for accessibility */}
                 <div
                   id={`${id}__toolbar`}
                   class={MENUBAR_CLASSNAME}
                   data-editor-toolbar
                   data-editor-for={id}
+                  role="group"
+                  aria-label="Formatting toolbar"
                 >
                   <button
                     type="button"

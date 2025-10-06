@@ -33,3 +33,26 @@
 .content-prose.prose hr {
   /* Elements inherit prose typography; no additional rules needed */
 }
+
+/* [D3:editor-tiptap.step-15:flow-layout-grids] CSS grid-based layout for images */
+@layer components {
+  /* Figure grid utilities for multiple images */
+  .editor-figure-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .editor-figure-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .editor-figure-grid-2,
+    .editor-figure-grid-3 {
+      grid-template-columns: 1fr;
+    }
+  }
+}
