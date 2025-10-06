@@ -225,18 +225,96 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
         },
       setImageSize:
         (size) =>
-        ({ commands }) => {
-          return commands.updateAttributes(this.name, { size: clampSize(size) })
+        ({ state, commands, tr }) => {
+          const { selection } = state
+          const { $from } = selection
+
+          // Find the imageFigure node
+          let pos: number | null = null
+          for (let depth = $from.depth; depth >= 0; depth--) {
+            const node = $from.node(depth)
+            if (node?.type.name === this.name) {
+              pos = $from.before(depth)
+              break
+            }
+          }
+
+          // Also check node selection
+          if (!pos && selection.node && selection.node.type.name === this.name) {
+            pos = selection.from
+          }
+
+          if (pos !== null) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...state.doc.nodeAt(pos)?.attrs,
+              size: clampSize(size),
+            })
+            return true
+          }
+
+          return false
         },
       setImageAlign:
         (align) =>
-        ({ commands }) => {
-          return commands.updateAttributes(this.name, { align: clampAlign(align) })
+        ({ state, commands, tr }) => {
+          const { selection } = state
+          const { $from } = selection
+
+          // Find the imageFigure node
+          let pos: number | null = null
+          for (let depth = $from.depth; depth >= 0; depth--) {
+            const node = $from.node(depth)
+            if (node?.type.name === this.name) {
+              pos = $from.before(depth)
+              break
+            }
+          }
+
+          // Also check node selection
+          if (!pos && selection.node && selection.node.type.name === this.name) {
+            pos = selection.from
+          }
+
+          if (pos !== null) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...state.doc.nodeAt(pos)?.attrs,
+              align: clampAlign(align),
+            })
+            return true
+          }
+
+          return false
         },
       updateImageAlt:
         (alt) =>
-        ({ commands }) => {
-          return commands.updateAttributes(this.name, { alt: alt || '' })
+        ({ state, commands, tr }) => {
+          const { selection } = state
+          const { $from } = selection
+
+          // Find the imageFigure node
+          let pos: number | null = null
+          for (let depth = $from.depth; depth >= 0; depth--) {
+            const node = $from.node(depth)
+            if (node?.type.name === this.name) {
+              pos = $from.before(depth)
+              break
+            }
+          }
+
+          // Also check node selection
+          if (!pos && selection.node && selection.node.type.name === this.name) {
+            pos = selection.from
+          }
+
+          if (pos !== null) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...state.doc.nodeAt(pos)?.attrs,
+              alt: alt || '',
+            })
+            return true
+          }
+
+          return false
         },
     }
   },
