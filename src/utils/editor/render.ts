@@ -347,7 +347,8 @@ function renderNodes(content: JSONContent['content'] | undefined, profile: Edito
             const sizeClass = `editor-figure--size-${size}`
             const alignClass = `editor-figure--align-${align}`
             const caption = renderInline(node.content)
-            return `<figure class="editor-figure ${sizeClass} ${alignClass}"><img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}" class="editor-image" loading="lazy" decoding="async" /><figcaption class="editor-figcaption">${caption}</figcaption></figure>`
+            const figcaption = caption.trim().length > 0 ? `<figcaption class="editor-figcaption">${caption}</figcaption>` : ''
+            return `<figure class="editor-figure ${sizeClass} ${alignClass}"><img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}" class="editor-image" loading="lazy" decoding="async" />${figcaption}</figure>`
           }
         default:
           return ''

@@ -60,7 +60,6 @@
   .editor-figure {
     --editor-image-width: 100%;
     margin: 1.5rem auto;
-    width: 100%;
   }
 
   .editor-figure .editor-image {
