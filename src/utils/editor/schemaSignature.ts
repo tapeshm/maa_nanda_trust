@@ -1,6 +1,4 @@
 import type { EditorProfile } from '../../frontend/editor/types'
-import { IMAGE_FIGURE_NODE_NAME } from './extensions/imageFigure'
-
 const DOCUMENT_NODES = ['doc'] as const
 const TEXT_NODES = ['text'] as const
 const BLOCK_NODES = [
@@ -14,10 +12,11 @@ const BLOCK_NODES = [
 ] as const
 const LEAF_NODES = ['hardBreak', 'horizontalRule'] as const
 
-const OPTIONAL_IMAGE_FIGURE_NODE = {
-  name: IMAGE_FIGURE_NODE_NAME,
-  attrs: ['src', 'alt', 'width', 'height', 'size', 'align', 'captionId'] as const,
-}
+// [D3:editor-tiptap.step-12:image-figure-schema] Use imageFigure node with extended attrs
+const OPTIONAL_IMAGE_NODE = {
+  name: 'imageFigure',
+  attrs: ['src', 'alt', 'size', 'align'] as const,
+} as const
 
 const BASE_MARK_TYPES = ['bold', 'italic', 'strike', 'code'] as const
 
@@ -28,7 +27,7 @@ const BASIC_NODE_SET = new Set<string>([
   ...LEAF_NODES,
 ])
 
-const FULL_NODE_SET = new Set<string>([...BASIC_NODE_SET, OPTIONAL_IMAGE_FIGURE_NODE.name])
+const FULL_NODE_SET = new Set<string>([...BASIC_NODE_SET, OPTIONAL_IMAGE_NODE.name])
 
 const CONTAINER_NODE_SET = new Set<string>([...DOCUMENT_NODES, ...BLOCK_NODES])
 
@@ -41,7 +40,7 @@ export const schemaSignature = {
     block: BLOCK_NODES,
     leaf: LEAF_NODES,
     optional: {
-      imageFigure: OPTIONAL_IMAGE_FIGURE_NODE,
+      image: OPTIONAL_IMAGE_NODE,
     },
   },
   marks: BASE_MARK_TYPES,
@@ -71,11 +70,11 @@ export function baseNodeTypes(): string[] {
 }
 
 export function optionalImageNode(): string {
-  return schemaSignature.nodes.optional.imageFigure.name
+  return schemaSignature.nodes.optional.image.name
 }
 
-export function optionalImageFigureAttributes(): readonly string[] {
-  return schemaSignature.nodes.optional.imageFigure.attrs
+export function optionalImageAttributes(): readonly string[] {
+  return schemaSignature.nodes.optional.image.attrs
 }
 
 export function baseMarkTypes(): string[] {
