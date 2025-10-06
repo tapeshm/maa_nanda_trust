@@ -3,7 +3,16 @@ import type { FC } from 'hono/jsx'
 import { raw } from 'hono/html'
 import Layout from '../layout'
 import { resolveAsset } from '../../utils/assets'
-import { MENUBAR_CLASSNAME, MENUBAR_BUTTON_CLASSNAME } from '../../frontend/editor/styles'
+import {
+  MENUBAR_CLASSNAME,
+  MENUBAR_BUTTON_CLASSNAME,
+  IMAGE_PANEL_CLASSNAME,
+  IMAGE_PANEL_SECTION_CLASSNAME,
+  IMAGE_PANEL_LABEL_CLASSNAME,
+  IMAGE_PANEL_BUTTONS_CLASSNAME,
+  IMAGE_PANEL_BUTTON_CLASSNAME,
+  IMAGE_PANEL_INPUT_CLASSNAME,
+} from '../../frontend/editor/styles'
 
 type EditorSpec = {
   id: string
@@ -64,7 +73,8 @@ const EditorPage: FC<{
             const htmlValue = initialHtml[id] ?? ''
             const etag = etags[id]
             const docId = documentId ?? id
-            const imageAltId = `${id}__alt-input`
+            const imageAltId = `${id}__image-alt-input`
+            const imagePanelId = `${id}__image-panel`
 
             return (
               <section class="space-y-2" id={`${id}__section`}>
@@ -137,6 +147,7 @@ const EditorPage: FC<{
                     </button>
                   ) : null}
                 </div>
+                {/* [D3:editor-tiptap.step-14:image-panel-template] ImagePanel with contextual controls for full profile */}
                 {profile === 'full' ? (
                   <>
                     <input
@@ -145,23 +156,104 @@ const EditorPage: FC<{
                       accept="image/png,image/jpeg,image/webp"
                       class="hidden"
                     />
-                    <div class="space-y-2 text-sm text-zinc-700">
-                      <label class="flex flex-col gap-1" htmlFor={imageAltId}>
-                        <span class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                          Image alternative text
-                        </span>
+                    <div
+                      id={imagePanelId}
+                      class={`${IMAGE_PANEL_CLASSNAME} hidden`}
+                      hidden
+                      data-image-panel
+                      data-editor-for={id}
+                      role="group"
+                      aria-label="Image controls"
+                    >
+                      <div class={IMAGE_PANEL_SECTION_CLASSNAME}>
+                        <label class={IMAGE_PANEL_LABEL_CLASSNAME}>Size</label>
+                        <div class={IMAGE_PANEL_BUTTONS_CLASSNAME} role="radiogroup" aria-label="Image size">
+                          <button
+                            type="button"
+                            class={IMAGE_PANEL_BUTTON_CLASSNAME}
+                            data-size="s"
+                            aria-pressed="false"
+                            title="Resize to 33%"
+                          >
+                            33%
+                          </button>
+                          <button
+                            type="button"
+                            class={IMAGE_PANEL_BUTTON_CLASSNAME}
+                            data-size="m"
+                            aria-pressed="false"
+                            title="Resize to 50%"
+                          >
+                            50%
+                          </button>
+                          <button
+                            type="button"
+                            class={IMAGE_PANEL_BUTTON_CLASSNAME}
+                            data-size="l"
+                            aria-pressed="false"
+                            title="Resize to 75%"
+                          >
+                            75%
+                          </button>
+                          <button
+                            type="button"
+                            class={IMAGE_PANEL_BUTTON_CLASSNAME}
+                            data-size="xl"
+                            aria-pressed="false"
+                            title="Resize to 100%"
+                          >
+                            100%
+                          </button>
+                        </div>
+                      </div>
+                      <div class={IMAGE_PANEL_SECTION_CLASSNAME}>
+                        <label class={IMAGE_PANEL_LABEL_CLASSNAME}>Alignment</label>
+                        <div class={IMAGE_PANEL_BUTTONS_CLASSNAME} role="radiogroup" aria-label="Image alignment">
+                          <button
+                            type="button"
+                            class={IMAGE_PANEL_BUTTON_CLASSNAME}
+                            data-align="left"
+                            aria-pressed="false"
+                            title="Align left"
+                          >
+                            ← Left
+                          </button>
+                          <button
+                            type="button"
+                            class={IMAGE_PANEL_BUTTON_CLASSNAME}
+                            data-align="center"
+                            aria-pressed="false"
+                            title="Align center"
+                          >
+                            ↔ Center
+                          </button>
+                          <button
+                            type="button"
+                            class={IMAGE_PANEL_BUTTON_CLASSNAME}
+                            data-align="right"
+                            aria-pressed="false"
+                            title="Align right"
+                          >
+                            → Right
+                          </button>
+                        </div>
+                      </div>
+                      <div class={IMAGE_PANEL_SECTION_CLASSNAME}>
+                        <label class={IMAGE_PANEL_LABEL_CLASSNAME} htmlFor={imageAltId}>
+                          Alt text
+                        </label>
                         <input
                           id={imageAltId}
-                          name="image_alt"
                           type="text"
+                          class={IMAGE_PANEL_INPUT_CLASSNAME}
                           placeholder="Describe the image"
-                          class="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          maxLength={250}
+                          maxlength={250}
                         />
-                      </label>
-                      <p class="text-xs text-zinc-500">
-                        Provide a short description for screen readers. Leave blank only when the image is decorative.
-                      </p>
+                        <p class="text-xs text-zinc-500 mt-1">
+                          Provide a short description for screen readers. Leave blank only when the image is
+                          decorative.
+                        </p>
+                      </div>
                     </div>
                   </>
                 ) : null}
@@ -172,7 +264,8 @@ const EditorPage: FC<{
                   data-editor-profile={profile}
                   data-editor-toolbar-id={`${id}__toolbar`}
                   data-editor-image-input-id={profile === 'full' ? `${id}__image-input` : undefined}
-                  data-editor-alt-id={profile === 'full' ? imageAltId : undefined}
+                  data-editor-image-panel-id={profile === 'full' ? imagePanelId : undefined}
+                  data-editor-image-alt-id={profile === 'full' ? imageAltId : undefined}
                 />
                 <script id={scriptId} type="application/json" nonce={nonce}>
                   {serialized}

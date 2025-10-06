@@ -3,7 +3,9 @@ import type { Context } from 'hono'
 
 import type { Bindings } from '../../bindings'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
-import { csrfProtect } from '../../middleware/csrf'
+import { getCookie } from 'hono/cookie'
+
+import { CSRF_COOKIE_NAME } from '../../middleware/csrf'
 import { rateLimit } from '../../middleware/rateLimit'
 import { getNumber, getTrustedOrigins } from '../../utils/env'
 import { logEditorError, logEditorSuccess } from '../../observability/editorLogs'
@@ -21,11 +23,30 @@ const DEFAULT_MAX_BYTES = 5 * 1024 * 1024 // 5 MiB
 
 const getEnv = (c: Context<any, any, any>) => c.env as Record<string, unknown>
 
-// Enforce CSRF token checks before any other handlers to guarantee 403 on missing/invalid tokens.
-upload.use('/upload-image', csrfProtect())
 upload.use('/upload-image', rateLimit(getEnv))
 
 const UPLOAD_ROUTE = '/admin/upload-image'
+
+function verifyCsrfToken(c: Context, formData: FormData | null): boolean {
+  const cookieToken = getCookie(c, CSRF_COOKIE_NAME)
+  if (!cookieToken) {
+    return false
+  }
+
+  const headerToken = c.req.header('X-CSRF-Token') || c.req.header('HX-CSRF-Token')
+  if (headerToken && headerToken === cookieToken) {
+    return true
+  }
+
+  for (const name of ['csrf_token', '_csrf']) {
+    const value = formData?.get(name)
+    if (typeof value === 'string' && value === cookieToken) {
+      return true
+    }
+  }
+
+  return false
+}
 
 function logUploadFailure(
   c: Context<{ Bindings: Bindings }>,
@@ -180,6 +201,11 @@ upload.post('/upload-image', requireAuth(), requireAdmin, async (c) => {
   if (!(file instanceof File)) {
     logUploadFailure(c, 'missing_file', { status: 415 })
     return c.text('Unsupported Media Type', 415)
+  }
+
+  if (!verifyCsrfToken(c, formData)) {
+    logUploadFailure(c, 'csrf_invalid', { status: 403 })
+    return c.text('Forbidden', 403)
   }
 
   const limit = bytesLimit(c)

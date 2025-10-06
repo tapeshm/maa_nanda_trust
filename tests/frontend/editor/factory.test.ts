@@ -4,7 +4,7 @@ import { EDITOR_CLASSNAME } from '../../../src/frontend/editor/styles'
 const starterKit = { name: 'starter-kit' }
 const placeholderConfigured = { name: 'placeholder' }
 const placeholderConfigure = vi.fn(() => placeholderConfigured)
-const imageFigureExtension = { name: 'imageFigure' }
+const imageExtension = { name: 'image' }
 
 const editorConstructor = vi.fn()
 
@@ -18,21 +18,8 @@ vi.mock('@tiptap/extension-placeholder', () => ({
   },
 }))
 
-vi.mock('../../src/utils/editor/extensions/imageFigure', () => ({
-  default: imageFigureExtension,
-  IMAGE_FIGURE_NODE_NAME: 'imageFigure',
-  IMAGE_FIGURE_SIZES: ['original', 'large', 'medium', 'small'],
-  IMAGE_FIGURE_ALIGNS: ['start', 'center', 'end'],
-  ensureCaptionId: (value: unknown) => (typeof value === 'string' ? value : 'imgcap-mockvalue'),
-  normalizeImageFigureAttrs: (attrs: any) => ({
-    src: attrs.src ?? '/media/example.png',
-    alt: attrs.alt ?? '',
-    width: attrs.width ?? null,
-    height: attrs.height ?? null,
-    size: attrs.size ?? 'medium',
-    align: attrs.align ?? 'center',
-    captionId: attrs.captionId ?? 'imgcap-mockvalue',
-  }),
+vi.mock('@tiptap/extension-image', () => ({
+  default: imageExtension,
 }))
 
 vi.mock('@tiptap/core', async () => {
@@ -78,7 +65,7 @@ describe('createEditor factory profiles', () => {
 
     const [options] = editorConstructor.mock.calls.at(-1) ?? []
     expect(options?.extensions?.slice(0, 2)).toEqual([starterKit, placeholderConfigured])
-    expect(options?.extensions?.[2]?.name).toBe('imageFigure')
+    expect(options?.extensions?.at(-1)).toBe(imageExtension)
   })
 
   it('editorProps apply Tailwind prose classes and disable CSS injection', async () => {

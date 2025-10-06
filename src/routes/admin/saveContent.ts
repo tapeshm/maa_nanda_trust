@@ -85,7 +85,6 @@ const ALLOWED_NODE_TYPES = new Set([
   'orderedList',
   'listItem',
   'image',
-  'imageFigure',
   'blockquote',
   'horizontalRule',
   'codeBlock',

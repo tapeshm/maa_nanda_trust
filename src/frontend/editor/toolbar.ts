@@ -1,8 +1,10 @@
 import { MENUBAR_BUTTON_ACTIVE_CLASSNAME } from './styles'
 import type { EditorInstance, EditorProfile } from './types'
+import { attachImagePanelHandlers } from './ui/ImagePanel'
 
 const ACTIVE_CLASSES = MENUBAR_BUTTON_ACTIVE_CLASSNAME.split(/\s+/).filter(Boolean)
 const toolbarRegistry = new Map<HTMLElement, () => void>()
+const imagePanelRegistry = new Map<HTMLElement, () => void>()
 
 export type CommandName =
   | 'bold'
@@ -84,10 +86,18 @@ function resolveFileInput(root: HTMLElement): HTMLInputElement | null {
 }
 
 function resolveAltInput(root: HTMLElement): HTMLInputElement | null {
-  const id = root.dataset.editorAltId
+  const id = root.dataset.editorImageAltId
   if (!id) return null
   const doc = root.ownerDocument || document
   return doc.getElementById(id) as HTMLInputElement | null
+}
+
+// [D3:editor-tiptap.step-14:resolve-image-panel] Resolve ImagePanel element by ID
+function resolveImagePanel(root: HTMLElement): HTMLElement | null {
+  const id = root.dataset.editorImagePanelId
+  if (!id) return null
+  const doc = root.ownerDocument || document
+  return doc.getElementById(id)
 }
 
 function gatherButtons(toolbar: HTMLElement): HTMLButtonElement[] {
@@ -291,6 +301,7 @@ function attachButtonHandlers(
   return () => handlers.forEach((teardown) => teardown())
 }
 
+// [D3:editor-tiptap.step-14:register-toolbar-and-panel] Register both toolbar and image panel
 export function registerToolbarForEditor(
   root: HTMLElement,
   editor: EditorInstance,
@@ -305,21 +316,37 @@ export function registerToolbarForEditor(
 
   const fileInput = profile === 'full' ? resolveFileInput(root) : null
   const altInput = profile === 'full' ? resolveAltInput(root) : null
+  const imagePanel = profile === 'full' ? resolveImagePanel(root) : null
   const form = findForm(root)
 
   const cleanup = attachButtonHandlers(toolbar, editor, profile, fileInput, altInput, form)
   toolbarRegistry.set(root, cleanup)
+
+  // [D3:editor-tiptap.step-14:attach-image-panel] Attach image panel handlers for full profile
+  if (imagePanel && altInput) {
+    const panelCleanup = attachImagePanelHandlers(imagePanel, editor, altInput)
+    imagePanelRegistry.set(root, panelCleanup)
+  }
 }
 
+// [D3:editor-tiptap.step-14:unregister-panel] Unregister both toolbar and image panel
 export function unregisterToolbarForEditor(root: HTMLElement): void {
   const cleanup = toolbarRegistry.get(root)
   if (cleanup) {
     cleanup()
     toolbarRegistry.delete(root)
   }
+
+  const panelCleanup = imagePanelRegistry.get(root)
+  if (panelCleanup) {
+    panelCleanup()
+    imagePanelRegistry.delete(root)
+  }
 }
 
 export function resetToolbarForTesting(): void {
   toolbarRegistry.forEach((cleanup) => cleanup())
   toolbarRegistry.clear()
+  imagePanelRegistry.forEach((cleanup) => cleanup())
+  imagePanelRegistry.clear()
 }

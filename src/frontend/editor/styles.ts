@@ -68,3 +68,82 @@ export const MENUBAR_BUTTON_ACTIVE_CLASSNAME = [
   'bg-zinc-200', // Zinc-200 background for active state
   'dark:bg-zinc-700', // Zinc-700 background for active in dark mode
 ].join(' ')
+
+// [D3:editor-tiptap.step-14:image-panel-styles] Styles for contextual image controls
+export const IMAGE_PANEL_CLASSNAME = [
+  'mt-2',
+  'p-3',
+  'border',
+  'border-gray-200',
+  'dark:border-gray-700',
+  'rounded-md',
+  'bg-gray-50',
+  'dark:bg-zinc-800',
+  'space-y-3',
+].join(' ')
+
+export const IMAGE_PANEL_SECTION_CLASSNAME = ['space-y-1'].join(' ')
+
+export const IMAGE_PANEL_LABEL_CLASSNAME = [
+  'block',
+  'text-xs',
+  'font-semibold',
+  'uppercase',
+  'tracking-wide',
+  'text-zinc-500',
+  'dark:text-zinc-400',
+].join(' ')
+
+export const IMAGE_PANEL_BUTTONS_CLASSNAME = ['flex', 'gap-1', 'flex-wrap'].join(' ')
+
+export const IMAGE_PANEL_BUTTON_CLASSNAME = [
+  'inline-flex',
+  'items-center',
+  'justify-center',
+  'px-3',
+  'py-1.5',
+  'text-sm',
+  'rounded',
+  'border',
+  'border-gray-300',
+  'dark:border-gray-600',
+  'bg-white',
+  'dark:bg-zinc-900',
+  'text-zinc-700',
+  'dark:text-zinc-200',
+  'hover:bg-zinc-100',
+  'dark:hover:bg-zinc-800',
+  'transition-colors',
+].join(' ')
+
+export const IMAGE_PANEL_BUTTON_ACTIVE_CLASSNAME = [
+  'bg-blue-100',
+  'dark:bg-blue-900',
+  'border-blue-500',
+  'dark:border-blue-400',
+  'text-blue-700',
+  'dark:text-blue-200',
+].join(' ')
+
+export const IMAGE_PANEL_INPUT_CLASSNAME = [
+  'block',
+  'w-full',
+  'rounded-md',
+  'border',
+  'border-gray-300',
+  'dark:border-gray-600',
+  'px-3',
+  'py-2',
+  'text-sm',
+  'bg-white',
+  'dark:bg-zinc-900',
+  'text-zinc-900',
+  'dark:text-zinc-100',
+  'placeholder-zinc-400',
+  'dark:placeholder-zinc-500',
+  'focus:border-blue-500',
+  'focus:outline-none',
+  'focus:ring-2',
+  'focus:ring-blue-500',
+  'focus:ring-opacity-50',
+].join(' ')

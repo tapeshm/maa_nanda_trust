@@ -263,9 +263,11 @@ function mountEditor(root: HTMLElement): Promise<void> {
       // [D3:editor-tiptap.step-03:hydrate] Pass SSR-provided initial content to the factory.
       const initialContent = readInitialContent(root)
       const instance = await factory(root, { profile, root, initialContent })
-      entry.instance = instance
-      registerEditorContentSource(root, instance)
-      registerToolbarForEditor(root, instance, profile)
+      if (instance) {
+        entry.instance = instance
+        registerEditorContentSource(root, instance)
+        registerToolbarForEditor(root, instance, profile)
+      }
     } catch (error) {
       mountedEditors.delete(root)
       unregisterEditorContentSource(root)

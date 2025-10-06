@@ -189,7 +189,7 @@ steps:
     hints:
       - "Attach a submit listener that injects both `editor.getJSON()` and `editor.getHTML()` (when available) into hidden inputs (`content_json[...]` and `content_html[...]`)."
       - "Emit HTMX-friendly responses for partial swaps."
-      - "Server renders hx-headers='{"X-CSRF-Token":"..."}' directly on the <form> using a token from the request context; no client JS reads cookies."
+      - "Server renders hx-headers='{'X-CSRF-Token':'...'}' directly on the <form> using a token from the request context; no client JS reads cookies."
       - "Support multiple editors in a single <form>: serialize each editor into a hidden input named `content_json[<root-id>]` using the editor container's `id`."
     changes:
       - modify: "src/frontend/editor/bootstrap.ts"
@@ -423,212 +423,171 @@ steps:
           - "skips duplicate HTMX parameters when hidden inputs exist"
           - "logs warning once for editor without id"
 
-  - id: step-12
-    title: Editor hardening and parity
-    rationale: Address security, styling, and rendering gaps surfaced in review while documenting the Workers runtime limitation.
-    depends_on: ["step-07", "step-08", "step-10"]
+  - id: step-11
+    title: Content typography & tokens
+    rationale: Single source of truth for content styles.
     hints:
-      - "Run `csrfProtect()` on `/admin/upload-image` before any handlers; missing/invalid tokens must return 403."
-      - "Ensure editor root classes include `max-w-none` and `focus:outline-none`; assert via typography unit tests."
-      - "Adjust CSP builder so `img-src` only allows `'self'`; guard with a regression test."
-      - "Update the server renderer to stay aligned with `extensionsList(profile)` and expand parity tests to catch drift."
-      - "Record the `@tiptap/html` limitation in code comments/docstrings so future work understands the fallback."
+      - "Create `src/frontend/editor/ui/content.css` with Tailwind Typography under the namespaced root `.content-prose.prose`."
+      - "Expose CSS vars `--editor-bg`, `--editor-border`, `--editor-focus` for editor chrome."
+      - "Add helper `contentClass(): string` returning 'content-prose prose'."
+      - "Ensure no global `.prose` selectors are emitted outside `.content-prose`."
     changes:
-      - modify: "src/routes/admin/upload.ts"
-      - modify: "tests/admin/security-origin.test.ts"
+      - create: "src/frontend/editor/ui/content.css"
+      - create: "src/frontend/editor/ui/content.ts"
+      - modify: "src/templates/admin/editorPage.tsx"
       - modify: "src/frontend/editor/styles.ts"
-      - modify: "tests/frontend/editor/typography.test.ts"
-      - modify: "src/config/csp.ts"
-      - create: "tests/config/csp.test.ts"
-      - modify: "src/utils/editor/render.ts"
-      - modify: "tests/editor/extensions-parity.test.ts"
     acceptance_criteria:
-      - "Image upload endpoint enforces CSRF tokens; missing/invalid tokens receive 403 and regression tests cover the path."
-      - "Editor root classes include `prose max-w-none focus:outline-none`, verified by typography unit tests."
-      - "CSP builder restricts `img-src` to `'self'` only with dedicated coverage."
-      - "Saved HTML is validated before rendering, documented alongside the `@tiptap/html` limitation, and parity tests ensure the fallback renderer matches `extensionsList(profile)` when regeneration is required."
+      - "Editor and SSR wrappers both use exactly `contentClass()`."
+      - "h2/h3/p/ul/ol/blockquote/hr appear under a `.content-prose` ancestor."
+      - "No standalone `.prose` rules outside the namespace in built CSS."
     tests:
-      - path: "tests/admin/security-origin.test.ts"
-        type: integration
-        cases:
-          - "returns 403 when CSRF token missing for upload-image"
-  - path: "tests/frontend/editor/typography.test.ts"
-    type: unit
-    cases:
-      - "editor root includes required Tailwind tokens"
-      - path: "tests/config/csp.test.ts"
+      - path: "tests/ui/contentClass.spec.tsx"
         type: unit
         cases:
-          - "img-src directive restricts to self"
-      - path: "tests/editor/extensions-parity.test.ts"
+          - "SSR <Content> and <EditorContent> wrappers have equal className sets."
+          - "Rendered h2/p nodes are descendants of `.content-prose`."
+      - path: "tests/ui/contentCss.namespace.spec.ts"
         type: unit
         cases:
-          - "server renderer matches extensions profile"
-
-  - id: step-13
-    title: Image figure sizing, alignment, and captions
-    rationale: Replace the legacy image node with an accessible figure node so admins can control presentation while keeping stored JSON/HTML and SSR output safe, synchronized, and CLS-friendly.
-    depends_on: ["step-06", "step-08", "step-09", "step-12"]
+          - "`content.css`/built CSS contains `.content-prose.prose` and does not contain a top-level `.prose{` rule."
+  - id: step-12
+    title: Tiptap node: imageFigure
+    rationale: Accessible image with controlled attrs.
+    depends_on: ["step-11"]
     hints:
-      - "Create `src/utils/editor/extensions/imageFigure.ts` defining an `imageFigure` block node (group: 'block', content: 'inline*' for caption only, selectable, draggable, isolating, defining). DOM: `<figure class=\"editor-figure editor-figure--size-{size} editor-figure--align-{align}\">` + child `<img class=\"editor-image\" …>` (image comes from node attrs only) + `<figcaption class=\"editor-figcaption\">` (caption = node content). If `<figcaption>` absent on parse, produce empty content."
-      - "Have `parseHTML` wrap legacy `<img>` markup into the figure structure, normalize size/align defaults, parse `width/height` as base-10 integers; if units are present or value is non-integer, drop the attribute; for numeric values outside `[1,8192]`, clamp into `[1,8192]`; store attrs as numbers. Set `class=\"editor-image\"` on the nested `<img>` and drop unexpected classes/attrs—including `style`, any `on*`, or `data-*`."
-      - "Restrict `<img>` attributes to { src, alt, width, height, loading, decoding, class, aria-describedby }. `src` MUST be either a relative `/media/...` URL or an absolute same-origin URL whose path starts with `/media/...`; reject everything else (drop the node during sanitization and regenerate from JSON). Always emit an `alt` attribute; if not provided, set `alt=\"\"` (empty string). Freeze enums: `size ∈ {'original','large','medium','small'}` and `align ∈ {'start','center','end'}`; unknown tokens normalize to `size:'medium'`, `align:'center'`. For `aria-describedby`, only accept a single ID that matches `^imgcap-[A-Za-z0-9_-]{8,22}$` and resolves to the sibling `<figcaption>`; otherwise drop the attribute."
-      - "Expose `setImageFigure` (with optional `captionText`) and `updateImageFigure` commands that always `editor.chain().focus().…` so toolbar interactions mutate attributes/content without re-inserting nodes. If caption content is non-empty, set `aria-describedby` on `<img>` pointing to a stable `id` emitted on `<figcaption>`; remove the attribute when caption becomes empty."
-      - "Store a `captionId` attribute on the node; when inserting a new figure, generate `captionId = 'imgcap-' + customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789_-', 10)()`. Use this attribute for both `<figcaption id>` and the `<img aria-describedby>` value; if a legacy node lacks `captionId`, create one during upgrade."
-      - "Update the upload flow to decode intrinsic image dimensions once (e.g., `createImageBitmap`; Safari fallback to `HTMLImageElement.decode()`), insert figures with `{ width, height, size: 'medium', align: 'center' }`, and cache the probe result; keep width/height immutable afterward."
-      - "Wire full-profile toolbar controls for `[data-editor-image-size]`, `[data-editor-image-align]`, and a caption-focus button `[data-editor-image-caption]`; enable them only when selection is within an `imageFigure`, hydrate UI state on `selectionUpdate`, and persist adjustments through `updateAttributes` or by placing the caret inside figcaption. On `selectionUpdate`, if stored `size|align` are invalid, reflect normalized defaults (`medium|center`) in UI state without remounting the node."
-      - "Adjust `extensionsList()` to register the new module for both client and server profiles and expand parity tests so they assert shared instances plus schema-signature coverage for the figure node. Remove `@tiptap/extension-image` from the full profile to prevent schema collisions."
-      - "Tighten `schemaSignature.ts`, `render.ts`, and `isSafeEditorHtml()` to whitelist only `<figure>`, `<img>`, `<figcaption>`; strip all `style`, `on*`, and `data-*`; allow `'aria-describedby'` on `<img>` and `'id'` on `<figcaption>` only. In captions allow only `<strong>`, `<em>`, `<code>` (escape others). Enforce `src` same-origin `/media/...` rule; clamp numeric `width/height` to `[1,8192]`; always emit `loading=\"lazy\"` and `decoding=\"async\"`. Require exactly one `<img>` child inside `<figure>`; if zero or more than one are present, drop the HTML node during sanitization and regenerate from JSON. Upgrade legacy JSON/HTML (`image` node or bare `<img>`) into `imageFigure` with defaults. Validate that `<figcaption id>` matches `^imgcap-[A-Za-z0-9_-]{8,22}$`; otherwise create a new `captionId` (`'imgcap-' + customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789_-', 10)()`) and persist it in both JSON and HTML during capture/SSR."
-      - |
-        In `src/styles/input.css`, define the figure/image utility classes directly so Tailwind keeps them alongside the generated utilities:
-        ```css
-        @import "tailwindcss";
-        /* Width presets and alignment rules */
-        .editor-figure--size-original{ width:100%; }
-        .editor-figure--size-large{ width:75%; }
-        .editor-figure--size-medium{ width:50%; }
-        .editor-figure--size-small{ width:33.3333%; }
-        .editor-figure--align-start{ margin-inline-start:0; margin-inline-end:auto; }
-        .editor-figure--align-center{ margin-inline:auto; }
-        .editor-figure--align-end{ margin-inline-start:auto; margin-inline-end:0; }
-        .editor-image{ width:100%; height:auto; display:block; }
-        .editor-figcaption:empty{ display:none; }
-        ```
-        Custom selectors are not purged by Tailwind v4+, so no inline safelist is required—just ensure the raw CSS ships with the bundle. Keep the typography check asserting that these classes are present.
+      - "File: `src/frontend/editor/extensions/imageFigure.ts`."
+      - "Attrs: {src:string; alt:string; size:'s'|'m'|'l'|'xl'; align:'left'|'center'|'right'}."
+      - "DOM: `<figure class='editor-figure editor-figure--size-{size} editor-figure--align-{align}'>` + `<img class='editor-image' alt> <figcaption class='editor-figcaption'>`."
+      - "Commands clamp invalid values; parseHTML migrates bare <img> into figure and strips inline styles/classes."
+      - "URL policy: allow `https:` and relative URLs; reject `javascript:` and `data:`."
     changes:
-      - create: "src/utils/editor/extensions/imageFigure.ts"
-      - modify: "src/utils/editor/extensions.ts"  # remove @tiptap/extension-image; register shared imageFigure in client & server profiles
+      - create: "src/frontend/editor/extensions/imageFigure.ts"
+      - modify: "src/frontend/editor/factory.ts"
+      - modify: "src/utils/editor/extensions.ts"
       - modify: "src/utils/editor/schemaSignature.ts"
       - modify: "src/utils/editor/render.ts"
-      - modify: "src/frontend/editor/toolbar.ts"
-      - modify: "src/templates/admin/editorPage.tsx"
-      - modify: "src/styles/input.css"
-      - modify: "tests/frontend/editor/toolbar.test.tsx"
-      - modify: "tests/editor/extensions-parity.test.ts"
-      - modify: "tests/utils/editor/render.image.test.ts"
-      - modify: "tests/frontend/editor/typography.test.ts"
     acceptance_criteria:
-      - "Full-profile editors surface size presets (`original|large|medium|small`), alignment (`start|center|end`), and caption tooling, active only when an `imageFigure` is selected; toolbar updates use `updateAttributes('imageFigure', …)` or move the caret into `<figcaption>` without remounting the node or shifting the selection anchor."
-      - "Image uploads insert an `imageFigure` with intrinsic numeric `width`/`height` (immutable thereafter), defaults `{ size:'medium', align:'center' }`, preserved `alt`, optional caption; subsequent toolbar edits persist to both ProseMirror JSON and captured HTML."
-      - "Width/height are immutable after insert (no toolbar controls to edit them); attempts to change via commands are ignored and do not affect JSON/HTML."
-      - "Sanitization/fallback rendering permit only whitelisted tags/attrs/classes, forbid `style/on*/data-*`, enforce `src` to be `/media/...` or absolute same-origin `/media/...`, clamp `width/height` to `[1,8192]`, emit `loading=\"lazy\"` and `decoding=\"async\"`, allow only `<strong>`, `<em>`, `<code>` inside figcaptions (escape others), and upgrade legacy JSON/HTML into `imageFigure`."
-      - "Sanitization enforces exactly one `<img>` per `imageFigure`; documents violating this are normalized by regenerating from JSON."
-      - "If caption text exists, `<img>` includes a valid `aria-describedby` that resolves to its sibling `<figcaption id=\"imgcap-…\">`; if the idref is missing or invalid, the attribute is dropped."
-      - "Inline figcaptions support the allowed marks and render inside `<figcaption class=\"editor-figcaption\">…</figcaption>`; empty captions collapse via CSS so legacy documents without captions do not leave visual gaps."
-      - "Captured HTML and SSR output always include `alt` on `<img>`; when authoring omitted it, `alt=\"\"` is emitted."
-      - "When caption is non-empty, `<img>` includes `aria-describedby` referencing the `<figcaption>`; when empty, the attribute is absent."
-      - "The `<figcaption id>` comes from the node's persisted `captionId` (generated `'imgcap-' + customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789_-', 10)()`); captured HTML and SSR output reuse the same value, and missing/invalid ids are regenerated once during upgrade."
-      - "Client/server extension parity excludes the legacy `Image` extension and includes a shared `imageFigure` instance; schema helpers enumerate `size`, `align`, `src`, `alt`, `width`, `height`."
-      - "Tailwind v4 builds retain all `editor-figure`/`editor-image` BEM classes in dev & prod, and parity tests confirm client/server share the same `imageFigure` extension while schema helpers enumerate its attrs."
+      - "Round-trip parse/serialize preserves attrs and caption content."
+      - "Invalid size/align inputs clamp to size='m', align='center'."
+      - "Reject unsupported URL schemes for `src`."
     tests:
-      - path: "tests/frontend/editor/toolbar.test.tsx"
+      - path: "tests/editor/imageFigure.roundtrip.spec.ts"
+        type: unit
+      - path: "tests/editor/imageFigure.dom.spec.ts"
         type: unit
         cases:
-          - "applies size/alignment presets to the selected `imageFigure` without remounting (stable node id/pos) and without changing selection anchor"
-          - "updates alignment buttons and reflects active state from selection"
-          - "normalizes invalid stored size|align to (medium|center) on selectionUpdate without remounting"
-          - "focuses figcaption editing and persists caption text inline"
-          - "ignores attempts to change intrinsic width/height via commands; attrs remain unchanged and JSON/HTML are identical"
-      - path: "tests/editor/extensions-parity.test.ts"
+          - "Classes `editor-figure`, `editor-image`, `editor-figcaption` exist; size/align classes match attrs."
+      - path: "tests/editor/imageFigure.migration.spec.ts"
+        type: unit
+      - path: "tests/editor/imageFigure.commands.spec.ts"
         type: unit
         cases:
-          - "full profile registers a shared `imageFigure` extension instance and does not register the legacy `Image` extension"
-          - "schema signature exposes `imageFigure` attrs: { src, alt, width, height, size, align }"
-      - path: "tests/utils/editor/render.image.test.ts"
-        type: unit
-        cases:
-          - "renders sanitized imageFigure JSON to expected figure/img/figcaption markup with intrinsic dimensions, loading hints, and allowed marks"
-          - "rejects/normalizes invalid `size|align|width|height`, strips forbidden caption tags/attrs and all style/on*/data-*; rejects disallowed `<img>` attrs; upgrades legacy HTML/JSON into `imageFigure`"
-          - "accepts `src` = `/media/x.webp` and `https://<same-origin>/media/x.webp`; rejects `https://cdn.example/x.webp` and regenerates from JSON"
-          - "emits `aria-describedby` on `<img>` when caption text is present and removes it when caption becomes empty"
-          - "rejects figures with zero or multiple `<img>` children and regenerates valid markup from JSON (exactly one `<img>`)"
-          - "on capture, drops HTML figure with invalid/missing `<img>` and regenerates from JSON to a single `<img>`"
-          - "ensures `<img>` always has alt; emits `alt=\"\"` when authoring omitted it"
-          - "accepts `aria-describedby` that matches `^imgcap-[A-Za-z0-9_-]{8,22}$` and points to sibling `<figcaption>`; drops invalid or missing idrefs"
-          - "drops `aria-describedby` when caption is empty or `<figcaption>` lacks the matching id"
-          - "reuses the node's persisted `captionId` (pattern `'imgcap-' + customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789_-', 10)()`) for both `<figcaption id>` and `<img aria-describedby>`"
-          - "regenerates missing/invalid `captionId` values to a new `'imgcap-' + customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789_-', 10)()` and persists them back to JSON/HTML"
-      - path: "tests/frontend/editor/typography.test.ts"
-        type: unit
-        cases:
-          - "keeps BEM classes (size: original|large|medium|small; align: start|center|end) available in the generated CSS even when unused in TSX markup"
-          - "includes the `.editor-figure`, `.editor-image`, and `.editor-figcaption` class declarations in the emitted stylesheet"
-
-  - id: step-14
-    title: Image toolbar and layout UX refinements
-    rationale: Streamline image-only controls, prevent misleading alerts, and let surrounding copy flow around aligned figures without remounting nodes so the editor feels polished for non-technical authors.
-    depends_on: ["step-13"]
+          - "setSize('xx') → 'm'; setAlign('weird') → 'center'."
+          - "`src='javascript:alert(1)'` rejected/cleared; `src='https://…'` accepted."
+  - id: step-13
+    title: Toolbar shell (basic + writing)
+    rationale: Fixed, responsive toolbar with reactive states.
+    depends_on: ["step-12"]
     hints:
-      - "Wrap image-specific controls (alt text, caption focus, size, alignment) in a secondary panel/section that mounts once per editor (sibling to the primary toolbar) and toggles visibility only while an `imageFigure` is selected."
-      - "Each editor root manages its own image panel instance; do not share DOM or state across multiple editors rendered on the same page."
-      - "Subscribe to `selectionUpdate`/`transaction` to recompute `editor.isActive('imageFigure')`; mutate panel state without tearing down DOM."
-      - "Expose the panel with accessible labelling (e.g., headings plus `role=group`/`aria-labelledby`) so groups are announced correctly."
-      - "Hide the alt-text input until an image is active; keep the value in sync with the node attrs, allow clearing to empty string, and ensure tab order remains predictable (no forced focus unless expressly triggered)."
-      - "Treat size presets as layout hints that update only the `size` attribute; never mutate the intrinsic width/height captured at insert time."
-      - "Move caption editing into the image panel (no top-level button) and use the existing command to create a `TextSelection` inside `<figcaption>` without remounting the node."
-      - "Return a discriminated result from the upload helper so success resolves without running the generic failure alert; treat any HTTP 2xx as success and surface only failed network/non-2xx responses."
-      - "Debounce panel visibility/state updates (≈100 ms or `requestAnimationFrame`) to avoid flicker during rapid selection changes; re-use the same panel DOM when switching between figures."
-      - "Render the panel as an inline sibling that stays visible via `position: sticky` (or equivalent) so controls remain accessible while scrolling longer documents."
-      - "Sanitise alt-text input by stripping HTML, enforcing a 250-character limit (with inline counter), and falling back to the node's attrs when truncation occurs."
-      - "Update `.editor-figure--align-start|end` styles to float using logical properties (`float: inline-start/inline-end`, `display: flow-root`, sensible margins) so paragraphs wrap cleanly; verify RTL mirrors correctly and clear subsequent blocks when needed."
-      - "Ensure `.editor-figure` and descendant `<img>` elements remain within the editor column on all breakpoints (`max-width: 100%`, responsive sizing) so aligned media never overflows or causes horizontal scroll."
-      - "Add regression coverage for panel toggling, alert behaviour, wrap layout, focus rules, and node stability to prevent future drift."
+      - "File: `src/frontend/editor/ui/Toolbar.tsx`."
+      - "Profiles: `basic` (H2/H3, paragraph, ol/ul, quote, br, hr) and `writing` (=basic + image)."
+      - "Disabled/active use classes; buttons not removed from DOM."
+      - "A11y: group via `role='group'` + `aria-labelledby`."
     changes:
-      - modify: "src/frontend/editor/toolbar.ts"
+      - create: "src/frontend/editor/ui/Toolbar.tsx"
+      - modify: "src/frontend/editor/bootstrap.ts"
       - modify: "src/templates/admin/editorPage.tsx"
       - modify: "src/frontend/editor/styles.ts"
-      - modify: "src/styles/input.css"
-      - modify: "tests/frontend/editor/toolbar.test.tsx"
-      - modify: "tests/frontend/editor/bootstrap.test.ts"
-      - modify: "tests/frontend/editor/typography.test.ts"
     acceptance_criteria:
-      - "Primary toolbar shows global formatting actions only; each editor owns a single image panel that toggles visibility without DOM remounts and appears only while an `imageFigure` is active."
-      - "Within the image panel, size presets and alignment controls are separated into labelled groups (`role=group`, `aria-labelledby`) with active state derived from the node attrs."
-      - "Alt-text editing UI is hidden until an image is selected, sanitises input to plain text, enforces a 250-character limit with inline feedback, and hiding the panel never mutates the stored alt value."
-      - "When the alt-text input is focused, clicking size/alignment controls does not blur the field; Tab/Shift+Tab follow the panel’s DOM order, and pressing Escape restores the node’s current alt value and returns focus to the editor."
-      - "Preset size controls update only the `size` attribute; intrinsic width/height remain immutable after insert. Switching back to ‘Original’ applies the layout preset without mutating width/height or remounting the node."
-      - "Panel visibility/state updates are debounced (~100 ms or `requestAnimationFrame`) to prevent flicker; switching between figures updates the same panel instance in place, and losing the image selection hides the panel without tearing it down."
-      - "Panel layout keeps controls reachable while scrolling (e.g., `position: sticky`) and hides the panel when the editor loses focus, preserving state for the next selection."
-      - "Focusing the caption via the panel moves the caret into `<figcaption>` without scroll jumps or node churn; if the selection is already inside the caption the command is a no-op; if absent, create an empty caption and place the selection inside without replacing the figure."
-      - "Successful uploads are defined as HTTP 2xx responses and resolve without firing the generic failure alert; rejected requests or non-2xx responses emit the alert exactly once."
-      - "Paragraphs wrap alongside start/end aligned figures using logical floats (`float: inline-start/inline-end`, `display: flow-root`), while center-aligned figures remain block-level (`margin-inline: auto`); subsequent block elements clear the float, captions remain inside the figure, and DOM reading order stays figure → caption → text for both LTR and RTL."
-      - "Multiple editors on the same page maintain independent panel state and listeners; destroying one editor cleans up without affecting the others."
-      - "Aligned figures and their `<img>` contents obey the editor container width at every breakpoint; no horizontal overflow or scrollbar appears, and small screens collapse floats gracefully (stacking when necessary)."
+      - "Image selected → text mark buttons have `.is-disabled`; image button enabled."
     tests:
-      - path: "tests/frontend/editor/toolbar.test.tsx"
+      - path: "tests/editor/toolbar.profile.spec.tsx"
+        type: unit
+      - path: "tests/editor/toolbar.state.spec.tsx"
+        type: unit
+  - id: step-14
+    title: Image action sub-panel
+    rationale: Contextual controls; no remount churn.
+    depends_on: ["step-13"]
+    hints:
+      - "File: `src/frontend/editor/ui/ImagePanel.tsx` (sibling to toolbar)."
+      - "Visibility toggled on selectionUpdate via `hidden`/class; the node stays mounted."
+      - "Controls: presets 33.33/50/75/100 → size s/m/l/xl; align L/C/R; alt input (empty allowed); inline caption."
+      - "Dismiss on outside click and `Esc`."
+    changes:
+      - create: "src/frontend/editor/ui/ImagePanel.tsx"
+      - modify: "src/frontend/editor/ui/Toolbar.tsx"
+      - modify: "src/frontend/editor/styles.ts"
+      - modify: "src/templates/admin/editorPage.tsx"
+      - modify: "src/frontend/editor/bootstrap.ts"
+    acceptance_criteria:
+      - "Panel visible only with imageFigure selection; actions update attrs immediately."
+    tests:
+      - path: "tests/editor/imagePanel.visibility.spec.tsx"
+        type: unit
+      - path: "tests/editor/imagePanel.actions.spec.tsx"
+        type: unit
+      - path: "tests/editor/imagePanel.keyboard.spec.tsx"
+        type: unit
+  - id: step-15
+    title: Flow layout & grids (CSS grid)
+    rationale: Text flow and simple image grids without floats.
+    depends_on: ["step-14"]
+    hints:
+      - "Define component classes in `content.css` (`@layer components`)."
+      - "`.editor-figure--align-left|center|right` implemented with grid/justify utilities."
+      - "`.editor-figure-grid-2` and `-3` utilities (stack under `sm`)."
+      - "`.editor-figcaption` width tracks image block; no overflow."
+    changes:
+      - modify: "src/frontend/editor/ui/content.css"
+      - modify: "src/frontend/editor/extensions/imageFigure.ts"
+    acceptance_criteria:
+      - "Markup carries alignment/grid classes; captions remain within figure."
+    tests:
+      - path: "tests/editor/imageFigure.align.spec.ts"
+        type: unit
+      - path: "tests/ui/imageGrid.classes.spec.ts"
         type: unit
         cases:
-          - "image panel mounts once, toggles visibility with an active `imageFigure`, and retains node id/attrs across toggles"
-          - "size/alignment groups render inside the panel with correct active state tied to node attrs"
-          - "successful image upload resolves without firing the failure alert; rejected uploads fire exactly one alert"
-          - "caption focus command places selection in figcaption without changing node key"
-          - "alt-text input sanitises pasted HTML, enforces the 250-character limit with inline feedback, and Escape restores the node attr while refocusing the editor"
-          - "clicking size or alignment controls while the alt-text field is focused does not blur the input"
-          - "rapid selection changes do not re-focus or re-append the panel (debounced visibility update)"
-          - "panel updates alt-text display when node attrs change externally (e.g., undo/redo) without remounting"
-          - "caption focus creates a caption when missing, preserves node key/attrs, and is a no-op when the selection is already inside the figcaption"
-          - "multiple editors on the same page maintain independent panel state and listeners"
-          - "panel hides when the editor loses focus and reappears with preserved state after re-selection"
-          - "keyboard navigation (Tab/Shift+Tab) traverses panel controls predictably and returns to the editor after the last control"
-      - path: "tests/frontend/editor/bootstrap.test.ts"
+          - "`content.css` contains selectors `.editor-figure-grid-2` and `.editor-figure-grid-3`."
+  - id: step-16
+    title: WYSIWYG parity (class-level)
+    rationale: Same classes and key elements between Editor and SSR.
+    depends_on: ["step-15"]
+    hints:
+      - "Fixture: h2 + p + imageFigure(with caption)."
+      - "Render via editor preview wrapper and SSR `<Content>`."
+      - "Compare class sets and element names for wrapper and figure subtree."
+    changes:
+      - modify: "src/templates/admin/editorPage.tsx"
+      - modify: "src/frontend/editor/ui/Toolbar.tsx"
+      - modify: "src/frontend/editor/ui/ImagePanel.tsx"
+      - modify: "src/frontend/editor/ui/content.ts"
+    acceptance_criteria:
+      - "Wrapper and figure subtree have equal class sets and matching tag names (figure/img/figcaption)."
+    tests:
+      - path: "tests/parity/classParity.spec.tsx"
+        type: unit
+  - id: step-17
+    title: Accessibility essentials
+    rationale: Minimal semantics enforced cheaply.
+    depends_on: ["step-16"]
+    hints:
+      - "Ensure one `<figcaption>` inside each `<figure>`; `<img>` always has `alt` (empty allowed)."
+      - "Toolbar sections labelled and grouped."
+    changes:
+      - modify: "src/frontend/editor/ui/Toolbar.tsx"
+      - modify: "src/frontend/editor/ui/ImagePanel.tsx"
+      - modify: "src/frontend/editor/extensions/imageFigure.ts"
+    acceptance_criteria:
+      - "DOM contains expected roles and relations."
+    tests:
+      - path: "tests/a11y/semantics.spec.tsx"
         type: unit
         cases:
-          - "image panel mounts once per editor and does not re-append on repeated selection toggles"
-          - "destroying the editor unregisters panel event listeners"
-          - "multiple editors register independent panels and clean up correctly when one editor is destroyed"
-          - "panel visibility responds to editor blur/focus events surfaced through bootstrap observers"
-      - path: "tests/frontend/editor/typography.test.ts"
-        type: unit
-        cases:
-          - "aligned figures allow adjacent paragraphs to wrap without overlapping captions in LTR"
-          - "long captions wrap within the figure without overlapping adjacent text"
-          - "aligned figures mirror correctly under RTL (inline-start/end)"
-          - "RTL snapshot confirms computed float/margin values mirror correctly"
-          - "center-aligned figures stay block-level with no text wrapping"
-          - "floated figures clear properly when followed by another figure or block element"
-          - "caption text does not overflow figure bounds on narrow viewports"
-          - "RTL layouts avoid scrollbar overlap or clipping when figures align to inline-start/end"
-          - "responsive figures clamp width to 100% and prevent horizontal overflow on small viewports"
+          - "figure→figcaption relation exists; img has `alt` (including empty)."
+          - "Toolbar sections expose `role='group'` with labelled headings."
+
 
 
 ---
@@ -637,187 +596,141 @@ steps:
 
 Authoritative spec: the YAML frontmatter above. The prose below provides context and guidance for reviewers and contributors.
 
-Prepare a D3-compatible input spec for integrating the Tiptap V3 editor with SSR HTML, Hono, Cloudflare Workers, R2, and D1.
+Implement a WYSIWYG rich text editor using Tiptap in a Cloudflare Workers environment with Hono, D1, and R2. The editor should support server-side rendering (SSR) with HTMX for dynamic interactions without a frontend framework.
 
-It will support modular editor creation, ProseMirror JSON output, Tailwind prose styling, and secure usage within authenticated admin routes only.
+- id: step-01
+  title: Content typography & tokens
+  rationale: Single source of truth for content styles.
+  hints:
+  - "Create `src/ui/content.css` with Tailwind Typography under the namespaced root `.content-prose.prose`."
+  - "Expose CSS vars `--editor-bg`, `--editor-border`, `--editor-focus` for editor chrome."
+  - "Add helper `contentClass(): string` returning 'content-prose prose'."
+  - "Ensure no global `.prose` selectors are emitted outside `.content-prose`."
+  acceptance_criteria:
+  - "Editor and SSR wrappers both use exactly `contentClass()`."
+  - "h2/h3/p/ul/ol/blockquote/hr appear under a `.content-prose` ancestor."
+  - "No standalone `.prose` rules outside the namespace in built CSS."
+  tests:
+  - name: content-class-parity
+      file: tests/ui/contentClass.spec.tsx
+      asserts:
+    - "SSR <Content> and <EditorContent> wrappers have equal className sets."
+    - "Rendered h2/p nodes are descendants of `.content-prose`."
+  - name: no-global-prose
+      file: tests/ui/contentCss.namespace.spec.ts
+      asserts:
+    - "`content.css`/built CSS contains `.content-prose.prose` and does not contain a top-level `.prose{` rule."
 
-## Overview
+- id: step-02
+  title: Tiptap node: imageFigure
+  rationale: Accessible image with controlled attrs.
+  depends_on: ["step-01"]
+  hints:
+  - "File: `src/editor/extensions/imageFigure.ts`."
+  - "Attrs: {src:string; alt:string; size:'s'|'m'|'l'|'xl'; align:'left'|'center'|'right'}."
+  - "DOM: `<figure class='editor-figure editor-figure--size-{size} editor-figure--align-{align}'>` + `<img class='editor-image' alt> <figcaption class='editor-figcaption'>`."
+  - "Commands clamp invalid values; parseHTML migrates bare <img> into figure and strips inline styles/classes."
+  - "URL policy: allow `https:` and relative URLs; reject `javascript:` and `data:`."
+  acceptance_criteria:
+  - "Round-trip parse/serialize preserves attrs and caption content."
+  - "Invalid size/align inputs clamp to size='m', align='center'."
+  - "Reject unsupported URL schemes for `src`."
+  tests:
+  - name: roundtrip-attrs
+      file: tests/editor/imageFigure.roundtrip.spec.ts
+  - name: dom-classing
+      file: tests/editor/imageFigure.dom.spec.ts
+      asserts:
+    - "Classes `editor-figure`, `editor-image`, `editor-figcaption` exist; size/align classes match attrs."
+  - name: migrate-bare-img
+      file: tests/editor/imageFigure.migration.spec.ts
+  - name: commands-clamp-and-url
+      file: tests/editor/imageFigure.commands.spec.ts
+      asserts:
+    - "setSize('xx') → 'm'; setAlign('weird') → 'center'."
+    - "`src='javascript:alert(1)'` rejected/cleared; `src='https://…'` accepted."
 
-* Add **Tiptap v3** rich-text editor to **SSR HTML** app (no frontend framework).
-* Stack: **Hono** on **Cloudflare Workers**; storage in **R2** (images), content in **D1** (JSON).
-* Editor initialized on **server-rendered `contenteditable` elements**; **deferred binding** on client.
-* **Factory pattern**: basic editor (text), full editor (text + images).
-* **Tailwind typography (`prose`)** for consistent look; same UX across all editors.
-* Admin-only, authenticated routes; content serialized to **ProseMirror JSON**.
+- id: step-03
+  title: Toolbar shell (basic + writing)
+  rationale: Fixed, responsive toolbar with reactive states.
+  depends_on: ["step-02"]
+  hints:
+  - "File: `src/editor/ui/Toolbar.tsx`."
+  - "Profiles: `basic` (H2/H3, paragraph, ol/ul, quote, br, hr) and `writing` (=basic + image)."
+  - "Disabled/active use classes; buttons not removed from DOM."
+  - "A11y: group via `role='group'` + `aria-labelledby`."
+  acceptance_criteria:
+  - "Image selected → text mark buttons have `.is-disabled`; image button enabled."
+  tests:
+  - name: profile-controls
+      file: tests/editor/toolbar.profile.spec.tsx
+  - name: state-reactivity
+      file: tests/editor/toolbar.state.spec.tsx
 
----
+- id: step-04
+  title: Image action sub-panel
+  rationale: Contextual controls; no remount churn.
+  depends_on: ["step-03"]
+  hints:
+  - "File: `src/editor/ui/ImagePanel.tsx` (sibling to toolbar)."
+  - "Visibility toggled on selectionUpdate via `hidden`/class; the node stays mounted."
+  - "Controls: presets 33.33/50/75/100 → size s/m/l/xl; align L/C/R; alt input (empty allowed); inline caption."
+  - "Dismiss on outside click and `Esc`."
+  acceptance_criteria:
+  - "Panel visible only with imageFigure selection; actions update attrs immediately."
+  tests:
+  - name: visibility-guard
+      file: tests/editor/imagePanel.visibility.spec.tsx
+  - name: preset-mapping
+      file: tests/editor/imagePanel.actions.spec.tsx
+  - name: esc-dismiss
+      file: tests/editor/imagePanel.keyboard.spec.tsx
 
-## Constraints
+- id: step-05
+  title: Flow layout & grids (CSS grid)
+  rationale: Text flow and simple image grids without floats.
+  depends_on: ["step-04"]
+  hints:
+  - "Define component classes in `content.css` (`@layer components`)."
+  - "`.editor-figure--align-left|center|right` implemented with grid/justify utilities."
+  - "`.editor-figure-grid-2` and `-3` utilities (stack under `sm`)."
+  - "`.editor-figcaption` width tracks image block; no overflow."
+  acceptance_criteria:
+  - "Markup carries alignment/grid classes; captions remain within figure."
+  tests:
+  - name: align-class-parity
+      file: tests/editor/imageFigure.align.spec.ts
+  - name: grid-component-classes-present
+      file: tests/ui/imageGrid.classes.spec.ts
+      asserts:
+    - "`content.css` contains selectors `.editor-figure-grid-2` and `.editor-figure-grid-3`."
 
-* Pure SSR; **no React/Vue**; SSR templates written in JSX.
-* Editor code in `src/frontend/**`; **Vite** bundles for dev/prod; assets resolved via the Vite manifest in both dev (`vite build --watch`) and prod—no hardcoded asset paths.
-* **Single source of truth**: app `__Host-*` cookies (auth already defined elsewhere).
-* **No DOM on server**; instantiate editor **only in browser**.
-* Image uploads via **file input** → **R2**; URLs inserted into doc.
-* Tiptap `injectCSS: false`; rely on Tailwind + `@tailwindcss/typography` for styles (`prose` classes).
-* Provide a basic toolbar suitable for non-technical admins.
-* Persist both JSON and browser-generated HTML on save; render stored HTML when valid, falling back to the shared JSON renderer (derived from `extensionsList(profile)`) when necessary. Document that `@tiptap/html` is unavailable on Workers.
-* Save via **HTMX** → **D1**.
+- id: step-06
+  title: WYSIWYG parity (class-level)
+  rationale: Same classes and key elements between Editor and SSR.
+  depends_on: ["step-05"]
+  hints:
+  - "Fixture: h2 + p + imageFigure(with caption)."
+  - "Render via editor preview wrapper and SSR `<Content>`."
+  - "Compare class sets and element names for wrapper and figure subtree."
+  acceptance_criteria:
+  - "Wrapper and figure subtree have equal class sets and matching tag names (figure/img/figcaption)."
+  tests:
+  - name: class-parity-editor-vs-ssr
+      file: tests/parity/classParity.spec.tsx
 
----
-
-## Assumptions
-
-* Tailwind + `@tailwindcss/typography` available to style editor output.
-* R2 bucket and D1 DB bindings configured in `wrangler`.
-* Admin auth middleware already exists and is reusable.
-* Latest **Tiptap v3** packages available in build.
-
----
-
-## Artifacts
-
-* Frontend: `src/frontend/editor/*.ts` (factory, init, configs).
-* Styling: Tailwind CSS with typography.
-* Hono routes (Workers):
-
-  * `/admin/:slug/:id` (page with editor (can have multiple editors))
-  * `/admin/upload-image` (POST; CSRF required)
-  * `/admin/save-content` (POST, HTMX; CSRF required)
-  * `/media/:key+` (GET from R2; nested keys allowed)
-* Server renderer: helper to regenerate HTML from ProseMirror JSON as a fallback when stored HTML fails validation (Workers runtime cannot run `@tiptap/html`).
-
----
-
-## Editor Architecture
-
-* **Selector-based init**: `document.querySelectorAll('[data-editor]')`.
-* **Factory**: `createEditor(element, profile)` where `profile ∈ {basic, full}`.
-* **Mount**: `new Editor({ element, extensions, content, editorProps })`.
-* Toolbar: Add a simple intuitive toolbar for non-technical admins.
-* **Content in**: JSON provided via inline `<script type="application/json">` or data-attrs.
-* **Content out**: `editor.getJSON()` (on save).
-* **Parity**: single shared `extensionsList(profile)` module imported by both client and server rendering to prevent drift.
-
----
-
-## Extensions
-
-* **Base**: `StarterKit` (paragraph, heading, lists, code, link, etc.).
-* **Full**: `StarterKit + Image` (optional `Placeholder`).
-* Configure `Image` (optional `HTMLAttributes`).
-* Keep input rules & keymaps from StarterKit.
-* Use a shared module for extension configuration; no duplicate lists across client/server.
-
----
-
-## Styling (Tailwind)
-
-* Apply `prose` via `editorProps.attributes.class = 'prose max-w-none focus:outline-none'`.
-* Set `injectCSS: false` (let Tailwind control styles).
-* Uniform theme across all editor instances.
-
----
-
-## Image Upload Flow
-
-* UI: hidden `<input type="file" accept="image/*">` + trigger button.
-* Client: POST `FormData(image)` to `/admin/upload-image` with `X-CSRF-Token` set (via `hx-headers` or global default). If a sibling `<input name="image_alt">` is present, include its value on insertion.
-* Server:
-
-  * Auth check.
-  * Validate type/extension and size (≤ 5 MiB by default from `.dev.vars`, set `MEDIA_MAX_UPLOAD_BYTES=5242880`).
-  * `R2.put(key, blob, { httpMetadata: { contentType: <file.mimetype> } })` → return JSON `{ url: "/media/<key>" }`.
-* Client: `editor.chain().focus().setImage({ src: url }).run()`.
-* Insert images with `{ src, alt }`, defaulting `alt: ""` if no input present.
-
----
-
-## Persistence (HTMX + D1)
-
-* Form with hidden `content_json` field; `hx-post="/admin/save-content"`.
-* On submit: set hidden field with `JSON.stringify(editor.getJSON())`.
-* Server:
-
-  * Auth check.
-  * Upsert JSON into D1 row (`TEXT` column).
-  * Return success (optional HTMX swap snippet).
-
----
-
-## SSR Rendering for End Users
-
-* Prefer the HTML captured client-side at save time; validate before rendering (allowed tags/attributes, `/media/...` sources, no `data:` images).
-* If stored HTML fails validation or is missing, regenerate from the saved ProseMirror JSON using the fallback renderer driven by `extensionsList(profile)`.
-  * Document the Workers restriction that prevents using `@tiptap/html`; the fallback must stay in parity with the client schema and marks.
-* Inject rendered HTML into a container with `class="prose"`.
-* Defensive parse and validate JSON shape; if invalid, render a safe empty document (or return 404) without throwing.
-
----
-
-## Routes (Hono)
-
-* `GET /admin/:slug/:id` → SSR page with editor + script include.
-* `POST /admin/upload-image` → R2 write, returns `{url}` (auth + CSRF required).
-* `POST /admin/save-content` → D1 update (auth + CSRF required).
-* `GET /media/:key+` → validate key against `^[A-Za-z0-9/_\-.]+$`; stream from R2 with immutable cache headers (ETag optional) and `X-Content-Type-Options: nosniff`.
-* `HEAD /media/:key+` → return headers (including Content-Type, Cache-Control, ETag) without the body.
-* (Public) `GET /:slug/:id` → render stored HTML when valid; otherwise regenerate from JSON via the fallback renderer.
-
----
-
-## Security
-
-* **Admin-only** guards on `/admin/*` and upload/save endpoints; expect 401 (unauth) vs 403 (forbidden) deterministically.
-* Enforce **CSRF** on state-changing verbs using cookie `__Host-csrf` and headers `X-CSRF-Token`/`HX-CSRF-Token`, or form fields `csrf_token`/`_csrf`.
-* Validate uploads (MIME and extension) and size (≤ 5 MiB).
-* Public `GET /media/*` with long cache; optional ETag for revalidation.
-* Do not inject raw HTML; render strictly from ProseMirror JSON via schema.
-* Load the editor bundle via a manifest-aware resolver in both development and production; no hardcoded or fallback paths.
-* Rate-limit state-changing admin endpoints (`/admin/upload-image`, `/admin/save-content`) with a simple token bucket per IP (and per user id if available); on exceed, return 429.
-* For pages that render editor content, set CSP `img-src 'self'` (omit `data:`) to disallow external or inline image sources.
-* Never eval/insert raw HTML from client; render via schema only.
-
----
-
-## Testing (Key Cases)
-
-* Editor mounts on SSR element; basic formatting works.
-* Tailwind `prose` styles applied.
-* Save → D1 contains valid JSON; reload restores content.
-* Upload image → `/media/*` URL inserted and loads.
-* Unauthorized access blocked for admin routes.
-* Stored HTML remains in parity (it was produced by the editor); fallback renderer stays aligned with client extensions for drift detection.
-* Large content performance acceptable; JSON size within limits.
-
----
-
-## D3 Step Outline (suggested)
-
-1. **Scaffold frontend** (`src/frontend/editor/…`), Vite entry & build wiring.
-2. **Editor factory** (basic/full profiles), deferred init on `[data-editor]`.
-3. **Tailwind integration** (`prose` class via `editorProps`).
-4. **Initial content loader** (JSON injection; per-element pairing).
-5. **Image upload UI + client handler** (CSRF header via HTMX).
-6. **Upload route** (auth + CSRF) → R2 put with httpMetadata.contentType; `GET /media/:key+` with cache.
-7. **Lifecycle refactor** (FormSync, HTMX hooks, MutationObserver cleanup) — placed after toolbar/upload; persistence depends on this.
-8. **HTMX save flow** (auth + CSRF; hidden field, submit) → D1 persist.
-9. **Server render helper** (fallback renderer derived from `extensionsList(profile)`) for public pages.
-10. **Auth guards** on admin endpoints; validations.
-11. **Smoke & integration tests** (mount, save, upload, render).
-
----
-
-## Open Decisions (defaults if unspecified)
-
-* Placeholder text (optional): `"Start writing…"` via `Placeholder` extension.
-* Max file size for images (e.g., **5 MB**) & accepted types (`image/png|jpeg|webp`).
-* Media key format in R2: `images/<timestamp>_<random>.<ext>`; public read via `/media/:key+`.
-* Cache headers for media: `public, max-age=31536000, immutable`.
-
----
-
-## Build & Gates
-
-* **typecheck** → **test** (coverage ≥ 80%).
-* Keep editor code tree **modular**; no framework runtime.
+- id: step-07
+  title: Accessibility essentials
+  rationale: Minimal semantics enforced cheaply.
+  depends_on: ["step-06"]
+  hints:
+  - "Ensure one `<figcaption>` inside each `<figure>`; `<img>` always has `alt` (empty allowed)."
+  - "Toolbar sections labelled and grouped."
+  acceptance_criteria:
+  - "DOM contains expected roles and relations."
+  tests:
+  - name: semantics-present
+      file: tests/a11y/semantics.spec.tsx
+      asserts:
+    - "figure→figcaption relation exists; img has `alt` (including empty)."
+    - "Toolbar sections expose `role='group'` with labelled headings."
