@@ -55,4 +55,72 @@
       grid-template-columns: 1fr;
     }
   }
+
+  /* [D3:editor-tiptap.step-14:image-figure-sizes] Size classes for imageFigure nodes */
+  .editor-figure {
+    margin: 1rem auto;
+  }
+
+  .editor-figure .editor-image {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .editor-figure--size-s .editor-image {
+    max-width: 33.33%;
+  }
+
+  .editor-figure--size-m .editor-image {
+    max-width: 50%;
+  }
+
+  .editor-figure--size-l .editor-image {
+    max-width: 75%;
+  }
+
+  .editor-figure--size-xl .editor-image {
+    max-width: 100%;
+  }
+
+  /* [D3:editor-tiptap.step-14:image-figure-alignment] Alignment classes for imageFigure nodes */
+  .editor-figure--align-left {
+    text-align: left;
+  }
+
+  .editor-figure--align-left .editor-image {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .editor-figure--align-center {
+    text-align: center;
+  }
+
+  .editor-figure--align-center .editor-image {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .editor-figure--align-right {
+    text-align: right;
+  }
+
+  .editor-figure--align-right .editor-image {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  .editor-figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .editor-figcaption {
+      color: #9ca3af;
+    }
+  }
 }

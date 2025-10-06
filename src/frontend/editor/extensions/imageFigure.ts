@@ -84,6 +84,10 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
 
   draggable: true,
 
+  selectable: true,
+
+  atom: false,
+
   addOptions() {
     return {
       HTMLAttributes: {},

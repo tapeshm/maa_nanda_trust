@@ -12,10 +12,26 @@ export interface ImagePanelState {
 // [D3:editor-tiptap.step-14:panel-state] Read current imageFigure attrs from selection
 export function getImagePanelState(editor: EditorInstance): ImagePanelState {
   const { selection } = editor.state
-  const node = selection.$from.node(selection.$from.depth)
+  const { $from } = selection
 
-  if (node?.type.name === 'imageFigure') {
-    const attrs = node.attrs as { src: string; alt: string; size: string; align: string }
+  // Check if the current selection is within or on an imageFigure node
+  // Walk up the tree from the current position to find an imageFigure
+  for (let depth = $from.depth; depth >= 0; depth--) {
+    const node = $from.node(depth)
+    if (node?.type.name === 'imageFigure') {
+      const attrs = node.attrs as { src: string; alt: string; size: string; align: string }
+      return {
+        visible: true,
+        size: (attrs.size || 'm') as 's' | 'm' | 'l' | 'xl',
+        align: (attrs.align || 'center') as 'left' | 'center' | 'right',
+        alt: attrs.alt || '',
+      }
+    }
+  }
+
+  // Also check if a node selection contains an imageFigure
+  if (selection.node && selection.node.type.name === 'imageFigure') {
+    const attrs = selection.node.attrs as { src: string; alt: string; size: string; align: string }
     return {
       visible: true,
       size: (attrs.size || 'm') as 's' | 'm' | 'l' | 'xl',

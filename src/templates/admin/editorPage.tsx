@@ -173,36 +173,36 @@ const EditorPage: FC<{
                             class={IMAGE_PANEL_BUTTON_CLASSNAME}
                             data-size="s"
                             aria-pressed="false"
-                            title="Resize to 33%"
+                            title="Resize to small (33% width)"
                           >
-                            33%
+                            Small
                           </button>
                           <button
                             type="button"
                             class={IMAGE_PANEL_BUTTON_CLASSNAME}
                             data-size="m"
                             aria-pressed="false"
-                            title="Resize to 50%"
+                            title="Resize to medium (50% width)"
                           >
-                            50%
+                            Medium
                           </button>
                           <button
                             type="button"
                             class={IMAGE_PANEL_BUTTON_CLASSNAME}
                             data-size="l"
                             aria-pressed="false"
-                            title="Resize to 75%"
+                            title="Resize to large (75% width)"
                           >
-                            75%
+                            Large
                           </button>
                           <button
                             type="button"
                             class={IMAGE_PANEL_BUTTON_CLASSNAME}
                             data-size="xl"
                             aria-pressed="false"
-                            title="Resize to 100%"
+                            title="Original size (100% width)"
                           >
-                            100%
+                            Original
                           </button>
                         </div>
                       </div>
