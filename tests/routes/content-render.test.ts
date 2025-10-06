@@ -69,7 +69,8 @@ describe('public content rendering', () => {
     expect(res.status).toBe(200)
     const body = await res.text()
     expect(body).toContain('Hello world')
-    expect(body).toContain('class="prose')
+    // [D3:editor-tiptap.step-11:test-update] Updated to check for namespaced content-prose class
+    expect(body).toContain('class="content-prose prose')
   })
 
   it('returns 404 for missing documents', async () => {
@@ -157,7 +158,8 @@ describe('public content rendering', () => {
     expect(res.status).toBe(200)
     const body = await res.text()
     expect(body).toContain('Recovered from JSON')
-    expect(body).toContain('class="prose')
+    // [D3:editor-tiptap.step-11:test-update] Updated to check for namespaced content-prose class
+    expect(body).toContain('class="content-prose prose')
 
     expect(warn).toHaveBeenCalledWith(
       expect.objectContaining({

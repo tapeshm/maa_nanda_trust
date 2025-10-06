@@ -3,13 +3,7 @@ import type { FC } from 'hono/jsx'
 import { raw } from 'hono/html'
 import Layout from '../layout'
 import { resolveAsset } from '../../utils/assets'
-import {
-  MENUBAR_CLASSNAME,
-  MENUBAR_BUTTON_CLASSNAME,
-  IMAGE_PANEL_CLASSNAME,
-  IMAGE_PANEL_GROUP_CLASSNAME,
-  IMAGE_PANEL_BUTTON_ROW_CLASSNAME,
-} from '../../frontend/editor/styles'
+import { MENUBAR_CLASSNAME, MENUBAR_BUTTON_CLASSNAME } from '../../frontend/editor/styles'
 
 type EditorSpec = {
   id: string
@@ -70,12 +64,7 @@ const EditorPage: FC<{
             const htmlValue = initialHtml[id] ?? ''
             const etag = etags[id]
             const docId = documentId ?? id
-            const imagePanelId = `${id}__image-panel`
             const imageAltId = `${id}__alt-input`
-            const imageAltCounterId = `${imageAltId}__counter`
-            const sizeHeadingId = `${imagePanelId}__size`
-            const alignHeadingId = `${imagePanelId}__align`
-            const panelHeadingId = `${imagePanelId}__heading`
 
             return (
               <section class="space-y-2" id={`${id}__section`}>
@@ -153,136 +142,27 @@ const EditorPage: FC<{
                       accept="image/png,image/jpeg,image/webp"
                       class="hidden"
                     />
-                    <div
-                      id={imagePanelId}
-                      class={IMAGE_PANEL_CLASSNAME}
-                      data-editor-image-panel
-                      aria-hidden="true"
-                      aria-labelledby={panelHeadingId}
-                      hidden
-                    >
-                      <p id={panelHeadingId} class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        Image tools
+                    <div class="space-y-2 text-sm text-zinc-700">
+                      <label class="flex flex-col gap-1" htmlFor={imageAltId}>
+                        <span class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                          Image alternative text
+                        </span>
+                        <input
+                          id={imageAltId}
+                          name="image_alt"
+                          type="text"
+                          placeholder="Describe the image"
+                          class="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          maxLength={250}
+                        />
+                      </label>
+                      <p class="text-xs text-zinc-500">
+                        Provide a short description for screen readers. Leave blank only when the image is decorative.
                       </p>
-                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
-                        <label class="flex flex-col gap-1 text-sm text-zinc-700" htmlFor={imageAltId}>
-                          <span class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                            Alternative text
-                          </span>
-                          <input
-                            id={imageAltId}
-                            name="image_alt"
-                            type="text"
-                            placeholder="Describe the image"
-                            class="block w-full rounded-md border border-gray-300 bg-blue-50 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            maxLength={250}
-                            aria-describedby={imageAltCounterId}
-                            data-editor-image-alt
-                          />
-                        </label>
-                        <p
-                          id={imageAltCounterId}
-                          data-editor-image-alt-counter
-                          class="text-xs text-zinc-500"
-                          aria-live="polite"
-                        >
-                          0 / 250
-                        </p>
-                      </div>
-                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
-                        <p id={sizeHeadingId} class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                          Size
-                        </p>
-                        <div
-                          class={IMAGE_PANEL_BUTTON_ROW_CLASSNAME}
-                          role="group"
-                          aria-labelledby={sizeHeadingId}
-                          data-editor-image-size-group
-                        >
-                          <button
-                            type="button"
-                            class={MENUBAR_BUTTON_CLASSNAME}
-                            data-editor-image-size="small"
-                            aria-pressed="false"
-                          >
-                            Small
-                          </button>
-                          <button
-                            type="button"
-                            class={MENUBAR_BUTTON_CLASSNAME}
-                            data-editor-image-size="medium"
-                            aria-pressed="false"
-                          >
-                            Medium
-                          </button>
-                          <button
-                            type="button"
-                            class={MENUBAR_BUTTON_CLASSNAME}
-                            data-editor-image-size="large"
-                            aria-pressed="false"
-                          >
-                            Large
-                          </button>
-                          <button
-                            type="button"
-                            class={MENUBAR_BUTTON_CLASSNAME}
-                            data-editor-image-size="original"
-                            aria-pressed="false"
-                          >
-                            Original
-                          </button>
-                        </div>
-                      </div>
-                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
-                        <p id={alignHeadingId} class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                          Alignment
-                        </p>
-                        <div
-                          class={IMAGE_PANEL_BUTTON_ROW_CLASSNAME}
-                          role="group"
-                          aria-labelledby={alignHeadingId}
-                          data-editor-image-align-group
-                        >
-                          <button
-                            type="button"
-                            class={MENUBAR_BUTTON_CLASSNAME}
-                            data-editor-image-align="start"
-                            aria-pressed="false"
-                          >
-                            Left
-                          </button>
-                          <button
-                            type="button"
-                            class={MENUBAR_BUTTON_CLASSNAME}
-                            data-editor-image-align="center"
-                            aria-pressed="false"
-                          >
-                            Center
-                          </button>
-                          <button
-                            type="button"
-                            class={MENUBAR_BUTTON_CLASSNAME}
-                            data-editor-image-align="end"
-                            aria-pressed="false"
-                          >
-                            Right
-                          </button>
-                        </div>
-                      </div>
-                      <div class={IMAGE_PANEL_GROUP_CLASSNAME}>
-                        <button
-                          type="button"
-                          class={MENUBAR_BUTTON_CLASSNAME}
-                          data-editor-image-caption
-                          aria-pressed="false"
-                          aria-labelledby={panelHeadingId}
-                        >
-                          Edit caption
-                        </button>
-                      </div>
                     </div>
                   </>
                 ) : null}
+                {/* [D3:editor-tiptap.step-11:editor-content-class] Editor content uses contentClass() via EDITOR_CLASSNAME (applied by Tiptap editorProps) */}
                 <div
                   id={id}
                   data-editor
@@ -290,7 +170,6 @@ const EditorPage: FC<{
                   data-editor-toolbar-id={`${id}__toolbar`}
                   data-editor-image-input-id={profile === 'full' ? `${id}__image-input` : undefined}
                   data-editor-alt-id={profile === 'full' ? imageAltId : undefined}
-                  data-editor-image-panel-id={profile === 'full' ? imagePanelId : undefined}
                 />
                 <script id={scriptId} type="application/json" nonce={nonce}>
                   {serialized}

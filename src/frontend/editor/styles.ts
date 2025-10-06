@@ -1,16 +1,8 @@
 // Centralized Tailwind class lists for the editor UI
 // Keep all editor-related styling here for consistent look-and-feel.
 
-const PROSE_BASE_TOKENS = [
-  'prose',
-  'prose-sm',
-  'sm:prose-base',
-  'lg:prose-lg',
-  'xl:prose-2xl',
-  'prose-zinc',
-  'dark:prose-invert',
-  'max-w-none',
-]
+// [D3:editor-tiptap.step-11:import-content-class] Import single source of truth for content classes
+import { contentClass } from './ui/content'
 
 const EDITOR_CHROME_TOKENS = [
   'border',
@@ -28,8 +20,12 @@ const EDITOR_CHROME_TOKENS = [
   'tiptap-editor',
 ]
 
+// [D3:editor-tiptap.step-11:export-content-class] Re-export contentClass for consistency
+export { contentClass }
+
 // [D3:editor-tiptap.step-03:prose-base] Shared typography tokens for editor + SSR output.
-export const PROSE_BASE = PROSE_BASE_TOKENS.join(' ')
+// [D3:editor-tiptap.step-11:use-content-class] Use contentClass() as base for prose
+export const PROSE_BASE = contentClass()
 
 // [D3:editor-tiptap.step-08:editor-chrome] Container chrome applied only within the editor UI.
 export const EDITOR_CHROME = EDITOR_CHROME_TOKENS.join(' ')
@@ -71,33 +67,4 @@ export const MENUBAR_BUTTON_CLASSNAME = [
 export const MENUBAR_BUTTON_ACTIVE_CLASSNAME = [
   'bg-zinc-200', // Zinc-200 background for active state
   'dark:bg-zinc-700', // Zinc-700 background for active in dark mode
-].join(' ')
-
-export const IMAGE_PANEL_CLASSNAME = [
-  'editor-image-panel',
-  'mt-2',
-  'rounded-md',
-  'border',
-  'border-gray-200',
-  'dark:border-gray-700',
-  'bg-white',
-  'dark:bg-zinc-900',
-  'p-3',
-  'flex',
-  'flex-col',
-  'gap-4',
-  'w-full',
-  'md:sticky',
-  'md:top-4',
-  'md:self-start',
-  'md:overflow-y-auto',
-].join(' ')
-
-export const IMAGE_PANEL_GROUP_CLASSNAME = ['flex', 'flex-col', 'gap-2'].join(' ')
-
-export const IMAGE_PANEL_BUTTON_ROW_CLASSNAME = [
-  'flex',
-  'flex-wrap',
-  'items-center',
-  'gap-1.5',
 ].join(' ')

@@ -10,6 +10,9 @@
 /* Plugins */
 @plugin "@tailwindcss/typography";
 
+/* [D3:editor-tiptap.step-11:import-content-css] Import namespaced content typography */
+@import "../frontend/editor/ui/content.css";
+
 /* Do not safelist custom selectors here; Tailwind keeps these declarations. */
 
 

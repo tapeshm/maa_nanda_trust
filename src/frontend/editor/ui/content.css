@@ -1,0 +1,35 @@
+/* [D3:editor-tiptap.step-11:content-prose-namespace] Namespaced Tailwind Typography for content */
+
+/* CSS custom properties for editor chrome theming */
+:root {
+  --editor-bg: theme('colors.white');
+  --editor-border: theme('colors.gray.200');
+  --editor-focus: theme('colors.blue.300');
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --editor-bg: theme('colors.zinc.900');
+    --editor-border: theme('colors.gray.700');
+    --editor-focus: theme('colors.blue.500');
+  }
+}
+
+/* [D3:editor-tiptap.step-11:namespaced-prose] All prose styles under .content-prose.prose namespace */
+.content-prose.prose {
+  /* Typography plugin applies here with the prose class */
+  @apply prose prose-sm sm:prose-base lg:prose-lg xl:prose-2xl;
+  @apply prose-zinc dark:prose-invert;
+  @apply max-w-none;
+}
+
+/* Editor-specific content area styling */
+.content-prose.prose h2,
+.content-prose.prose h3,
+.content-prose.prose p,
+.content-prose.prose ul,
+.content-prose.prose ol,
+.content-prose.prose blockquote,
+.content-prose.prose hr {
+  /* Elements inherit prose typography; no additional rules needed */
+}
