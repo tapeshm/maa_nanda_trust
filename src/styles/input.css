@@ -46,7 +46,7 @@
 .editor-figure--align-center { float: none; margin-inline: auto; }
 .editor-figure--align-end { float: inline-end; margin-inline-start: 1.5rem; margin-inline-end: 0; }
 
-.editor-image { width: 100%; max-width: 100%; height: auto; display: block; }
+/* Removed: width rules now in content.css to work with size classes */
 .editor-figcaption { margin-top: 0.5rem; font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
 .editor-figcaption:empty { display: none; }
 
