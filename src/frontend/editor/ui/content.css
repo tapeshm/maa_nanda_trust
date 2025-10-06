@@ -2,16 +2,16 @@
 
 /* CSS custom properties for editor chrome theming */
 :root {
-  --editor-bg: theme('colors.white');
-  --editor-border: theme('colors.gray.200');
-  --editor-focus: theme('colors.blue.300');
+  --editor-bg: #ffffff;
+  --editor-border: #e5e7eb;
+  --editor-focus: #93c5fd;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --editor-bg: theme('colors.zinc.900');
-    --editor-border: theme('colors.gray.700');
-    --editor-focus: theme('colors.blue.500');
+    --editor-bg: #0f172a;
+    --editor-border: #374151;
+    --editor-focus: #3b82f6;
   }
 }
 
@@ -58,56 +58,53 @@
 
   /* [D3:editor-tiptap.step-14:image-figure-sizes] Size classes for imageFigure nodes */
   .editor-figure {
-    margin: 1rem auto;
-  }
-
-  .editor-figure .editor-image {
-    height: auto;
-    display: block;
-  }
-
-  .editor-figure--size-s .editor-image {
-    width: 33.33%;
-  }
-
-  .editor-figure--size-m .editor-image {
-    width: 50%;
-  }
-
-  .editor-figure--size-l .editor-image {
-    width: 75%;
-  }
-
-  .editor-figure--size-xl .editor-image {
+    --editor-image-width: 100%;
+    margin: 1.5rem auto;
     width: 100%;
   }
 
-  /* [D3:editor-tiptap.step-14:image-figure-alignment] Alignment classes for imageFigure nodes */
-  .editor-figure--align-left {
-    text-align: left;
+  .editor-figure .editor-image {
+    display: block;
+    height: auto;
+    max-width: 100%;
+    width: var(--editor-image-width);
   }
 
-  .editor-figure--align-left .editor-image {
-    margin-left: 0;
-    margin-right: auto;
+  .editor-figure--size-s {
+    --editor-image-width: 33.333%;
+  }
+
+  .editor-figure--size-m {
+    --editor-image-width: 50%;
+  }
+
+  .editor-figure--size-l {
+    --editor-image-width: 75%;
+  }
+
+  .editor-figure--size-xl {
+    --editor-image-width: 100%;
+  }
+
+  /* [D3:editor-tiptap.step-15:image-figure-alignment] Alignment with text flow using float */
+  .editor-figure--align-left {
+    float: left;
+    margin-right: 1.5rem;
+    margin-bottom: 1rem;
+    max-width: 50%;
   }
 
   .editor-figure--align-center {
+    margin-left: auto;
+    margin-right: auto;
     text-align: center;
   }
 
-  .editor-figure--align-center .editor-image {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
   .editor-figure--align-right {
-    text-align: right;
-  }
-
-  .editor-figure--align-right .editor-image {
-    margin-left: auto;
-    margin-right: 0;
+    float: right;
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    max-width: 50%;
   }
 
   .editor-figcaption {
