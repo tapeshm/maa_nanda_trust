@@ -225,11 +225,11 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
         },
       setImageSize:
         (size) =>
-        ({ state, commands, tr }) => {
+        ({ state, dispatch }) => {
           const { selection } = state
           const { $from } = selection
 
-          // Find the imageFigure node
+          // Find the imageFigure node position
           let pos: number | null = null
           for (let depth = $from.depth; depth >= 0; depth--) {
             const node = $from.node(depth)
@@ -240,27 +240,31 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
           }
 
           // Also check node selection
-          if (!pos && selection.node && selection.node.type.name === this.name) {
+          if (pos === null && selection.node && selection.node.type.name === this.name) {
             pos = selection.from
           }
 
           if (pos !== null) {
-            tr.setNodeMarkup(pos, undefined, {
-              ...state.doc.nodeAt(pos)?.attrs,
-              size: clampSize(size),
-            })
-            return true
+            const nodeAtPos = state.doc.nodeAt(pos)
+            if (nodeAtPos && dispatch) {
+              const tr = state.tr.setNodeMarkup(pos, undefined, {
+                ...nodeAtPos.attrs,
+                size: clampSize(size),
+              })
+              dispatch(tr)
+              return true
+            }
           }
 
           return false
         },
       setImageAlign:
         (align) =>
-        ({ state, commands, tr }) => {
+        ({ state, dispatch }) => {
           const { selection } = state
           const { $from } = selection
 
-          // Find the imageFigure node
+          // Find the imageFigure node position
           let pos: number | null = null
           for (let depth = $from.depth; depth >= 0; depth--) {
             const node = $from.node(depth)
@@ -271,27 +275,31 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
           }
 
           // Also check node selection
-          if (!pos && selection.node && selection.node.type.name === this.name) {
+          if (pos === null && selection.node && selection.node.type.name === this.name) {
             pos = selection.from
           }
 
           if (pos !== null) {
-            tr.setNodeMarkup(pos, undefined, {
-              ...state.doc.nodeAt(pos)?.attrs,
-              align: clampAlign(align),
-            })
-            return true
+            const nodeAtPos = state.doc.nodeAt(pos)
+            if (nodeAtPos && dispatch) {
+              const tr = state.tr.setNodeMarkup(pos, undefined, {
+                ...nodeAtPos.attrs,
+                align: clampAlign(align),
+              })
+              dispatch(tr)
+              return true
+            }
           }
 
           return false
         },
       updateImageAlt:
         (alt) =>
-        ({ state, commands, tr }) => {
+        ({ state, dispatch }) => {
           const { selection } = state
           const { $from } = selection
 
-          // Find the imageFigure node
+          // Find the imageFigure node position
           let pos: number | null = null
           for (let depth = $from.depth; depth >= 0; depth--) {
             const node = $from.node(depth)
@@ -302,16 +310,20 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
           }
 
           // Also check node selection
-          if (!pos && selection.node && selection.node.type.name === this.name) {
+          if (pos === null && selection.node && selection.node.type.name === this.name) {
             pos = selection.from
           }
 
           if (pos !== null) {
-            tr.setNodeMarkup(pos, undefined, {
-              ...state.doc.nodeAt(pos)?.attrs,
-              alt: alt || '',
-            })
-            return true
+            const nodeAtPos = state.doc.nodeAt(pos)
+            if (nodeAtPos && dispatch) {
+              const tr = state.tr.setNodeMarkup(pos, undefined, {
+                ...nodeAtPos.attrs,
+                alt: alt || '',
+              })
+              dispatch(tr)
+              return true
+            }
           }
 
           return false
