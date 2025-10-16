@@ -7,9 +7,12 @@ import {
   resetEditorBootstrapForTesting,
 } from '../../../src/frontend/editor/bootstrap'
 import * as toolbarModule from '../../../src/frontend/editor/toolbar'
+import { EDITOR_DATA_ATTRIBUTES } from '../../../src/editor/constants'
 
 const originalDocument = globalThis.document
 const originalMutationObserver = globalThis.MutationObserver
+
+const { root: DATA_ATTR_EDITOR_ROOT, profile: DATA_ATTR_EDITOR_PROFILE } = EDITOR_DATA_ATTRIBUTES
 
 class MutationObserverStub {
   static instances: MutationObserverStub[] = []
@@ -93,18 +96,21 @@ const createRoot = (profile?: string) => {
       dataset: {},
       nodeType: 1,
       querySelectorAll: vi.fn(() => [] as HTMLElement[]),
-      matches: (selector: string) => selector === '[data-editor]',
+      matches: (selector: string) => selector === DATA_ATTR_EDITOR_ROOT.selector,
     } as unknown as HTMLElement)
   if (typeof element.setAttribute === 'function') {
-    element.setAttribute('data-editor', '')
+    element.setAttribute(DATA_ATTR_EDITOR_ROOT.attr, '')
   } else {
-    ;(element as any).dataset = { ...(element as any).dataset, editor: '' }
+    ;(element as any).dataset = {
+      ...(element as any).dataset,
+      [DATA_ATTR_EDITOR_ROOT.dataset]: '',
+    }
   }
   if (profile) {
     ;(element as any).dataset ??= {}
-    element.dataset.editorProfile = profile
+    element.dataset[DATA_ATTR_EDITOR_PROFILE.dataset] = profile
   } else if ((element as any).dataset) {
-    delete element.dataset.editorProfile
+    delete element.dataset[DATA_ATTR_EDITOR_PROFILE.dataset]
   }
   element.id = element.id || `editor_${Math.random().toString(36).slice(2)}`
   return element

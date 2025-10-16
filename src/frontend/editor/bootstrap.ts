@@ -1,4 +1,9 @@
 import type { EditorFactory, EditorInstance, EditorProfile } from './types'
+import {
+  DEFAULT_EDITOR_PROFILE,
+  EDITOR_DATA_ATTRIBUTES,
+  resolveEditorProfile,
+} from '../../editor/constants'
 import { readInitialContent } from './content'
 import { registerDefaultEditorProfiles } from './factory'
 import {
@@ -13,14 +18,17 @@ import {
   unregisterToolbarForEditor,
 } from './toolbar'
 
-const DEFAULT_PROFILE: EditorProfile = 'basic'
-
 // [D3:editor-tiptap.step-01:registry] Track registered profile factories and mount states.
 const profileFactories = new Map<EditorProfile, EditorFactory>()
 let mountedEditors = new WeakMap<HTMLElement, MountEntry>()
 let domReadyListenerAttached = false
-const EDITOR_SELECTOR = '[data-editor]'
-const FORM_SELECTOR = 'form[data-editor-form]'
+const {
+  root: DATA_ATTR_EDITOR_ROOT,
+  form: DATA_ATTR_EDITOR_FORM,
+  profile: DATA_ATTR_EDITOR_PROFILE,
+} = EDITOR_DATA_ATTRIBUTES
+const EDITOR_SELECTOR = DATA_ATTR_EDITOR_ROOT.selector
+const FORM_SELECTOR = `form${DATA_ATTR_EDITOR_FORM.selector}`
 let lifecycleListenersAttached = false
 let mutationObserver: MutationObserver | null = null
 let scheduledInitializer = false
@@ -44,12 +52,12 @@ function isHTMLElement(value: unknown): value is HTMLElement {
   return value instanceof HTMLElement
 }
 
-function hasDatasetFlag(node: unknown, key: 'editor' | 'editorForm'): boolean {
+function hasDatasetFlag(node: unknown, datasetKey: string): boolean {
   const dataset = (node as any)?.dataset
   if (!dataset || typeof dataset !== 'object') {
     return false
   }
-  return key in dataset
+  return datasetKey in dataset
 }
 
 function asEventTargetElement(value: unknown): HTMLElement | null {
@@ -70,7 +78,10 @@ function nodeHasEditorOrForm(candidate: HTMLElement): boolean {
     }
   }
 
-  if (hasDatasetFlag(candidate, 'editor') || hasDatasetFlag(candidate, 'editorForm')) {
+  if (
+    hasDatasetFlag(candidate, DATA_ATTR_EDITOR_ROOT.dataset) ||
+    hasDatasetFlag(candidate, DATA_ATTR_EDITOR_FORM.dataset)
+  ) {
     return true
   }
 
@@ -91,7 +102,7 @@ function collectEditorRoots(node: Node | null | undefined, bucket: Set<HTMLEleme
   if (isHTMLElement(node)) {
     const isEditorNode =
       (typeof node.matches === 'function' && node.matches(EDITOR_SELECTOR)) ||
-      hasDatasetFlag(node, 'editor')
+      hasDatasetFlag(node, DATA_ATTR_EDITOR_ROOT.dataset)
     if (isEditorNode) {
       bucket.add(node)
     }
@@ -235,8 +246,11 @@ function setupLifecycleListeners(): void {
   }
 }
 function readProfile(root: HTMLElement): EditorProfile {
-  const value = root.dataset.editorProfile
-  return (value as EditorProfile) || DEFAULT_PROFILE
+  const value = root.dataset[DATA_ATTR_EDITOR_PROFILE.dataset]
+  if (value) {
+    return resolveEditorProfile(value)
+  }
+  return DEFAULT_EDITOR_PROFILE
 }
 
 function mountEditor(root: HTMLElement): Promise<void> {

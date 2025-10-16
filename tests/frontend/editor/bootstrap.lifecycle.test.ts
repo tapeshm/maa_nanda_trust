@@ -6,6 +6,7 @@ import {
   resetEditorBootstrapForTesting,
   getMountedEditorsForTesting,
 } from '../../../src/frontend/editor/bootstrap'
+import { EDITOR_DATA_ATTRIBUTES } from '../../../src/editor/constants'
 
 const originalDocument = globalThis.document
 const originalMutationObserver = globalThis.MutationObserver
@@ -65,14 +66,16 @@ const createEventTargetStub = (): EventTargetStub => {
   return { listeners, addEventListener, removeEventListener, dispatch, target: element }
 }
 
+const { root: DATA_ATTR_EDITOR_ROOT, profile: DATA_ATTR_EDITOR_PROFILE } = EDITOR_DATA_ATTRIBUTES
+
 const createRoot = (profile?: string) => {
   const element = document.createElement('div')
-  element.setAttribute('data-editor', '')
+  element.setAttribute(DATA_ATTR_EDITOR_ROOT.attr, '')
   element.id = `editor_${Math.random().toString(36).slice(2)}`
   if (profile) {
-    element.dataset.editorProfile = profile
+    element.dataset[DATA_ATTR_EDITOR_PROFILE.dataset] = profile
   } else {
-    delete element.dataset.editorProfile
+    delete element.dataset[DATA_ATTR_EDITOR_PROFILE.dataset]
   }
   return element
 }

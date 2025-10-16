@@ -1,10 +1,15 @@
 /* [D3:editor-tiptap.step-11:content-prose-namespace] Namespaced Tailwind Typography for content */
 
+@import 'tailwindcss';
+
 /* CSS custom properties for editor chrome theming */
 :root {
-  --editor-bg: #ffffff;
-  --editor-border: #e5e7eb;
-  --editor-focus: #93c5fd;
+  /* --editor-bg: #ffffff; */
+  /* --editor-border: #e5e7eb; */
+  /* --editor-focus: #93c5fd; */
+  --editor-bg: theme(colors.gray.50);
+  --editor-border: theme(colors.gray.400);
+  --editor-focus: theme(colors.blue.100);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +26,7 @@
   @apply prose prose-sm sm:prose-base lg:prose-lg xl:prose-2xl;
   @apply prose-zinc dark:prose-invert;
   @apply max-w-none;
+  @apply flow-root;
 }
 
 /* Editor-specific content area styling */
@@ -56,40 +62,43 @@
     }
   }
 
-  /* [D3:editor-tiptap.step-14:image-figure-sizes] Size classes for imageFigure nodes */
+  /* [D3:editor-tiptap.step-15:image-figure-sizing] Figure width is controlled via CSS variable */
   .editor-figure {
-    --editor-image-width: 100%;
+    --editor-figure-width: 100%;
+    --editor-figure-gutter: 1.5rem;
+    --editor-figure-marker-offset: 1.5em;
+    width: min(100%, var(--editor-figure-width));
     margin: 1.5rem auto;
   }
 
   .editor-figure .editor-image {
     display: block;
+    width: 100%;
     height: auto;
-    max-width: 100%;
-    width: var(--editor-image-width);
   }
 
   .editor-figure--size-s {
-    --editor-image-width: 33.333%;
+    --editor-figure-width: 33.333%;
   }
 
   .editor-figure--size-m {
-    --editor-image-width: 50%;
+    --editor-figure-width: 50%;
   }
 
   .editor-figure--size-l {
-    --editor-image-width: 75%;
+    --editor-figure-width: 75%;
   }
 
   .editor-figure--size-xl {
-    --editor-image-width: 100%;
+    --editor-figure-width: 100%;
   }
 
   /* [D3:editor-tiptap.step-15:image-figure-alignment] Alignment with text flow using float */
   .editor-figure--align-left {
     float: left;
-    margin-right: 1.5rem;
+    margin-right: calc(var(--editor-figure-gutter) + var(--editor-figure-marker-offset));
     margin-bottom: 1rem;
+    width: min(var(--editor-figure-width), 50%);
     max-width: 50%;
   }
 
@@ -101,9 +110,17 @@
 
   .editor-figure--align-right {
     float: right;
-    margin-left: 1.5rem;
+    margin-left: calc(var(--editor-figure-gutter) + var(--editor-figure-marker-offset));
     margin-bottom: 1rem;
+    width: min(var(--editor-figure-width), 50%);
     max-width: 50%;
+  }
+
+  .editor-figure--wrap-break {
+    float: none !important;
+    width: 100% !important;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .editor-figcaption {
@@ -116,6 +133,36 @@
   @media (prefers-color-scheme: dark) {
     .editor-figcaption {
       color: #9ca3af;
+    }
+  }
+
+  .editor-figure--wrap-break + * {
+    clear: both;
+  }
+
+  @media (min-width: 769px) {
+    .content-prose.prose :where(ol, ul) {
+      padding-inline-start: 2rem;
+    }
+
+    :where(.editor-figure--align-left),
+    :where(.editor-figure--align-right) {
+      --editor-figure-marker-offset: 1.75em;
+    }
+
+    :where(.editor-figure--align-left) ~ :where(ol, ul),
+    :where(.editor-figure--align-right) ~ :where(ol, ul) {
+      padding-inline-start: 2.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .editor-figure {
+      float: none;
+      margin-left: auto;
+      margin-right: auto;
+      --editor-figure-width: 100%;
+      width: 100%;
     }
   }
 }

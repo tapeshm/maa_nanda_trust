@@ -1,7 +1,7 @@
 // [D3:editor-tiptap.step-01:types] Shared editor type definitions.
 import type { Editor, JSONContent as TiptapJSONContent } from '@tiptap/core'
-
-export type EditorProfile = 'basic' | 'full'
+import type { EditorProfile } from '../../editor/constants'
+export type { EditorProfile } from '../../editor/constants'
 
 // [D3:editor-tiptap.step-06:editor-instance] Expose the full Tiptap editor API for toolbar interactions.
 export type EditorInstance = Editor

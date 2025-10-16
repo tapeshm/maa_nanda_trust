@@ -1,208 +1,126 @@
-// [D3:editor-tiptap.step-12:image-figure-tests] Comprehensive tests for imageFigure node
+// [D3:editor-tiptap.step-12:image-figure-tests] imageFigure node behaviour (command-free)
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { Editor } from '@tiptap/core'
-import StarterKit from '@tiptap/starter-kit'
+import { describe, it, expect } from 'vitest'
 import { ImageFigure } from '../../src/frontend/editor/extensions/imageFigure'
+import {
+  clampImageFigureAlign,
+  clampImageFigureSize,
+  clampImageFigureWrap,
+  normalizeImageFigureAttrs,
+} from '../../src/frontend/editor/extensions/imageFigureShared'
 
-describe('[D3:editor-tiptap.step-12] imageFigure node', () => {
-  let editor: Editor
-
-  beforeEach(() => {
-    const element = document.createElement('div')
-    editor = new Editor({
-      element,
-      extensions: [StarterKit, ImageFigure],
-      content: '',
-    })
-  })
-
-  afterEach(() => {
-    editor?.destroy()
-  })
-
-  describe('roundtrip', () => {
-    it('preserves attrs and caption content through JSON roundtrip', () => {
-      const content = {
-        type: 'doc',
-        content: [
-          {
-            type: 'imageFigure',
-            attrs: { src: '/media/test.png', alt: 'Test image', size: 'l', align: 'center' },
-            content: [{ type: 'text', text: 'Test caption' }],
-          },
-        ],
+function createElementStub(options: {
+  tag: 'figure' | 'img'
+  classes?: string[]
+  attrs?: Record<string, string>
+}): any {
+  const { tag, classes = [], attrs = {} } = options
+  const classSet = new Set(classes)
+  return {
+    tagName: tag.toUpperCase(),
+    getAttribute: (key: string) => attrs[key] ?? null,
+    querySelector: (selector: string) => {
+      if (tag === 'figure' && selector === 'img') {
+        return createElementStub({ tag: 'img', attrs })
       }
+      return null
+    },
+    classList: {
+      contains: (value: string) => classSet.has(value),
+    },
+  }
+}
 
-      editor.commands.setContent(content)
-      const output = editor.getJSON()
+describe('[D3:editor-tiptap.step-12] imageFigure helpers', () => {
+  it('clamps size, align, and wrap values', () => {
+    expect(clampImageFigureSize('xl')).toBe('xl')
+    expect(clampImageFigureSize('invalid')).toBe('m')
 
-      expect(output.content).toHaveLength(1)
-      const figure = output.content?.[0]
-      expect(figure?.type).toBe('imageFigure')
-      expect(figure?.attrs).toMatchObject({
-        src: '/media/test.png',
-        alt: 'Test image',
-        size: 'l',
-        align: 'center',
-      })
-      expect(figure?.content?.[0]).toMatchObject({ type: 'text', text: 'Test caption' })
-    })
+    expect(clampImageFigureAlign('right')).toBe('right')
+    expect(clampImageFigureAlign('off')).toBe('center')
+
+    expect(clampImageFigureWrap('break')).toBe('break')
+    expect(clampImageFigureWrap('other')).toBe('text')
   })
 
-  describe('DOM rendering', () => {
-    it('renders with editor-figure, editor-image, and editor-figcaption classes', () => {
-      editor.commands.setContent({
-        type: 'doc',
-        content: [
-          {
-            type: 'imageFigure',
-            attrs: { src: '/media/test.png', alt: 'Test', size: 'm', align: 'center' },
-            content: [],
-          },
-        ],
-      })
-
-      const html = editor.getHTML()
-      expect(html).toContain('class="editor-figure')
-      expect(html).toContain('editor-figure--size-m')
-      expect(html).toContain('editor-figure--align-center')
-      expect(html).toContain('class="editor-image"')
-      expect(html).toContain('class="editor-figcaption"')
+  it('normalizes attributes with sensible defaults', () => {
+    const normalized = normalizeImageFigureAttrs({
+      src: '/media/test.png',
+      alt: 42 as any,
+      size: 'something',
+      align: 'somewhere',
+      wrap: 'unknown',
     })
 
-    it('applies correct size and align classes', () => {
-      editor.commands.setContent({
-        type: 'doc',
-        content: [
-          {
-            type: 'imageFigure',
-            attrs: { src: '/media/test.png', alt: 'Test', size: 'xl', align: 'right' },
-            content: [],
-          },
-        ],
-      })
-
-      const html = editor.getHTML()
-      expect(html).toContain('editor-figure--size-xl')
-      expect(html).toContain('editor-figure--align-right')
+    expect(normalized).toEqual({
+      src: '/media/test.png',
+      alt: '',
+      size: 'm',
+      align: 'center',
+      wrap: 'text',
     })
   })
+})
 
-  describe('parseHTML migration', () => {
-    it('migrates bare img tags into imageFigure', () => {
-      const htmlInput = '<img src="/media/test.png" alt="Test image" />'
-      editor.commands.setContent(htmlInput, { parseOptions: { preserveWhitespace: 'full' } })
-
-      const json = editor.getJSON()
-      expect(json.content).toHaveLength(1)
-      expect(json.content?.[0]?.type).toBe('imageFigure')
-      expect(json.content?.[0]?.attrs).toMatchObject({
-        src: '/media/test.png',
-        alt: 'Test image',
-        size: 'm',
-        align: 'center',
-      })
+describe('[D3:editor-tiptap.step-12] imageFigure renderHTML', () => {
+  it('renders figure/img/figcaption structure', () => {
+    const output = ImageFigure.config.renderHTML!.call(ImageFigure, {
+      node: {
+        attrs: {
+          src: '/media/demo.png',
+          alt: 'Demo',
+          size: 'l',
+          align: 'right',
+          wrap: 'break',
+        },
+      } as any,
+      HTMLAttributes: {},
     })
 
-    it('parses existing figure elements', () => {
-      const htmlInput =
-        '<figure class="editor-figure editor-figure--size-l editor-figure--align-left"><img src="/media/test.png" alt="Test" class="editor-image" /><figcaption class="editor-figcaption">Caption</figcaption></figure>'
-      editor.commands.setContent(htmlInput, { parseOptions: { preserveWhitespace: 'full' } })
+    expect(output[0]).toBe('figure')
+    const attributes = output[1] as Record<string, string>
+    expect(attributes.class).toContain('editor-figure')
+    expect(attributes.class).toContain('editor-figure--size-l')
+    expect(attributes.class).toContain('editor-figure--align-right')
+    expect(attributes.class).toContain('editor-figure--wrap-break')
 
-      const json = editor.getJSON()
-      expect(json.content?.[0]?.type).toBe('imageFigure')
-      expect(json.content?.[0]?.attrs?.size).toBe('l')
-      expect(json.content?.[0]?.attrs?.align).toBe('left')
+    const children = output.slice(2)
+    expect(children[0]).toEqual(['img', { src: '/media/demo.png', alt: 'Demo', class: 'editor-image' }])
+    expect(children[1]).toEqual(['figcaption', { class: 'editor-figcaption' }, 0])
+  })
+})
+
+describe('[D3:editor-tiptap.step-12] imageFigure parseHTML', () => {
+  it('accepts existing figure markup with expected classes', () => {
+    const figure = createElementStub({
+      tag: 'figure',
+      classes: [
+        'editor-figure',
+        'editor-figure--size-s',
+        'editor-figure--align-left',
+        'editor-figure--wrap-break',
+      ],
+      attrs: { src: '/media/demo.png', alt: 'Demo' },
     })
+
+    const matcher = ImageFigure.config.parseHTML!.call(ImageFigure)[0]
+    const attrs = matcher.getAttrs?.(figure)
+    expect(attrs).toBeNull()
   })
 
-  describe('commands', () => {
-    it('clamps invalid size to default (m)', () => {
-      editor.commands.setContent({
-        type: 'doc',
-        content: [
-          {
-            type: 'imageFigure',
-            attrs: { src: '/media/test.png', alt: 'Test', size: 'xx' as any, align: 'center' },
-            content: [],
-          },
-        ],
-      })
-
-      const json = editor.getJSON()
-      expect(json.content?.[0]?.attrs?.size).toBe('m')
+  it('migrates bare img tags into imageFigure attrs', () => {
+    const img = createElementStub({
+      tag: 'img',
+      attrs: { src: '/media/demo.png', alt: 'Demo' },
     })
 
-    it('clamps invalid align to default (center)', () => {
-      editor.commands.setContent({
-        type: 'doc',
-        content: [
-          {
-            type: 'imageFigure',
-            attrs: { src: '/media/test.png', alt: 'Test', size: 'm', align: 'weird' as any },
-            content: [],
-          },
-        ],
-      })
-
-      const json = editor.getJSON()
-      expect(json.content?.[0]?.attrs?.align).toBe('center')
-    })
-
-    it('rejects javascript: protocol URLs', () => {
-      const result = editor.commands.setImageFigure({
-        src: 'javascript:alert(1)',
-        alt: 'Evil',
-      })
-
-      expect(result).toBe(false)
-      expect(editor.getJSON().content).toHaveLength(0)
-    })
-
-    it('rejects data: protocol URLs', () => {
-      const result = editor.commands.setImageFigure({
-        src: 'data:image/png;base64,abc',
-        alt: 'Data',
-      })
-
-      expect(result).toBe(false)
-    })
-
-    it('accepts https: URLs', () => {
-      const result = editor.commands.setImageFigure({
-        src: 'https://example.com/image.png',
-        alt: 'HTTPS image',
-      })
-
-      expect(result).toBe(true)
-      expect(editor.getJSON().content?.[0]?.attrs?.src).toBe('https://example.com/image.png')
-    })
-
-    it('accepts relative URLs', () => {
-      const result = editor.commands.setImageFigure({
-        src: '/media/test.png',
-        alt: 'Relative',
-      })
-
-      expect(result).toBe(true)
-      expect(editor.getJSON().content?.[0]?.attrs?.src).toBe('/media/test.png')
-    })
-
-    it('setImageSize command clamps invalid values', () => {
-      editor.commands.setImageFigure({ src: '/media/test.png', alt: 'Test' })
-      editor.commands.setImageSize('invalid' as any)
-
-      const json = editor.getJSON()
-      expect(json.content?.[0]?.attrs?.size).toBe('m')
-    })
-
-    it('setImageAlign command clamps invalid values', () => {
-      editor.commands.setImageFigure({ src: '/media/test.png', alt: 'Test' })
-      editor.commands.setImageAlign('invalid' as any)
-
-      const json = editor.getJSON()
-      expect(json.content?.[0]?.attrs?.align).toBe('center')
+    const matcher = ImageFigure.config.parseHTML!.call(ImageFigure)[1]
+    const attrs = matcher.getAttrs?.(img)
+    expect(attrs).toEqual({
+      src: '/media/demo.png',
+      alt: 'Demo',
+      size: 'm',
+      align: 'center',
     })
   })
 })

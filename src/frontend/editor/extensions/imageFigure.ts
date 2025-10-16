@@ -1,17 +1,21 @@
-// [D3:editor-tiptap.step-12:image-figure-node] Accessible image node with controlled attributes
-
 import { Node, mergeAttributes } from '@tiptap/core'
+
+// [D3:editor-tiptap.step-12:image-figure-node] Accessible image node with controlled attributes
 
 export interface ImageFigureOptions {
   HTMLAttributes: Record<string, any>
 }
 
-export interface ImageFigureAttrs {
-  src: string
-  alt: string
-  size: 's' | 'm' | 'l' | 'xl'
-  align: 'left' | 'center' | 'right'
-}
+import {
+  clampImageFigureAlign,
+  clampImageFigureSize,
+  clampImageFigureWrap,
+  findImageFigureSelection,
+  normalizeImageFigureAttrs,
+  type ImageFigureAttrs,
+} from './imageFigureShared'
+import type { EditorState, Transaction } from '@tiptap/pm/state'
+import { EDITOR_OPTIONAL_IMAGE_NODE } from '../../../editor/constants'
 
 // [D3:editor-tiptap.step-12:url-validation] URL policy: allow https and relative, reject javascript/data
 function isAllowedImageSrc(src: string): boolean {
@@ -41,6 +45,7 @@ function isAllowedImageSrc(src: string): boolean {
   }
 
   // Allow http: URLs (for development)
+  // TODO: remove this in production
   if (lowerSrc.startsWith('http:')) {
     return true
   }
@@ -48,19 +53,22 @@ function isAllowedImageSrc(src: string): boolean {
   return false
 }
 
-// [D3:editor-tiptap.step-12:attr-clamping] Clamp invalid size/align to defaults
-function clampSize(size: unknown): ImageFigureAttrs['size'] {
-  if (size === 's' || size === 'm' || size === 'l' || size === 'xl') {
-    return size
+function updateImageFigureNode(
+  state: EditorState,
+  dispatch: ((tr: Transaction) => void) | undefined,
+  nodeName: string,
+  apply: (attrs: ImageFigureAttrs) => ImageFigureAttrs,
+): boolean {
+  const selectionInfo = findImageFigureSelection(state, nodeName)
+  if (!selectionInfo || !dispatch) {
+    return false
   }
-  return 'm'
-}
 
-function clampAlign(align: unknown): ImageFigureAttrs['align'] {
-  if (align === 'left' || align === 'center' || align === 'right') {
-    return align as ImageFigureAttrs['align']
-  }
-  return 'center'
+  const currentAttrs = normalizeImageFigureAttrs(selectionInfo.node.attrs)
+  const nextAttrs = apply(currentAttrs)
+  const tr = state.tr.setNodeMarkup(selectionInfo.pos, undefined, nextAttrs)
+  dispatch(tr)
+  return true
 }
 
 declare module '@tiptap/core' {
@@ -70,13 +78,14 @@ declare module '@tiptap/core' {
       setImageSize: (size: ImageFigureAttrs['size']) => ReturnType
       setImageAlign: (align: ImageFigureAttrs['align']) => ReturnType
       updateImageAlt: (alt: string) => ReturnType
+      setImageWrap: (wrap: ImageFigureAttrs['wrap']) => ReturnType
     }
   }
 }
 
 // [D3:editor-tiptap.step-12:image-figure-extension] Custom Tiptap node for accessible images
 export const ImageFigure = Node.create<ImageFigureOptions>({
-  name: 'imageFigure',
+  name: EDITOR_OPTIONAL_IMAGE_NODE.name,
 
   group: 'block',
 
@@ -124,7 +133,7 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
           return 'm'
         },
         renderHTML: (attributes) => {
-          return { 'data-size': clampSize(attributes.size) }
+          return { 'data-size': clampImageFigureSize(attributes.size) }
         },
       },
       align: {
@@ -137,8 +146,14 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
           return 'center'
         },
         renderHTML: (attributes) => {
-          return { 'data-align': clampAlign(attributes.align) }
+          return { 'data-align': clampImageFigureAlign(attributes.align) }
         },
+      },
+      wrap: {
+        default: 'text',
+        parseHTML: (element) =>
+          element.classList.contains('editor-figure--wrap-break') ? 'break' : 'text',
+        renderHTML: (attributes) => ({ 'data-wrap': clampImageFigureWrap(attributes.wrap) }),
       },
     }
   },
@@ -179,20 +194,23 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
 
   // [D3:editor-tiptap.step-12:render-html] Render figure with img + figcaption
   renderHTML({ node, HTMLAttributes }) {
-    const { src, alt, size, align } = node.attrs as ImageFigureAttrs
+    const { src, alt, size, align, wrap } = node.attrs as ImageFigureAttrs
 
     if (!src || !isAllowedImageSrc(src)) {
       return ['figure', { class: 'editor-figure' }, ['p', 'Invalid image']]
     }
 
-    const sizeClass = `editor-figure--size-${clampSize(size)}`
-    const alignClass = `editor-figure--align-${clampAlign(align)}`
+    const normalized = normalizeImageFigureAttrs({ src, alt, size, align, wrap })
+    const sizeClass = `editor-figure--size-${normalized.size}`
+    const alignClass = `editor-figure--align-${normalized.align}`
+    const wrapClass =
+      normalized.wrap === 'break' ? 'editor-figure--wrap-break' : 'editor-figure--wrap-text'
 
     return [
       'figure',
       mergeAttributes(
         {
-          class: `editor-figure ${sizeClass} ${alignClass}`,
+          class: `editor-figure ${sizeClass} ${alignClass} ${wrapClass}`,
         },
         this.options.HTMLAttributes,
         HTMLAttributes,
@@ -207,127 +225,57 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
     return {
       setImageFigure:
         (attrs) =>
-        ({ commands }) => {
-          const src = attrs.src || ''
-          if (!isAllowedImageSrc(src)) {
-            return false
-          }
+          ({ commands }) => {
+            const src = attrs.src || ''
+            if (!isAllowedImageSrc(src)) {
+              return false
+            }
 
-          return commands.insertContent({
-            type: this.name,
-            attrs: {
+            const normalized = normalizeImageFigureAttrs({
+              ...attrs,
               src,
               alt: attrs.alt || '',
-              size: clampSize(attrs.size),
-              align: clampAlign(attrs.align),
-            },
-          })
-        },
+            })
+
+            return commands.insertContent({
+              type: this.name,
+              attrs: {
+                ...normalized,
+              },
+            })
+          },
       setImageSize:
         (size) =>
-        ({ state, dispatch }) => {
-          const { selection } = state
-          const { $from } = selection
-
-          // Find the imageFigure node position
-          let pos: number | null = null
-          for (let depth = $from.depth; depth >= 0; depth--) {
-            const node = $from.node(depth)
-            if (node?.type.name === this.name) {
-              pos = $from.before(depth)
-              break
-            }
-          }
-
-          // Also check node selection
-          if (pos === null && selection.node && selection.node.type.name === this.name) {
-            pos = selection.from
-          }
-
-          if (pos !== null) {
-            const nodeAtPos = state.doc.nodeAt(pos)
-            if (nodeAtPos && dispatch) {
-              const tr = state.tr.setNodeMarkup(pos, undefined, {
-                ...nodeAtPos.attrs,
-                size: clampSize(size),
-              })
-              dispatch(tr)
-              return true
-            }
-          }
-
-          return false
-        },
+          ({ state, dispatch }) => {
+            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+              ...attrs,
+              size: clampImageFigureSize(size),
+            }))
+          },
       setImageAlign:
         (align) =>
-        ({ state, dispatch }) => {
-          const { selection } = state
-          const { $from } = selection
-
-          // Find the imageFigure node position
-          let pos: number | null = null
-          for (let depth = $from.depth; depth >= 0; depth--) {
-            const node = $from.node(depth)
-            if (node?.type.name === this.name) {
-              pos = $from.before(depth)
-              break
-            }
-          }
-
-          // Also check node selection
-          if (pos === null && selection.node && selection.node.type.name === this.name) {
-            pos = selection.from
-          }
-
-          if (pos !== null) {
-            const nodeAtPos = state.doc.nodeAt(pos)
-            if (nodeAtPos && dispatch) {
-              const tr = state.tr.setNodeMarkup(pos, undefined, {
-                ...nodeAtPos.attrs,
-                align: clampAlign(align),
-              })
-              dispatch(tr)
-              return true
-            }
-          }
-
-          return false
-        },
+          ({ state, dispatch }) => {
+            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+              ...attrs,
+              align: clampImageFigureAlign(align),
+            }))
+          },
       updateImageAlt:
         (alt) =>
-        ({ state, dispatch }) => {
-          const { selection } = state
-          const { $from } = selection
-
-          // Find the imageFigure node position
-          let pos: number | null = null
-          for (let depth = $from.depth; depth >= 0; depth--) {
-            const node = $from.node(depth)
-            if (node?.type.name === this.name) {
-              pos = $from.before(depth)
-              break
-            }
-          }
-
-          // Also check node selection
-          if (pos === null && selection.node && selection.node.type.name === this.name) {
-            pos = selection.from
-          }
-
-          if (pos !== null) {
-            const nodeAtPos = state.doc.nodeAt(pos)
-            if (nodeAtPos && dispatch) {
-              const tr = state.tr.setNodeMarkup(pos, undefined, {
-                ...nodeAtPos.attrs,
-                alt: alt || '',
-              })
-              dispatch(tr)
-              return true
-            }
-          }
-
-          return false
-        },
+          ({ state, dispatch }) => {
+            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+              ...attrs,
+              alt: alt || '',
+            }))
+          },
+      setImageWrap:
+        (wrap) =>
+          ({ state, dispatch }) => {
+            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+              ...attrs,
+              wrap: clampImageFigureWrap(wrap),
+            }))
+          },
     }
   },
 })

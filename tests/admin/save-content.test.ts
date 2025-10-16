@@ -71,6 +71,44 @@ describe('admin save content route', () => {
     expect(updated.results?.[0]?.content_html).toContain('<p>')
   })
 
+  it('accepts imageFigure nodes for full profile', async () => {
+    authState.authenticated = true
+    authState.roles = ['admin']
+    const env = createEnv()
+    const content = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'intro' }],
+        },
+        {
+          type: 'imageFigure',
+          attrs: {
+            src: '/media/example.jpg',
+            alt: 'Example image',
+            size: 'm',
+            align: 'left',
+            wrap: 'text',
+          },
+          content: [{ type: 'text', text: 'Caption text' }],
+        },
+      ],
+    }
+    const request = buildRequest({ slug: 'demo', documentId: 'img-doc', content })
+    const res = await app.fetch(request, env as any)
+    expect(res.status).toBe(200)
+    const payload = await res.json()
+    expect(payload.ok).toBe(true)
+
+    const stored = await baseEnv.DB.prepare(
+      'SELECT content_json FROM editor_documents WHERE slug = ? AND document_id = ? LIMIT 1',
+    )
+      .bind('demo', 'img-doc')
+      .all<{ content_json: string }>()
+    expect(stored.results?.[0]?.content_json).toContain('imageFigure')
+  })
+
   it('returns JSON payload suitable for HTMX responses', async () => {
     authState.authenticated = true
     authState.roles = ['admin']

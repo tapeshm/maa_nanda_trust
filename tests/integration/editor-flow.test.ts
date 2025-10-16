@@ -8,6 +8,7 @@ import {
   createIntegrationEnv,
   issueAdminToken,
 } from './editor.helpers'
+import { EDITOR_DATA_ATTRIBUTES } from '../../src/editor/constants'
 
 describe('editor end-to-end flow', () => {
   beforeEach(async () => {
@@ -66,7 +67,7 @@ describe('editor end-to-end flow', () => {
     }
 
     const adminHtml = await activeAdminResponse.text()
-    expect(adminHtml).toContain('data-editor')
+    expect(adminHtml).toContain(EDITOR_DATA_ATTRIBUTES.root.attr)
 
     const mountEvents = logSpy.mock.calls
       .map(([entry]) => entry)

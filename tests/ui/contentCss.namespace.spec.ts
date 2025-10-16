@@ -1,6 +1,7 @@
 // [D3:editor-tiptap.step-11:css-namespace-test] Verify content class namespace is consistent
 
 import { describe, expect, it } from 'vitest'
+import { env } from 'cloudflare:test'
 import { contentClass } from '../../src/frontend/editor/ui/content'
 import { PROSE_BASE, PUBLIC_CONTENT_WRAPPER_CLASSNAME } from '../../src/frontend/editor/styles'
 
@@ -21,5 +22,12 @@ describe('[D3:editor-tiptap.step-11] content.css namespace', () => {
     // The namespace ensures prose styles are scoped and won't leak globally
     // CSS rules will be defined as .content-prose.prose { ... } preventing
     // accidental application of prose styles to non-content elements
+  })
+
+  it('content.css contains flow-root to contain floats', async () => {
+    const request = new Request('https://example.com/assets/app.css')
+    const response = await env.STATIC_ASSETS.fetch(request)
+    const css = await response.text()
+    expect(css).toMatch(/\.content-prose\.prose[\s\S]*flow-root/)
   })
 })

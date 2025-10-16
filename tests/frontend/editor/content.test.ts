@@ -5,6 +5,7 @@ import {
   registerEditorProfile,
   resetEditorBootstrapForTesting,
 } from '../../../src/frontend/editor/bootstrap'
+import { EDITOR_DATA_ATTRIBUTES } from '../../../src/editor/constants'
 
 type DocumentStub = {
   readyState: DocumentReadyState
@@ -14,6 +15,8 @@ type DocumentStub = {
 }
 
 const originalDocument = globalThis.document
+const { profile: DATA_ATTR_EDITOR_PROFILE } = EDITOR_DATA_ATTRIBUTES
+const DATASET_KEY_EDITOR_PROFILE = DATA_ATTR_EDITOR_PROFILE.dataset
 
 const flushMicrotasks = async () => {
   await Promise.resolve()
@@ -21,7 +24,10 @@ const flushMicrotasks = async () => {
 }
 
 const createRoot = (id: string, profile?: string) =>
-  ({ id, dataset: profile ? { editorProfile: profile } : {} }) as unknown as HTMLElement
+  ({
+    id,
+    dataset: profile ? { [DATASET_KEY_EDITOR_PROFILE]: profile } : ({} as Record<string, string>),
+  }) as unknown as HTMLElement
 
 const createPayloadScript = (json: unknown) =>
   ({

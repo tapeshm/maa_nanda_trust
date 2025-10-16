@@ -1,21 +1,53 @@
-import { MENUBAR_BUTTON_ACTIVE_CLASSNAME } from './styles'
+import { MENUBAR_BUTTON_ACTIVE_TOKENS } from './styles'
 import type { EditorInstance, EditorProfile } from './types'
 import { attachImagePanelHandlers } from './ui/ImagePanel'
+import { EDITOR_DATA_ATTRIBUTES, isFullEditorProfile } from '../../editor/constants'
 
-const ACTIVE_CLASSES = MENUBAR_BUTTON_ACTIVE_CLASSNAME.split(/\s+/).filter(Boolean)
+const ACTIVE_CLASSES = MENUBAR_BUTTON_ACTIVE_TOKENS
 const toolbarRegistry = new Map<HTMLElement, () => void>()
 const imagePanelRegistry = new Map<HTMLElement, () => void>()
 
-export type CommandName =
-  | 'bold'
-  | 'italic'
-  | 'heading-2'
-  | 'heading-3'
-  | 'bullet-list'
-  | 'ordered-list'
-  | 'image'
+const TOOLBAR_COMMANDS = {
+  BOLD: 'bold',
+  ITALIC: 'italic',
+  HEADING_2: 'heading-2',
+  HEADING_3: 'heading-3',
+  BLOCKQUOTE: 'blockquote',
+  BULLET_LIST: 'bullet-list',
+  ORDERED_LIST: 'ordered-list',
+  SECTION_BREAK: 'section-break',
+  IMAGE: 'image',
+} as const
+
+const NON_IMAGE_COMMANDS = [
+  TOOLBAR_COMMANDS.BOLD,
+  TOOLBAR_COMMANDS.ITALIC,
+  TOOLBAR_COMMANDS.HEADING_2,
+  TOOLBAR_COMMANDS.HEADING_3,
+  TOOLBAR_COMMANDS.BLOCKQUOTE,
+  TOOLBAR_COMMANDS.BULLET_LIST,
+  TOOLBAR_COMMANDS.ORDERED_LIST,
+  TOOLBAR_COMMANDS.SECTION_BREAK,
+] as const
+
+export type NonImageCommand = (typeof NON_IMAGE_COMMANDS)[number]
+export type CommandName = NonImageCommand | typeof TOOLBAR_COMMANDS.IMAGE
+const IMAGE_COMMAND = TOOLBAR_COMMANDS.IMAGE
+const TOOLBAR_COMMAND_SET: ReadonlySet<CommandName> = new Set<CommandName>([
+  ...NON_IMAGE_COMMANDS,
+  IMAGE_COMMAND,
+])
+
+const {
+  toolbarId: DATA_ATTR_TOOLBAR_ID,
+  imageInputId: DATA_ATTR_IMAGE_INPUT_ID,
+  imageAltId: DATA_ATTR_IMAGE_ALT_ID,
+  imagePanelId: DATA_ATTR_IMAGE_PANEL_ID,
+  command: DATA_ATTR_COMMAND,
+} = EDITOR_DATA_ATTRIBUTES
 
 type ButtonHandler = (event: Event) => void
+type CommandHandler = (editor: EditorInstance) => boolean
 
 function setActiveState(button: HTMLButtonElement, active: boolean) {
   button.setAttribute('aria-pressed', active ? 'true' : 'false')
@@ -29,64 +61,85 @@ function setActiveState(button: HTMLButtonElement, active: boolean) {
   })
 }
 
-function canRunCommand(editor: EditorInstance, command: CommandName): boolean {
-  const chain = editor.can().chain().focus()
-  switch (command) {
-    case 'bold':
-      return chain.toggleBold().run()
-    case 'italic':
-      return chain.toggleItalic().run()
-    case 'heading-2':
-      return chain.toggleHeading({ level: 2 }).run()
-    case 'heading-3':
-      return chain.toggleHeading({ level: 3 }).run()
-    case 'bullet-list':
-      return chain.toggleBulletList().run()
-    case 'ordered-list':
-      return chain.toggleOrderedList().run()
-    case 'image':
-      return true
-    default:
-      return false
+function focusChain(editor: EditorInstance, forCanCheck: boolean) {
+  const chain = forCanCheck ? editor.can().chain() : editor.chain()
+  return chain.focus()
+}
+
+type CommandDescriptor = {
+  can: CommandHandler
+  run: CommandHandler
+  active: (editor: EditorInstance) => boolean
+}
+
+function createToggleCommand(
+  toggle: (chain: ReturnType<EditorInstance['chain']>) => ReturnType<EditorInstance['chain']>,
+  isActive: (editor: EditorInstance) => boolean,
+): CommandDescriptor {
+  const buildHandler =
+    (forCanCheck: boolean): CommandHandler =>
+      (editor) =>
+        toggle(focusChain(editor, forCanCheck)).run()
+
+  return {
+    can: buildHandler(true),
+    run: buildHandler(false),
+    active: isActive,
   }
 }
 
-function runCommand(editor: EditorInstance, command: CommandName): boolean {
-  const chain = editor.chain().focus()
-  switch (command) {
-    case 'bold':
-      return chain.toggleBold().run()
-    case 'italic':
-      return chain.toggleItalic().run()
-    case 'heading-2':
-      return chain.toggleHeading({ level: 2 }).run()
-    case 'heading-3':
-      return chain.toggleHeading({ level: 3 }).run()
-    case 'bullet-list':
-      return chain.toggleBulletList().run()
-    case 'ordered-list':
-      return chain.toggleOrderedList().run()
-    default:
-      return false
-  }
+const commandDescriptors: Record<NonImageCommand, CommandDescriptor> = {
+  [TOOLBAR_COMMANDS.BOLD]: createToggleCommand(
+    (chain) => chain.toggleBold(),
+    (editor) => editor.isActive('bold'),
+  ),
+  [TOOLBAR_COMMANDS.ITALIC]: createToggleCommand(
+    (chain) => chain.toggleItalic(),
+    (editor) => editor.isActive('italic'),
+  ),
+  [TOOLBAR_COMMANDS.HEADING_2]: createToggleCommand(
+    (chain) => chain.toggleHeading({ level: 2 }),
+    (editor) => editor.isActive('heading', { level: 2 }),
+  ),
+  [TOOLBAR_COMMANDS.HEADING_3]: createToggleCommand(
+    (chain) => chain.toggleHeading({ level: 3 }),
+    (editor) => editor.isActive('heading', { level: 3 }),
+  ),
+  [TOOLBAR_COMMANDS.BULLET_LIST]: createToggleCommand(
+    (chain) => chain.toggleBulletList(),
+    (editor) => editor.isActive('bulletList'),
+  ),
+  [TOOLBAR_COMMANDS.ORDERED_LIST]: createToggleCommand(
+    (chain) => chain.toggleOrderedList(),
+    (editor) => editor.isActive('orderedList'),
+  ),
+  [TOOLBAR_COMMANDS.BLOCKQUOTE]: createToggleCommand(
+    (chain) => chain.toggleBlockquote(),
+    (editor) => editor.isActive('blockquote'),
+  ),
+  [TOOLBAR_COMMANDS.SECTION_BREAK]: {
+    can: (editor) => focusChain(editor, true).setHorizontalRule().run(),
+    run: (editor) => focusChain(editor, false).setHorizontalRule().run(),
+    active: () => false,
+  },
 }
 
 function resolveToolbar(root: HTMLElement): HTMLElement | null {
-  const id = root.dataset.editorToolbarId
+  const id = root.dataset[DATA_ATTR_TOOLBAR_ID.dataset]
   if (!id) return null
   const doc = root.ownerDocument || document
   return doc.getElementById(id)
 }
 
 function resolveFileInput(root: HTMLElement): HTMLInputElement | null {
-  const id = root.dataset.editorImageInputId
+  const id = root.dataset[DATA_ATTR_IMAGE_INPUT_ID.dataset]
   if (!id) return null
   const doc = root.ownerDocument || document
   return doc.getElementById(id) as HTMLInputElement | null
 }
 
 function resolveAltInput(root: HTMLElement): HTMLInputElement | null {
-  const id = root.dataset.editorImageAltId
+  const id = root.dataset[DATA_ATTR_IMAGE_ALT_ID.dataset]
   if (!id) return null
   const doc = root.ownerDocument || document
   return doc.getElementById(id) as HTMLInputElement | null
@@ -94,50 +147,24 @@ function resolveAltInput(root: HTMLElement): HTMLInputElement | null {
 
 // [D3:editor-tiptap.step-14:resolve-image-panel] Resolve ImagePanel element by ID
 function resolveImagePanel(root: HTMLElement): HTMLElement | null {
-  const id = root.dataset.editorImagePanelId
+  const id = root.dataset[DATA_ATTR_IMAGE_PANEL_ID.dataset]
   if (!id) return null
   const doc = root.ownerDocument || document
   return doc.getElementById(id)
 }
 
 function gatherButtons(toolbar: HTMLElement): HTMLButtonElement[] {
-  return Array.from(toolbar.querySelectorAll<HTMLButtonElement>('[data-editor-command]'))
+  return Array.from(toolbar.querySelectorAll<HTMLButtonElement>(DATA_ATTR_COMMAND.selector))
+}
+
+function isToolbarCommand(value: string): value is CommandName {
+  return TOOLBAR_COMMAND_SET.has(value as CommandName)
 }
 
 function gatherCommand(button: HTMLButtonElement): CommandName | null {
-  const value = button.dataset.editorCommand
-  if (!value) return null
-  if (
-    value === 'bold' ||
-    value === 'italic' ||
-    value === 'heading-2' ||
-    value === 'heading-3' ||
-    value === 'bullet-list' ||
-    value === 'ordered-list' ||
-    value === 'image'
-  ) {
-    return value
-  }
-  return null
-}
-
-function activeStateFor(editor: EditorInstance, command: CommandName): boolean {
-  switch (command) {
-    case 'bold':
-      return editor.isActive('bold')
-    case 'italic':
-      return editor.isActive('italic')
-    case 'heading-2':
-      return editor.isActive('heading', { level: 2 })
-    case 'heading-3':
-      return editor.isActive('heading', { level: 3 })
-    case 'bullet-list':
-      return editor.isActive('bulletList')
-    case 'ordered-list':
-      return editor.isActive('orderedList')
-    default:
-      return false
-  }
+  const value = button.dataset[DATA_ATTR_COMMAND.dataset]
+  if (!value || !isToolbarCommand(value)) return null
+  return value
 }
 
 function findForm(root: HTMLElement): HTMLFormElement | null {
@@ -169,11 +196,12 @@ async function uploadImage(
 
   const alt = altInput?.value?.trim() ?? ''
   if (!alt) {
-    const proceed =
+    const confirmPrompt =
       typeof window !== 'undefined' && typeof window.confirm === 'function'
-        ? window.confirm('Insert image without alternative text?')
-        : true
-    if (!proceed) {
+        ? window.confirm
+        : null
+
+    if (confirmPrompt && !confirmPrompt('Insert image without alternative text?')) {
       fileInput.value = ''
       return
     }
@@ -234,16 +262,17 @@ function attachButtonHandlers(
         return
       }
 
-      if (command === 'image') {
-        const enabled = profile === 'full' && !!fileInput
+      if (command === IMAGE_COMMAND) {
+        const enabled = isFullEditorProfile(profile) && !!fileInput
         button.disabled = !enabled
         setActiveState(button, false)
         return
       }
 
-      const canRun = canRunCommand(editor, command)
+      const descriptor = commandDescriptors[command]
+      const canRun = descriptor.can(editor)
       button.disabled = !canRun
-      setActiveState(button, canRun && activeStateFor(editor, command))
+      setActiveState(button, canRun && descriptor.active(editor))
     })
   }
 
@@ -265,14 +294,15 @@ function attachButtonHandlers(
 
     const handler: ButtonHandler = async (event) => {
       event.preventDefault()
-      if (command === 'image') {
-        if (profile !== 'full' || !fileInput) {
+      if (command === IMAGE_COMMAND) {
+        if (!isFullEditorProfile(profile) || !fileInput) {
           return
         }
         fileInput.click()
         return
       }
-      runCommand(editor, command)
+      const descriptor = commandDescriptors[command]
+      descriptor.run(editor)
       updateStates()
     }
 
@@ -314,9 +344,9 @@ export function registerToolbarForEditor(
     return
   }
 
-  const fileInput = profile === 'full' ? resolveFileInput(root) : null
-  const altInput = profile === 'full' ? resolveAltInput(root) : null
-  const imagePanel = profile === 'full' ? resolveImagePanel(root) : null
+  const fileInput = isFullEditorProfile(profile) ? resolveFileInput(root) : null
+  const altInput = isFullEditorProfile(profile) ? resolveAltInput(root) : null
+  const imagePanel = isFullEditorProfile(profile) ? resolveImagePanel(root) : null
   const form = findForm(root)
 
   const cleanup = attachButtonHandlers(toolbar, editor, profile, fileInput, altInput, form)

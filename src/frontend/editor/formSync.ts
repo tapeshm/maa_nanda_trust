@@ -1,8 +1,17 @@
 import { EMPTY_DOC, readInitialContent } from './content'
 import type { EditorInstance, JSONContent } from './types'
+import { EDITOR_DATA_ATTRIBUTES } from '../../editor/constants'
 
-const FORM_SELECTOR = 'form[data-editor-form]'
-const EDITOR_SELECTOR = '[data-editor]'
+const {
+  form: DATA_ATTR_EDITOR_FORM,
+  root: DATA_ATTR_EDITOR_ROOT,
+  hiddenJsonField: DATA_ATTR_EDITOR_HIDDEN_JSON,
+  hiddenHtmlField: DATA_ATTR_EDITOR_HIDDEN_HTML,
+} = EDITOR_DATA_ATTRIBUTES
+
+const FORM_SELECTOR = `form${DATA_ATTR_EDITOR_FORM.selector}`
+const EDITOR_SELECTOR = DATA_ATTR_EDITOR_ROOT.selector
+const HIDDEN_JSON_SELECTOR = `input[type="hidden"]${DATA_ATTR_EDITOR_HIDDEN_JSON.selector}`
 
 function isFormElement(value: unknown): value is HTMLFormElement {
   if (!value) {
@@ -24,7 +33,7 @@ function isFunction<T extends (...args: any[]) => any>(maybeFn: unknown): maybeF
 }
 
 export function hasEditorHiddenFields(form: HTMLFormElement): boolean {
-  return Boolean(form.querySelector('input[type="hidden"][data-editor-field]'))
+  return Boolean(form.querySelector(HIDDEN_JSON_SELECTOR))
 }
 
 function safeJsonStringify(payload: JSONContent): string {
@@ -205,44 +214,48 @@ export class FormSync {
 
   private ensureJsonField(form: HTMLFormElement, editorId: string): HTMLInputElement {
     const existing = this.getHiddenJsonField(form, editorId)
-    return existing ?? this.createJsonField(form, editorId)
+    return existing ?? this.createHiddenField(form, editorId, 'json')
   }
 
   private ensureHtmlField(form: HTMLFormElement, editorId: string): HTMLInputElement {
     const existing = this.getHiddenHtmlField(form, editorId)
-    return existing ?? this.createHtmlField(form, editorId)
+    return existing ?? this.createHiddenField(form, editorId, 'html')
   }
 
   private getHiddenJsonField(form: HTMLFormElement, editorId: string): HTMLInputElement | null {
-    return form.querySelector(`input[type="hidden"][data-editor-field="${editorId}"]`)
+    return form.querySelector(
+      `input[type="hidden"][${DATA_ATTR_EDITOR_HIDDEN_JSON.attr}="${editorId}"]`,
+    )
   }
 
   private getHiddenHtmlField(form: HTMLFormElement, editorId: string): HTMLInputElement | null {
-    return form.querySelector(`input[type="hidden"][data-editor-html-field="${editorId}"]`)
+    return form.querySelector(
+      `input[type="hidden"][${DATA_ATTR_EDITOR_HIDDEN_HTML.attr}="${editorId}"]`,
+    )
   }
 
-  private createJsonField(form: HTMLFormElement, editorId: string): HTMLInputElement {
-    const node = form.ownerDocument?.createElement
-      ? form.ownerDocument.createElement('input')
-      : document.createElement('input')
+  private createHiddenField(
+    form: HTMLFormElement,
+    editorId: string,
+    kind: 'json' | 'html',
+  ): HTMLInputElement {
+    const factory = form.ownerDocument?.createElement
+      ? form.ownerDocument.createElement.bind(form.ownerDocument)
+      : document.createElement.bind(document)
 
+    const node = factory('input') as HTMLInputElement
     node.type = 'hidden'
-    node.name = `content_json[${editorId}]`
-    node.setAttribute('data-editor-field', editorId)
-    form.appendChild(node)
-    return node as HTMLInputElement
-  }
 
-  private createHtmlField(form: HTMLFormElement, editorId: string): HTMLInputElement {
-    const node = form.ownerDocument?.createElement
-      ? form.ownerDocument.createElement('input')
-      : document.createElement('input')
+    if (kind === 'json') {
+      node.name = `content_json[${editorId}]`
+      node.setAttribute(DATA_ATTR_EDITOR_HIDDEN_JSON.attr, editorId)
+    } else {
+      node.name = `content_html[${editorId}]`
+      node.setAttribute(DATA_ATTR_EDITOR_HIDDEN_HTML.attr, editorId)
+    }
 
-    node.type = 'hidden'
-    node.name = `content_html[${editorId}]`
-    node.setAttribute('data-editor-html-field', editorId)
     form.appendChild(node)
-    return node as HTMLInputElement
+    return node
   }
 
   private resolveContent(root: HTMLElement): JSONContent {

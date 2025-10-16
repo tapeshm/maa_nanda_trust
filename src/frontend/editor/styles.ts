@@ -4,6 +4,10 @@
 // [D3:editor-tiptap.step-11:import-content-class] Import single source of truth for content classes
 import { contentClass } from './ui/content'
 
+function tokenizeClassNames(value: string): string[] {
+  return value.split(/\s+/).filter(Boolean)
+}
+
 const EDITOR_CHROME_TOKENS = [
   'border',
   'border-gray-200',
@@ -67,7 +71,10 @@ export const MENUBAR_BUTTON_CLASSNAME = [
 export const MENUBAR_BUTTON_ACTIVE_CLASSNAME = [
   'bg-zinc-200', // Zinc-200 background for active state
   'dark:bg-zinc-700', // Zinc-700 background for active in dark mode
+  'ring-1 ring-zinc-300'
 ].join(' ')
+
+export const MENUBAR_BUTTON_ACTIVE_TOKENS = tokenizeClassNames(MENUBAR_BUTTON_ACTIVE_CLASSNAME)
 
 // [D3:editor-tiptap.step-14:image-panel-styles] Styles for contextual image controls
 export const IMAGE_PANEL_CLASSNAME = [
@@ -116,14 +123,20 @@ export const IMAGE_PANEL_BUTTON_CLASSNAME = [
   'transition-colors',
 ].join(' ')
 
-export const IMAGE_PANEL_BUTTON_ACTIVE_CLASSNAME = [
-  'bg-blue-100',
-  'dark:bg-blue-900',
-  'border-blue-500',
-  'dark:border-blue-400',
-  'text-blue-700',
-  'dark:text-blue-200',
-].join(' ')
+// export const IMAGE_PANEL_BUTTON_ACTIVE_CLASSNAME = [
+//   'bg-blue-100',
+//   'dark:bg-blue-900',
+//   'border-blue-500',
+//   'dark:border-blue-400',
+//   'text-blue-700',
+//   'dark:text-blue-200',
+// ].join(' ')
+
+export const IMAGE_PANEL_BUTTON_ACTIVE_CLASSNAME = MENUBAR_BUTTON_ACTIVE_CLASSNAME
+
+export const IMAGE_PANEL_BUTTON_ACTIVE_TOKENS = tokenizeClassNames(
+  IMAGE_PANEL_BUTTON_ACTIVE_CLASSNAME,
+)
 
 export const IMAGE_PANEL_INPUT_CLASSNAME = [
   'block',

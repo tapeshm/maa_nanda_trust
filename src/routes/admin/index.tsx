@@ -11,6 +11,7 @@ import saveContent from './saveContent'
 import { getEditorDocument } from '../../models/editorDocuments'
 import { renderFallbackHtml } from '../../utils/editor/render'
 import { logEditorSuccess } from '../../observability/editorLogs'
+import { EDITOR_PROFILE_FULL } from '../../editor/constants'
 
 // [D3:editor-tiptap.step-04:admin-router] Router for admin editor pages.
 const admin = new Hono<{ Bindings: Bindings }>()
@@ -73,7 +74,7 @@ admin.get('/:slug/:id', requireAuth(), requireAdmin, async (c) => {
     route: '/admin/:slug/:id',
     slug,
     documentId: id,
-    profile: existing?.profile ?? 'full',
+    profile: existing?.profile ?? EDITOR_PROFILE_FULL,
     status: existing ? 'existing' : 'new',
   })
 
@@ -82,7 +83,7 @@ admin.get('/:slug/:id', requireAuth(), requireAdmin, async (c) => {
       title={`Edit ${slug} ${id}`}
       csrfToken={csrfToken}
       editors={[
-        { id: 'editor_main', profile: 'full', documentId: id },
+        { id: 'editor_main', profile: EDITOR_PROFILE_FULL, documentId: id },
       ]}
       initialPayloads={initialPayloads}
       initialHtml={initialHtml}

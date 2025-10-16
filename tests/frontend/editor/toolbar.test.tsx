@@ -7,6 +7,16 @@ import {
   resetToolbarForTesting,
   unregisterToolbarForEditor,
 } from '../../../src/frontend/editor/toolbar'
+import { EDITOR_DATA_ATTRIBUTES } from '../../../src/editor/constants'
+
+const {
+  command: DATA_ATTR_EDITOR_COMMAND,
+  toolbarId: DATA_ATTR_EDITOR_TOOLBAR_ID,
+  imageInputId: DATA_ATTR_EDITOR_IMAGE_INPUT_ID,
+  imageAltId: DATA_ATTR_EDITOR_IMAGE_ALT_ID,
+  root: DATA_ATTR_EDITOR_ROOT,
+  profile: DATA_ATTR_EDITOR_PROFILE,
+} = EDITOR_DATA_ATTRIBUTES
 
 type ListenerMap = Map<string, Set<(...args: any[]) => void>>
 
@@ -38,8 +48,10 @@ describe('editor toolbar', () => {
       toggleBold: vi.fn().mockReturnThis(),
       toggleItalic: vi.fn().mockReturnThis(),
       toggleHeading: vi.fn().mockReturnThis(),
+      toggleBlockquote: vi.fn().mockReturnThis(),
       toggleBulletList: vi.fn().mockReturnThis(),
       toggleOrderedList: vi.fn().mockReturnThis(),
+      setHorizontalRule: vi.fn().mockReturnThis(),
       setImageFigure: vi.fn(({ src, alt }: { src: string; alt: string }) => {
         setImageFigure({ src, alt })
         return { run: vi.fn(() => true) }
@@ -52,8 +64,10 @@ describe('editor toolbar', () => {
       toggleBold: vi.fn(() => ({ run: canRun })),
       toggleItalic: vi.fn(() => ({ run: canRun })),
       toggleHeading: vi.fn(() => ({ run: canRun })),
+      toggleBlockquote: vi.fn(() => ({ run: canRun })),
       toggleBulletList: vi.fn(() => ({ run: canRun })),
       toggleOrderedList: vi.fn(() => ({ run: canRun })),
+      setHorizontalRule: vi.fn(() => ({ run: canRun })),
       chain: vi.fn().mockReturnThis(),
       run: canRun,
     }
@@ -90,9 +104,12 @@ describe('editor toolbar', () => {
       const listeners = new Map<string, ButtonHandler[]>()
       const attrs = new Map<string, string>()
       const classSet = new Set<string>()
+      const dataset: Record<string, string> = {
+        [DATA_ATTR_EDITOR_COMMAND.dataset]: command,
+      }
 
       const button = {
-        dataset: { editorCommand: command },
+        dataset,
         disabled: false,
         textContent: command,
         classList: {
@@ -132,8 +149,10 @@ describe('editor toolbar', () => {
       ['shared', 'italic'],
       ['shared', 'heading-2'],
       ['shared', 'heading-3'],
+      ['shared', 'blockquote'],
       ['shared', 'bullet-list'],
       ['shared', 'ordered-list'],
+      ['shared', 'section-break'],
       ['full', 'image'],
     ]
 
@@ -144,7 +163,7 @@ describe('editor toolbar', () => {
     const toolbar = {
       id: 'editor-root__toolbar',
       querySelectorAll: (selector: string) => {
-        if (selector === '[data-editor-command]') {
+        if (selector === DATA_ATTR_EDITOR_COMMAND.selector) {
           return buttons
         }
         return []
@@ -219,16 +238,16 @@ describe('editor toolbar', () => {
     const root = {
       id: 'editor-root',
       dataset: {
-        editor: 'true',
-        editorProfile: profile,
-        editorToolbarId: toolbar.id,
+        [DATA_ATTR_EDITOR_ROOT.dataset]: 'true',
+        [DATA_ATTR_EDITOR_PROFILE.dataset]: profile,
+        [DATA_ATTR_EDITOR_TOOLBAR_ID.dataset]: toolbar.id,
         ...(profile === 'full'
           ? {
-              editorImageInputId: fileInput?.id,
-              editorImageAltId: altInput?.id,
+              [DATA_ATTR_EDITOR_IMAGE_INPUT_ID.dataset]: fileInput?.id ?? '',
+              [DATA_ATTR_EDITOR_IMAGE_ALT_ID.dataset]: altInput?.id ?? '',
             }
           : {}),
-      },
+      } as Record<string, string>,
       ownerDocument: doc,
       closest: (selector: string) => (selector === 'form' ? form : null),
     } as unknown as HTMLElement
@@ -242,7 +261,9 @@ describe('editor toolbar', () => {
 
     registerToolbarForEditor(root, editor as any, 'basic')
 
-    const boldButton = buttons.find((btn) => btn.dataset.editorCommand === 'bold')!
+    const boldButton = buttons.find(
+      (btn) => btn.dataset[DATA_ATTR_EDITOR_COMMAND.dataset] === 'bold',
+    )!
     boldButton.click()
 
     expect(editor.chain).toHaveBeenCalled()
@@ -260,7 +281,9 @@ describe('editor toolbar', () => {
 
     registerToolbarForEditor(root, editor as any, 'full')
 
-    const imageButton = buttons.find((btn) => btn.dataset.editorCommand === 'image')!
+    const imageButton = buttons.find(
+      (btn) => btn.dataset[DATA_ATTR_EDITOR_COMMAND.dataset] === 'image',
+    )!
     imageButton.click()
 
     expect(clickSpy).toHaveBeenCalled()

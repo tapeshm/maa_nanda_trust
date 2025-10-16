@@ -6,8 +6,19 @@ import { csrfProtect } from '../../middleware/csrf'
 import { rateLimit } from '../../middleware/rateLimit'
 import { getTrustedOrigins, getNumber } from '../../utils/env'
 import { getEditorDocument, upsertEditorDocument } from '../../models/editorDocuments'
-import { isSafeEditorHtml, renderFallbackHtml } from '../../utils/editor/render'
+import {
+  isSafeEditorHtml,
+  normalizeEditorHtmlWhitespace,
+  renderFallbackHtml,
+} from '../../utils/editor/render'
 import { logEditorError, logEditorSuccess } from '../../observability/editorLogs'
+import type { EditorProfile } from '../../frontend/editor/types'
+import { allowedNodeTypesForProfile } from '../../utils/editor/schemaSignature'
+import {
+  DEFAULT_EDITOR_PROFILE,
+  EDITOR_LEGACY_IMAGE_NODE,
+  resolveEditorProfile,
+} from '../../editor/constants'
 
 const router = new Hono<{ Bindings: Bindings }>()
 
@@ -77,29 +88,20 @@ function parseJson(content: string): any {
   }
 }
 
-const ALLOWED_NODE_TYPES = new Set([
-  'paragraph',
-  'heading',
-  'text',
-  'bulletList',
-  'orderedList',
-  'listItem',
-  'image',
-  'blockquote',
-  'horizontalRule',
-  'codeBlock',
-])
-
-function isValidContent(doc: any): boolean {
+function isValidContent(doc: any, profile: EditorProfile): boolean {
   if (!doc || typeof doc !== 'object') return false
   if (doc.type !== 'doc') return false
   if (!Array.isArray(doc.content)) return false
+
+  const allowedNodes = new Set<string>(allowedNodeTypesForProfile(profile))
+  // TODO: remove  legacy image support
+  allowedNodes.add(EDITOR_LEGACY_IMAGE_NODE)
 
   const stack = [...doc.content]
   while (stack.length > 0) {
     const node = stack.pop()
     if (!node || typeof node !== 'object') return false
-    if (typeof node.type !== 'string' || !ALLOWED_NODE_TYPES.has(node.type)) {
+    if (typeof node.type !== 'string' || !allowedNodes.has(node.type)) {
       return false
     }
     if (Array.isArray(node.content)) {
@@ -171,14 +173,15 @@ export async function handleSaveContent(c: Context<{ Bindings: Bindings }>) {
       typeof (body as any)[documentIdKey] === 'string'
         ? (body as any)[documentIdKey].trim()
         : editorId
-    const profile =
+    const rawProfile =
       typeof (body as any)[profileKey] === 'string'
         ? (body as any)[profileKey].trim()
-        : 'basic'
+        : DEFAULT_EDITOR_PROFILE
+    const profile = resolveEditorProfile(rawProfile)
     const context = { profile, slug, documentId }
 
     const parsed = parseJson(contentJson)
-    if (!isValidContent(parsed)) {
+    if (!isValidContent(parsed, profile)) {
       logSaveFailure(c, 'invalid_content_schema', {
         slug,
         documentId,
@@ -200,7 +203,8 @@ export async function handleSaveContent(c: Context<{ Bindings: Bindings }>) {
     }
 
     if (contentHtml) {
-      const htmlValid = isSafeEditorHtml(contentHtml, context)
+      const normalizedHtml = normalizeEditorHtmlWhitespace(contentHtml)
+      const htmlValid = isSafeEditorHtml(normalizedHtml, context)
       if (!htmlValid) {
         logSaveFailure(c, 'html_invalid', {
           slug,
@@ -209,6 +213,7 @@ export async function handleSaveContent(c: Context<{ Bindings: Bindings }>) {
         })
         return c.text('Unprocessable Entity', 422)
       }
+      contentHtml = normalizedHtml
     } else {
       contentHtml = renderFallbackHtml(parsed, context)
     }

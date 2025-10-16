@@ -1,6 +1,7 @@
 import { Editor } from '@tiptap/core'
 
 import type { EditorFactory, EditorInstance, EditorProfile } from './types'
+import { EDITOR_PROFILES } from '../../editor/constants'
 import { extensionsList } from '../../utils/editor/extensions'
 import { EDITOR_CLASSNAME } from './styles'
 
@@ -39,9 +40,7 @@ export function createEditorFactory(profile: EditorProfile): EditorFactory {
 export function registerDefaultEditorProfiles(
   register: (profile: EditorProfile, factory: EditorFactory) => void,
 ): void {
-  const profiles: EditorProfile[] = ['basic', 'full']
-
-  profiles.forEach((profile) => {
+  EDITOR_PROFILES.forEach((profile) => {
     register(profile, createEditorFactory(profile))
   })
 }

@@ -1,7 +1,5 @@
 import { initEditors } from './bootstrap'
 
-//TODO:  introduce error handling if initEdiotors fails
-
 // [D3:editor-tiptap.step-01:entry] Register editor bootstrapping on DOM ready.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => initEditors(), { once: true })

@@ -23,3 +23,8 @@ declare module '../../dist/client/.vite/manifest.json' {
   const manifest: Record<string, ManifestEntry>
   export default manifest
 }
+
+declare module '*.css?raw' {
+  const content: string
+  export default content
+}

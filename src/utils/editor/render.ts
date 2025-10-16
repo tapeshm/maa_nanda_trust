@@ -2,6 +2,11 @@ import type { JSONContent } from '@tiptap/core'
 
 import type { EditorProfile } from '../../frontend/editor/types'
 import {
+  DEFAULT_EDITOR_PROFILE,
+  isFullEditorProfile,
+  resolveEditorProfile as resolveEditorProfileValue,
+} from '../../editor/constants'
+import {
   allowedContainerNodeTypes,
   allowedMarkTypes,
   allowedNodeTypesForProfile,
@@ -20,7 +25,6 @@ export interface EditorRenderContext {
   origin?: string | null
 }
 
-const DEFAULT_PROFILE: EditorProfile = 'basic'
 const MEDIA_SRC_PATTERN = /^\/media\/[A-Za-z0-9/_\-.]+$/
 const MEDIA_SRC_ABSOLUTE_PATTERN = /^https?:\/\/([^/]+)\/media\/[A-Za-z0-9/_\-.]+$/
 const IMAGE_NODE_NAME = optionalImageNode()
@@ -30,6 +34,7 @@ const INLINE_TAGS = new Set(['strong', 'em', 's', 'code', 'br'])
 // [D3:editor-tiptap.step-12:allow-figure-tags] Add figure and figcaption for imageFigure node
 const BLOCK_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'figure', 'figcaption'])
 const HTML_ENTITY_PATTERN = /[&<>"']/g
+const EMPTY_PARAGRAPH_PATTERN = /<p(\s[^>]*)?>\s*<\/p>/gi
 const SCRIPT_TAG_PATTERN = /<script\b/i
 const STYLE_ATTRIBUTE_PATTERN = /\sstyle\s*=\s*["']/i
 const EVENT_HANDLER_PATTERN = /\son[a-z]+\s*=\s*["']/i
@@ -38,14 +43,17 @@ const JAVASCRIPT_PROTOCOL_PATTERN = /javascript:/i
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
 
 function resolveProfile(profile: EditorRenderContext['profile']): EditorProfile {
-  return profile === 'full' ? 'full' : DEFAULT_PROFILE
+  if (typeof profile === 'string') {
+    return resolveEditorProfileValue(profile)
+  }
+  return DEFAULT_EDITOR_PROFILE
 }
 
 function warnWithContext(context: EditorRenderContext, reason: string, extra?: Record<string, unknown>) {
   const payload = {
     event: 'editor.render.warning',
     reason,
-    profile: context.profile ?? DEFAULT_PROFILE,
+    profile: context.profile ?? DEFAULT_EDITOR_PROFILE,
     slug: context.slug,
     documentId: context.documentId,
     ...extra,
@@ -176,6 +184,7 @@ function sanitizeNode(node: any, options: SanitizeOptions): JSONContent | null {
     const alt = typeof attrs.alt === 'string' ? attrs.alt : ''
     const size = ['s', 'm', 'l', 'xl'].includes(attrs.size) ? attrs.size : 'm'
     const align = ['left', 'center', 'right'].includes(attrs.align) ? attrs.align : 'center'
+    const wrap = attrs.wrap === 'break' ? 'break' : 'text'
 
     // imageFigure has inline content (figcaption)
     const contentArray: unknown[] = Array.isArray(node.content) ? node.content : []
@@ -190,6 +199,7 @@ function sanitizeNode(node: any, options: SanitizeOptions): JSONContent | null {
         alt,
         size,
         align,
+        wrap,
       },
       content: children,
     }
@@ -201,6 +211,9 @@ function sanitizeNode(node: any, options: SanitizeOptions): JSONContent | null {
     .filter((child): child is JSONContent => Boolean(child))
 
   if (containerNodes.has(type) && children.length === 0) {
+    if (type === 'paragraph') {
+      return { type, content: [{ type: 'hardBreak' }] }
+    }
     warn('container_without_children', { type })
     return null
   }
@@ -223,6 +236,15 @@ function sanitizeNode(node: any, options: SanitizeOptions): JSONContent | null {
 }
 
 function sanitizeEditorJson(jsonInput: unknown, context: EditorRenderContext): JSONContent | null {
+  if (typeof jsonInput === 'string') {
+    try {
+      jsonInput = JSON.parse(jsonInput) as JSONContent
+    } catch {
+      warnWithContext(context, 'json_invalid_parse')
+      return null
+    }
+  }
+
   if (!jsonInput || typeof jsonInput !== 'object') {
     warnWithContext(context, 'json_invalid_root')
     return null
@@ -235,7 +257,7 @@ function sanitizeEditorJson(jsonInput: unknown, context: EditorRenderContext): J
   }
 
   const profile = resolveProfile(context.profile)
-  const allowImages = profile === 'full'
+  const allowImages = isFullEditorProfile(profile)
   const allowedNodes = allowedNodeTypesForProfile(profile)
   const containerNodes = allowedContainerNodeTypes()
   const allowedMarks = allowedMarkTypes()
@@ -335,7 +357,7 @@ function renderNodes(content: JSONContent['content'] | undefined, profile: Edito
           return renderNodes(node.content, profile)
         // [D3:editor-tiptap.step-12:render-image-figure] Render imageFigure as figure/img/figcaption
         case IMAGE_NODE_NAME:
-          if (profile !== 'full') {
+          if (!isFullEditorProfile(profile)) {
             return ''
           }
           {
@@ -344,11 +366,13 @@ function renderNodes(content: JSONContent['content'] | undefined, profile: Edito
             const alt = attrs.alt || ''
             const size = attrs.size || 'm'
             const align = attrs.align || 'center'
+            const wrap = attrs.wrap === 'break' ? 'break' : 'text'
             const sizeClass = `editor-figure--size-${size}`
             const alignClass = `editor-figure--align-${align}`
+            const wrapClass = wrap === 'break' ? 'editor-figure--wrap-break' : 'editor-figure--wrap-text'
             const caption = renderInline(node.content)
-            const figcaption = caption.trim().length > 0 ? `<figcaption class="editor-figcaption">${caption}</figcaption>` : ''
-            return `<figure class="editor-figure ${sizeClass} ${alignClass}"><img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}" class="editor-image" loading="lazy" decoding="async" />${figcaption}</figure>`
+            const figcaption = `<figcaption class="editor-figcaption">${caption}</figcaption>`
+            return `<figure class="editor-figure ${sizeClass} ${alignClass} ${wrapClass}"><img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}" class="editor-image" loading="lazy" decoding="async" />${figcaption}</figure>`
           }
         default:
           return ''
@@ -362,6 +386,14 @@ function renderHtmlFromSanitizedDoc(doc: JSONContent, context: EditorRenderConte
   return renderNodes(doc.content, profile)
 }
 
+export function normalizeEditorHtmlWhitespace(html: string): string {
+  return html.replace(EMPTY_PARAGRAPH_PATTERN, (_, attrs = '') => {
+    const trimmed = attrs.trim()
+    const suffix = trimmed.length > 0 ? ` ${trimmed}` : ''
+    return `<p${suffix}><br /></p>`
+  })
+}
+
 function sanitizeHtmlAttributes(tag: string, attributes: string, context: EditorRenderContext, warn: WarnFn): boolean {
   if (STYLE_ATTRIBUTE_PATTERN.test(attributes) || EVENT_HANDLER_PATTERN.test(attributes)) {
     warn('html_forbidden_attribute', { tag })
@@ -371,6 +403,7 @@ function sanitizeHtmlAttributes(tag: string, attributes: string, context: Editor
   if (tag === 'img') {
     const attrPattern = /(\w[\w-]*)\s*=\s*("[^"]*"|'[^']*')/g
     const allowedAttrs = new Set(optionalImageAttributes())
+    allowedAttrs.add('class')
     allowedAttrs.add('loading')
     allowedAttrs.add('decoding')
     let match: RegExpExecArray | null
@@ -462,9 +495,10 @@ export function isSafeEditorHtml(html: string, context: EditorRenderContext = {}
 export function renderFallbackHtml(jsonInput: unknown, context: EditorRenderContext = {}): string {
   const sanitized = sanitizeEditorJson(jsonInput, context)
   if (!sanitized) {
-    return '<p></p>'
+    return '<p><br /></p>'
   }
-  return renderHtmlFromSanitizedDoc(sanitized, context)
+  const rendered = renderHtmlFromSanitizedDoc(sanitized, context)
+  return normalizeEditorHtmlWhitespace(rendered)
 }
 
 export function selectRenderedHtml(

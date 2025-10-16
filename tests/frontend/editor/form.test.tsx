@@ -8,8 +8,25 @@ import {
 } from '../../../src/frontend/editor/form'
 import { renderToString } from 'hono/jsx/dom/server'
 import EditorPage from '../../../src/templates/admin/editorPage'
+import { EDITOR_DATA_ATTRIBUTES } from '../../../src/editor/constants'
 
 const originalDocument = globalThis.document
+const {
+  root: DATA_ATTR_EDITOR_ROOT,
+  form: DATA_ATTR_EDITOR_FORM,
+  hiddenJsonField: DATA_ATTR_EDITOR_HIDDEN_JSON,
+  hiddenHtmlField: DATA_ATTR_EDITOR_HIDDEN_HTML,
+} = EDITOR_DATA_ATTRIBUTES
+const EDITOR_SELECTOR = DATA_ATTR_EDITOR_ROOT.selector
+const FORM_SELECTOR = `form${DATA_ATTR_EDITOR_FORM.selector}`
+const HIDDEN_JSON_SELECTOR = `input[type="hidden"]${DATA_ATTR_EDITOR_HIDDEN_JSON.selector}`
+const HIDDEN_HTML_SELECTOR = `input[type="hidden"]${DATA_ATTR_EDITOR_HIDDEN_HTML.selector}`
+const HIDDEN_JSON_SELECTOR_PREFIX = `input[type="hidden"][${DATA_ATTR_EDITOR_HIDDEN_JSON.attr}="`
+const HIDDEN_HTML_SELECTOR_PREFIX = `input[type="hidden"][${DATA_ATTR_EDITOR_HIDDEN_HTML.attr}="`
+const HIDDEN_JSON_VALUE_PATTERN = new RegExp(`${DATA_ATTR_EDITOR_HIDDEN_JSON.attr}="(.+)"`)
+const HIDDEN_HTML_VALUE_PATTERN = new RegExp(`${DATA_ATTR_EDITOR_HIDDEN_HTML.attr}="(.+)"`)
+const DATASET_KEY_EDITOR_HIDDEN_JSON = DATA_ATTR_EDITOR_HIDDEN_JSON.dataset
+const DATASET_KEY_EDITOR_HIDDEN_HTML = DATA_ATTR_EDITOR_HIDDEN_HTML.dataset
 
 interface ListenerEntry {
   handler: EventListener
@@ -26,7 +43,7 @@ type MockInput = HTMLInputElement & {
   value: string
   name: string
   type: string
-  dataset: { editorField?: string; editorHtmlField?: string }
+  dataset: Record<string, string | undefined>
   setAttribute: (key: string, value: string) => void
 }
 
@@ -47,32 +64,35 @@ class MockForm {
   }
 
   querySelectorAll<T extends Element>(selector: string): T[] {
-    if (selector === '[data-editor]') {
+    if (selector === EDITOR_SELECTOR) {
       return this.editors as unknown as T[]
     }
     return []
   }
 
   querySelector<T extends Element>(selector: string): T | null {
-    if (selector.startsWith('input[type="hidden"][data-editor-field="')) {
-      const match = selector.match(/data-editor-field="(.+)"/)
+    if (selector.startsWith(HIDDEN_JSON_SELECTOR_PREFIX)) {
+      const match = selector.match(HIDDEN_JSON_VALUE_PATTERN)
       const target = match?.[1]
       if (!target) return null
-      return (this.inputs.find((input) => input.dataset.editorField === target) ??
+      return (this.inputs.find(
+        (input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON] === target,
+      ) ?? null) as unknown as T | null
+    }
+    if (selector === HIDDEN_JSON_SELECTOR) {
+      return (this.inputs.find((input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON]) ??
         null) as unknown as T | null
     }
-    if (selector === 'input[type="hidden"][data-editor-field]') {
-      return (this.inputs.find((input) => input.dataset.editorField) ?? null) as unknown as T | null
-    }
-    if (selector.startsWith('input[type="hidden"][data-editor-html-field="')) {
-      const match = selector.match(/data-editor-html-field="(.+)"/)
+    if (selector.startsWith(HIDDEN_HTML_SELECTOR_PREFIX)) {
+      const match = selector.match(HIDDEN_HTML_VALUE_PATTERN)
       const target = match?.[1]
       if (!target) return null
-      return (this.inputs.find((input) => input.dataset.editorHtmlField === target) ??
-        null) as unknown as T | null
+      return (this.inputs.find(
+        (input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML] === target,
+      ) ?? null) as unknown as T | null
     }
-    if (selector === 'input[type="hidden"][data-editor-html-field]') {
-      return (this.inputs.find((input) => input.dataset.editorHtmlField) ??
+    if (selector === HIDDEN_HTML_SELECTOR) {
+      return (this.inputs.find((input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML]) ??
         null) as unknown as T | null
     }
     return null
@@ -120,11 +140,11 @@ const createInput = (
     value: '',
     dataset: {},
     setAttribute(key: string, value: string) {
-      if (key === 'data-editor-field') {
-        this.dataset!.editorField = value
+      if (key === DATA_ATTR_EDITOR_HIDDEN_JSON.attr) {
+        this.dataset![DATASET_KEY_EDITOR_HIDDEN_JSON] = value
       }
-      if (key === 'data-editor-html-field') {
-        this.dataset!.editorHtmlField = value
+      if (key === DATA_ATTR_EDITOR_HIDDEN_HTML.attr) {
+        this.dataset![DATASET_KEY_EDITOR_HIDDEN_HTML] = value
       }
     },
   }
@@ -150,7 +170,7 @@ beforeAll(() => {
   forms = []
   documentStub = {
     querySelectorAll: vi.fn((selector: string) => {
-      if (selector === 'form[data-editor-form]') {
+      if (selector === FORM_SELECTOR) {
         return forms as unknown as HTMLFormElement[]
       }
       return []
@@ -206,9 +226,9 @@ describe('editor form serialization', () => {
     idMap.set(script.id, script as unknown as HTMLElement)
 
     const jsonInput = createInput(editor.id, documentStub, 'json')
-    jsonInput.dataset.editorField = editor.id
+    jsonInput.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON] = editor.id
     const htmlInput = createInput(editor.id, documentStub, 'html')
-    htmlInput.dataset.editorHtmlField = editor.id
+    htmlInput.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML] = editor.id
 
     const form = new MockForm(documentStub, [editor], [jsonInput, htmlInput])
     forms.push(form)
@@ -287,13 +307,13 @@ describe('editor form serialization', () => {
     idMap.set(scriptB.id, scriptB as unknown as HTMLElement)
 
     const inputA = createInput(editorA.id, documentStub, 'json')
-    inputA.dataset.editorField = editorA.id
+    inputA.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON] = editorA.id
     const inputB = createInput(editorB.id, documentStub, 'json')
-    inputB.dataset.editorField = editorB.id
+    inputB.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON] = editorB.id
     const htmlInputA = createInput(editorA.id, documentStub, 'html')
-    htmlInputA.dataset.editorHtmlField = editorA.id
+    htmlInputA.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML] = editorA.id
     const htmlInputB = createInput(editorB.id, documentStub, 'html')
-    htmlInputB.dataset.editorHtmlField = editorB.id
+    htmlInputB.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML] = editorB.id
 
     const form = new MockForm(
       documentStub,

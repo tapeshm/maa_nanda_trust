@@ -1,25 +1,40 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 
 import { FormSync, hasEditorHiddenFields } from '../../../src/frontend/editor/formSync'
+import { EDITOR_DATA_ATTRIBUTES } from '../../../src/editor/constants'
 
 const scripts = new Map<string, HTMLScriptElement>()
 
 const originalDocument = globalThis.document
+const {
+  root: DATA_ATTR_EDITOR_ROOT,
+  hiddenJsonField: DATA_ATTR_EDITOR_HIDDEN_JSON,
+  hiddenHtmlField: DATA_ATTR_EDITOR_HIDDEN_HTML,
+} = EDITOR_DATA_ATTRIBUTES
+const EDITOR_SELECTOR = DATA_ATTR_EDITOR_ROOT.selector
+const HIDDEN_JSON_SELECTOR = `input[type="hidden"]${DATA_ATTR_EDITOR_HIDDEN_JSON.selector}`
+const HIDDEN_HTML_SELECTOR = `input[type="hidden"]${DATA_ATTR_EDITOR_HIDDEN_HTML.selector}`
+const HIDDEN_JSON_SELECTOR_PREFIX = `input[type="hidden"][${DATA_ATTR_EDITOR_HIDDEN_JSON.attr}="`
+const HIDDEN_HTML_SELECTOR_PREFIX = `input[type="hidden"][${DATA_ATTR_EDITOR_HIDDEN_HTML.attr}="`
+const HIDDEN_JSON_PATTERN = new RegExp(`${DATA_ATTR_EDITOR_HIDDEN_JSON.attr}="(.+)"`)
+const HIDDEN_HTML_PATTERN = new RegExp(`${DATA_ATTR_EDITOR_HIDDEN_HTML.attr}="(.+)"`)
+const DATASET_KEY_EDITOR_HIDDEN_JSON = DATA_ATTR_EDITOR_HIDDEN_JSON.dataset
+const DATASET_KEY_EDITOR_HIDDEN_HTML = DATA_ATTR_EDITOR_HIDDEN_HTML.dataset
 
 class MockHiddenInput {
   public type = 'hidden'
   public name = ''
   public value = ''
-  public dataset: { editorField?: string; editorHtmlField?: string } = {}
+  public dataset: Record<string, string | undefined> = {}
 
   constructor(private readonly form: MockForm) {}
 
   setAttribute(name: string, value: string) {
-    if (name === 'data-editor-field') {
-      this.dataset.editorField = value
+    if (name === DATA_ATTR_EDITOR_HIDDEN_JSON.attr) {
+      this.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON] = value
     }
-    if (name === 'data-editor-html-field') {
-      this.dataset.editorHtmlField = value
+    if (name === DATA_ATTR_EDITOR_HIDDEN_HTML.attr) {
+      this.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML] = value
     }
   }
 }
@@ -59,34 +74,36 @@ class MockForm {
   }
 
   querySelectorAll(selector: string) {
-    if (selector === '[data-editor]') {
+    if (selector === EDITOR_SELECTOR) {
       return this.editors as unknown as HTMLElement[]
     }
     return []
   }
 
   querySelector(selector: string) {
-    if (selector === 'input[type="hidden"][data-editor-field]') {
-      return (this.inputs.find((input) => input.dataset.editorField) ??
+    if (selector === HIDDEN_JSON_SELECTOR) {
+      return (this.inputs.find((input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON]) ??
         null) as unknown as HTMLInputElement | null
     }
-    if (selector.startsWith('input[type="hidden"][data-editor-field="')) {
-      const match = selector.match(/data-editor-field="(.+)"/)
+    if (selector.startsWith(HIDDEN_JSON_SELECTOR_PREFIX)) {
+      const match = selector.match(HIDDEN_JSON_PATTERN)
       const target = match?.[1]
       if (!target) return null
-      return (this.inputs.find((input) => input.dataset.editorField === target) ??
+      return (this.inputs.find(
+        (input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON] === target,
+      ) ?? null) as unknown as HTMLInputElement | null
+    }
+    if (selector === HIDDEN_HTML_SELECTOR) {
+      return (this.inputs.find((input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML]) ??
         null) as unknown as HTMLInputElement | null
     }
-    if (selector === 'input[type="hidden"][data-editor-html-field]') {
-      return (this.inputs.find((input) => input.dataset.editorHtmlField) ??
-        null) as unknown as HTMLInputElement | null
-    }
-    if (selector.startsWith('input[type="hidden"][data-editor-html-field="')) {
-      const match = selector.match(/data-editor-html-field="(.+)"/)
+    if (selector.startsWith(HIDDEN_HTML_SELECTOR_PREFIX)) {
+      const match = selector.match(HIDDEN_HTML_PATTERN)
       const target = match?.[1]
       if (!target) return null
-      return (this.inputs.find((input) => input.dataset.editorHtmlField === target) ??
-        null) as unknown as HTMLInputElement | null
+      return (this.inputs.find(
+        (input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML] === target,
+      ) ?? null) as unknown as HTMLInputElement | null
     }
     return null
   }
@@ -117,17 +134,23 @@ class MockForm {
   }
 
   getHiddenInput(editorId: string) {
-    return this.inputs.find((input) => input.dataset.editorField === editorId) ?? null
+    return (
+      this.inputs.find((input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_JSON] === editorId) ??
+      null
+    )
   }
 
   getHiddenHtmlInput(editorId: string) {
-    return this.inputs.find((input) => input.dataset.editorHtmlField === editorId) ?? null
+    return (
+      this.inputs.find((input) => input.dataset[DATASET_KEY_EDITOR_HIDDEN_HTML] === editorId) ??
+      null
+    )
   }
 }
 
 function createEditor(id: string): MockEditor {
   const editor = new MockEditor(id)
-  editor.dataset.editor = ''
+  editor.dataset[DATA_ATTR_EDITOR_ROOT.dataset] = ''
   return editor
 }
 
