@@ -1,17 +1,37 @@
 import type { AnyExtension } from '@tiptap/core'
 import Placeholder from '@tiptap/extension-placeholder'
+import Link from '@tiptap/extension-link'
 import StarterKit from '@tiptap/starter-kit'
 
 import type { EditorProfile } from '../../frontend/editor/types'
 import { isFullEditorProfile } from '../../editor/constants'
 // [D3:editor-tiptap.step-12:import-image-figure] Use custom ImageFigure extension
 import { ImageFigure } from '../../frontend/editor/extensions/imageFigure'
+import { normalizeLinkHref } from './linkValidation'
 
 export const PLACEHOLDER_TEXT = 'Start writing…'
 
 // [D3:editor-tiptap.step-02:extensions-base] Base extensions shared by all profiles.
+function createStarterKit(): AnyExtension {
+  const configure = (StarterKit as unknown as { configure?: (options: { link: false }) => AnyExtension }).configure
+  if (typeof configure === 'function') {
+    return configure.call(StarterKit, { link: false })
+  }
+  return StarterKit
+}
+
 const baseExtensions: AnyExtension[] = [
-  StarterKit,
+  createStarterKit(),
+  Link.configure({
+    openOnClick: false,
+    defaultProtocol: 'https',
+    HTMLAttributes: {
+      rel: 'noopener noreferrer',
+      target: null,
+    },
+    isAllowedUri: (url) => normalizeLinkHref(url) !== null,
+    shouldAutoLink: (url) => normalizeLinkHref(url) !== null,
+  }),
   Placeholder.configure({
     placeholder: PLACEHOLDER_TEXT,
   }),

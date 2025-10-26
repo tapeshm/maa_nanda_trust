@@ -2,6 +2,12 @@ import { Hono } from 'hono'
 import type { Bindings } from '../bindings'
 import content from './content'
 import admin from './admin/index'
+import adminPages from './admin/pages'
+import adminSave from './admin/save'
+import adminPublish from './admin/publish'
+import adminItems from './admin/items'
+import previewPages from './preview/pages'
+import publicPages from './public/pages'
 import media from './media'
 
 /**
@@ -10,8 +16,17 @@ import media from './media'
  */
 const routes = new Hono<{ Bindings: Bindings }>()
 
-// Mount admin before content to avoid content's catch-all matching /admin
-routes.route('/admin', admin)
+// [D3:pages.step-02:aggregate] Mount new page routers alongside existing modules.
+const adminAggregate = new Hono<{ Bindings: Bindings }>()
+adminAggregate.route('/', admin)
+adminAggregate.route('/', adminPages)
+adminAggregate.route('/', adminSave)
+adminAggregate.route('/', adminPublish)
+adminAggregate.route('/', adminItems)
+
+routes.route('/admin', adminAggregate)
+routes.route('/preview', previewPages)
+routes.route('/', publicPages)
 routes.route('/media', media)
 routes.route('/', content)
 

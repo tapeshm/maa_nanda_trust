@@ -184,6 +184,15 @@ export const EditorInstance: FC<EditorInstanceProps> = ({
         <button
           type="button"
           class={MENUBAR_BUTTON_CLASSNAME}
+          {...{ [DATA_ATTR_COMMAND.attr]: 'link' }}
+          aria-pressed="false"
+          title="Insert or edit link"
+        >
+          Link
+        </button>
+        <button
+          type="button"
+          class={MENUBAR_BUTTON_CLASSNAME}
           {...{ [DATA_ATTR_COMMAND.attr]: 'section-break' }}
           aria-pressed="false"
           title="Insert section break"

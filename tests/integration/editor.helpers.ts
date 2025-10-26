@@ -13,6 +13,7 @@ export interface IntegrationBindings extends Bindings {
   LOG_SAMPLE_RATE: string
   R2: ReturnType<typeof createTestR2>
   KV: ReturnType<typeof createTestKv>
+  PAGES_CACHE: ReturnType<typeof createTestKv>
 }
 
 export function createTestKv() {
@@ -32,11 +33,15 @@ export function createTestKv() {
       }
     },
     async put(key: string, value: string, options?: { expirationTtl?: number }) {
-      const ttl = options?.expirationTtl ?? 60
+      const ttl = options?.expirationTtl
       const payload = typeof value === 'string' ? value : JSON.stringify(value)
+      const expireAt =
+        typeof ttl === 'number' && Number.isFinite(ttl)
+          ? Math.floor(Date.now() / 1000) + ttl
+          : undefined
       store.set(key, {
         value: payload,
-        expireAt: Math.floor(Date.now() / 1000) + ttl,
+        expireAt,
       })
     },
   }
@@ -110,6 +115,7 @@ export function createIntegrationEnv(overrides: Partial<IntegrationBindings> = {
     SUPABASE_JWT_SECRET: 'integration-secret',
     R2: createTestR2(),
     KV: createTestKv(),
+    PAGES_CACHE: createTestKv(),
     SUPABASE_URL: 'http://127.0.0.1:54321',
     SUPABASE_ANON_KEY: 'anon',
     JWKS_URL: 'http://127.0.0.1:54321/auth/v1/.well-known/jwks.json',

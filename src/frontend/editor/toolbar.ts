@@ -2,6 +2,7 @@ import { MENUBAR_BUTTON_ACTIVE_TOKENS } from './styles'
 import type { EditorInstance, EditorProfile } from './types'
 import { attachImagePanelHandlers } from './ui/ImagePanel'
 import { EDITOR_DATA_ATTRIBUTES, isFullEditorProfile } from '../../editor/constants'
+import { normalizeLinkHref } from '../../utils/editor/linkValidation'
 
 const ACTIVE_CLASSES = MENUBAR_BUTTON_ACTIVE_TOKENS
 const toolbarRegistry = new Map<HTMLElement, () => void>()
@@ -15,6 +16,7 @@ const TOOLBAR_COMMANDS = {
   BLOCKQUOTE: 'blockquote',
   BULLET_LIST: 'bullet-list',
   ORDERED_LIST: 'ordered-list',
+  LINK: 'link',
   SECTION_BREAK: 'section-break',
   IMAGE: 'image',
 } as const
@@ -27,6 +29,7 @@ const NON_IMAGE_COMMANDS = [
   TOOLBAR_COMMANDS.BLOCKQUOTE,
   TOOLBAR_COMMANDS.BULLET_LIST,
   TOOLBAR_COMMANDS.ORDERED_LIST,
+  TOOLBAR_COMMANDS.LINK,
   TOOLBAR_COMMANDS.SECTION_BREAK,
 ] as const
 
@@ -78,8 +81,8 @@ function createToggleCommand(
 ): CommandDescriptor {
   const buildHandler =
     (forCanCheck: boolean): CommandHandler =>
-      (editor) =>
-        toggle(focusChain(editor, forCanCheck)).run()
+    (editor) =>
+      toggle(focusChain(editor, forCanCheck)).run()
 
   return {
     can: buildHandler(true),
@@ -113,6 +116,72 @@ const commandDescriptors: Record<NonImageCommand, CommandDescriptor> = {
     (chain) => chain.toggleOrderedList(),
     (editor) => editor.isActive('orderedList'),
   ),
+  [TOOLBAR_COMMANDS.LINK]: {
+    can: (editor) => {
+      const selection = editor.state?.selection
+      if (editor.isActive('link')) {
+        return true
+      }
+      if (!selection) {
+        return false
+      }
+      return selection.from !== selection.to
+    },
+    run: (editor) => {
+      const selection = editor.state?.selection
+      const active = editor.isActive('link')
+      const alertFn =
+        typeof window !== 'undefined' && typeof window.alert === 'function'
+          ? window.alert.bind(window)
+          : null
+      const promptFn =
+        typeof window !== 'undefined' && typeof window.prompt === 'function'
+          ? window.prompt.bind(window)
+          : null
+
+      if (!promptFn && !active) {
+        if (alertFn) {
+          alertFn('Link insertion is unavailable in this environment.')
+        }
+        return false
+      }
+
+      const hasSelection = Boolean(selection && selection.from !== selection.to)
+      if (!hasSelection && !active) {
+        if (alertFn) {
+          alertFn('Select the text you would like to turn into a link.')
+        }
+        return false
+      }
+
+      const currentHref =
+        active && typeof editor.getAttributes === 'function'
+          ? (editor.getAttributes('link')?.href ?? '')
+          : ''
+      const input = promptFn ? promptFn('Enter link URL', currentHref) : null
+      if (input === null) {
+        return false
+      }
+      const trimmed = input.trim()
+      if (trimmed.length === 0) {
+        return focusChain(editor, false).extendMarkRange('link').unsetLink().run()
+      }
+      const normalized = normalizeLinkHref(trimmed)
+      if (!normalized) {
+        if (alertFn) {
+          alertFn(
+            'Please enter a valid URL (https://example.com, /relative/path, mailto:, or tel:).',
+          )
+        }
+        return false
+      }
+      return focusChain(editor, false)
+        .extendMarkRange('link')
+        .setLink({ href: normalized.href })
+        .run()
+    },
+    active: (editor) => editor.isActive('link'),
+  },
   [TOOLBAR_COMMANDS.BLOCKQUOTE]: createToggleCommand(
     (chain) => chain.toggleBlockquote(),
     (editor) => editor.isActive('blockquote'),
@@ -197,9 +266,7 @@ async function uploadImage(
   const alt = altInput?.value?.trim() ?? ''
   if (!alt) {
     const confirmPrompt =
-      typeof window !== 'undefined' && typeof window.confirm === 'function'
-        ? window.confirm
-        : null
+      typeof window !== 'undefined' && typeof window.confirm === 'function' ? window.confirm : null
 
     if (confirmPrompt && !confirmPrompt('Insert image without alternative text?')) {
       fileInput.value = ''

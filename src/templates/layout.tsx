@@ -22,7 +22,17 @@ const Layout: FC<{
   hero?: Hero | null
   csrfToken?: string
   extraHead?: any
-} & PropsWithChildren> = ({ title, admin: _admin = false, signedIn = false, hero = null, csrfToken, extraHead, children }) => {
+  toolbar?: unknown
+} & PropsWithChildren> = ({
+  title,
+  admin: _admin = false,
+  signedIn = false,
+  hero = null,
+  csrfToken,
+  extraHead,
+  toolbar,
+  children,
+}) => {
   const navLinks = [
     { href: '/', label: 'Home' },
   ]
@@ -214,6 +224,14 @@ const Layout: FC<{
             </dialog>
           </el-dialog>
         </header>
+
+        {toolbar ? (
+          <div data-preview-toolbar class="border-b border-indigo-200 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-900/30">
+            <div class="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+              {toolbar as any}
+            </div>
+          </div>
+        ) : null}
 
         {/* Optional hero */}
         {h ? (

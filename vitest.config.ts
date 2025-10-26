@@ -4,6 +4,8 @@ process.env.HOME ??= path.join(__dirname, ".home");
 process.env.USERPROFILE ??= process.env.HOME;
 process.env.WRANGLER_CONFIG_DIR ??= path.join(__dirname, ".wrangler");
 process.env.VPW_LOG_LEVEL ??= "debug";
+process.env.VITE_CACHE_DIR ??= path.join(__dirname, ".vite-cache");
+process.env.VITEST_CACHE_DIR ??= path.join(__dirname, ".vitest-cache");
 
 const { defineWorkersConfig, readD1Migrations } = await import("@cloudflare/vitest-pool-workers/config");
 
@@ -15,6 +17,7 @@ export default defineWorkersConfig(async () => {
   migrations = await readD1Migrations(migrationsDir);
 
   return {
+    cacheDir: path.join(__dirname, ".vite-cache"),
     test: {
       setupFiles: ["./tests/setup/apply-migrations.ts"],
       reporters: [

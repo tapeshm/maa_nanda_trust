@@ -225,57 +225,57 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
     return {
       setImageFigure:
         (attrs) =>
-          ({ commands }) => {
-            const src = attrs.src || ''
-            if (!isAllowedImageSrc(src)) {
-              return false
-            }
+        ({ commands }) => {
+          const src = attrs.src || ''
+          if (!isAllowedImageSrc(src)) {
+            return false
+          }
 
-            const normalized = normalizeImageFigureAttrs({
-              ...attrs,
-              src,
-              alt: attrs.alt || '',
-            })
+          const normalized = normalizeImageFigureAttrs({
+            ...attrs,
+            src,
+            alt: attrs.alt || '',
+          })
 
-            return commands.insertContent({
-              type: this.name,
-              attrs: {
-                ...normalized,
-              },
-            })
-          },
+          return commands.insertContent({
+            type: this.name,
+            attrs: {
+              ...normalized,
+            },
+          })
+        },
       setImageSize:
         (size) =>
-          ({ state, dispatch }) => {
-            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
-              ...attrs,
-              size: clampImageFigureSize(size),
-            }))
-          },
+        ({ state, dispatch }) => {
+          return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+            ...attrs,
+            size: clampImageFigureSize(size),
+          }))
+        },
       setImageAlign:
         (align) =>
-          ({ state, dispatch }) => {
-            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
-              ...attrs,
-              align: clampImageFigureAlign(align),
-            }))
-          },
+        ({ state, dispatch }) => {
+          return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+            ...attrs,
+            align: clampImageFigureAlign(align),
+          }))
+        },
       updateImageAlt:
         (alt) =>
-          ({ state, dispatch }) => {
-            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
-              ...attrs,
-              alt: alt || '',
-            }))
-          },
+        ({ state, dispatch }) => {
+          return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+            ...attrs,
+            alt: alt || '',
+          }))
+        },
       setImageWrap:
         (wrap) =>
-          ({ state, dispatch }) => {
-            return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
-              ...attrs,
-              wrap: clampImageFigureWrap(wrap),
-            }))
-          },
+        ({ state, dispatch }) => {
+          return updateImageFigureNode(state, dispatch, this.name, (attrs) => ({
+            ...attrs,
+            wrap: clampImageFigureWrap(wrap),
+          }))
+        },
     }
   },
 })

@@ -84,6 +84,7 @@ migrations/*.sql.lock
 .fusebox/
 .dynamodb/
 .tern-port
+.vite-cache/
 
 # Temporary files
 tmp/

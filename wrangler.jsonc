@@ -24,6 +24,10 @@
     {
       "binding": "KV",
       "id": "mock-kv-id-for-prod"
+    },
+    {
+      "binding": "PAGES_CACHE",
+      "id": "mock-pages-cache-id"
     }
   ],
   // R2 Bucket binding

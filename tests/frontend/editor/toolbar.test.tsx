@@ -7,6 +7,7 @@ import {
   resetToolbarForTesting,
   unregisterToolbarForEditor,
 } from '../../../src/frontend/editor/toolbar'
+import type { EditorInstance } from '../../../src/frontend/editor/types'
 import { EDITOR_DATA_ATTRIBUTES } from '../../../src/editor/constants'
 
 const {
@@ -19,20 +20,37 @@ const {
 } = EDITOR_DATA_ATTRIBUTES
 
 type ListenerMap = Map<string, Set<(...args: any[]) => void>>
+type ButtonHandler = (event: Event) => void
 
 describe('editor toolbar', () => {
   let listeners: ListenerMap
   let chainRun: ReturnType<typeof vi.fn>
   let canRun: ReturnType<typeof vi.fn>
   let setImageFigure: ReturnType<typeof vi.fn>
+  let extendMarkRange: ReturnType<typeof vi.fn>
+  let setLink: ReturnType<typeof vi.fn>
+  let unsetLink: ReturnType<typeof vi.fn>
+  let windowPrompt: ReturnType<typeof vi.fn>
+  let windowAlert: ReturnType<typeof vi.fn>
+  let windowConfirm: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     listeners = new Map()
     chainRun = vi.fn(() => true)
     canRun = vi.fn(() => true)
     setImageFigure = vi.fn(() => ({ run: vi.fn(() => true) }))
+    extendMarkRange = vi.fn()
+    setLink = vi.fn(() => ({ run: chainRun }))
+    unsetLink = vi.fn(() => ({ run: chainRun }))
+    windowConfirm = vi.fn(() => true)
+    windowPrompt = vi.fn(() => 'https://example.com')
+    windowAlert = vi.fn()
     ;(globalThis as any).HTMLFormElement = class {}
-    ;(globalThis as any).window = { confirm: () => true }
+    ;(globalThis as any).window = {
+      confirm: windowConfirm,
+      prompt: windowPrompt,
+      alert: windowAlert,
+    }
   })
 
   afterEach(() => {
@@ -43,6 +61,8 @@ describe('editor toolbar', () => {
   })
 
   function createEditorStub() {
+    const selection = { from: 0, to: 0 }
+
     const chain = {
       focus: vi.fn().mockReturnThis(),
       toggleBold: vi.fn().mockReturnThis(),
@@ -56,6 +76,12 @@ describe('editor toolbar', () => {
         setImageFigure({ src, alt })
         return { run: vi.fn(() => true) }
       }),
+      extendMarkRange: vi.fn((...args: any[]) => {
+        extendMarkRange(...args)
+        return chain
+      }),
+      setLink: (...args: any[]) => setLink(...args),
+      unsetLink: (...args: any[]) => unsetLink(...args),
       run: chainRun,
     }
 
@@ -76,6 +102,7 @@ describe('editor toolbar', () => {
       chain: vi.fn(() => chain),
       can: vi.fn(() => canChain),
       isActive: vi.fn(() => false),
+      getAttributes: vi.fn(() => ({})),
       on: vi.fn((event: string, handler: (...args: any[]) => void) => {
         const set = listeners.get(event) ?? new Set()
         set.add(handler)
@@ -85,9 +112,17 @@ describe('editor toolbar', () => {
         const set = listeners.get(event)
         set?.delete(handler)
       }),
+      state: { selection },
     }
 
-    return editor
+    return {
+      editor: editor as unknown as EditorInstance,
+      selection,
+      setSelection: (from: number, to: number) => {
+        selection.from = from
+        selection.to = to
+      },
+    }
   }
 
   function dispatch(event: string) {
@@ -152,6 +187,7 @@ describe('editor toolbar', () => {
       ['shared', 'blockquote'],
       ['shared', 'bullet-list'],
       ['shared', 'ordered-list'],
+      ['shared', 'link'],
       ['shared', 'section-break'],
       ['full', 'image'],
     ]
@@ -256,10 +292,10 @@ describe('editor toolbar', () => {
   }
 
   it('executes formatting commands when buttons are clicked', () => {
-    const editor = createEditorStub()
+    const { editor } = createEditorStub()
     const { root, buttons } = createToolbarDom({ profile: 'basic' })
 
-    registerToolbarForEditor(root, editor as any, 'basic')
+    registerToolbarForEditor(root, editor, 'basic')
 
     const boldButton = buttons.find(
       (btn) => btn.dataset[DATA_ATTR_EDITOR_COMMAND.dataset] === 'bold',
@@ -274,12 +310,80 @@ describe('editor toolbar', () => {
     dispatch('transaction')
   })
 
+  it('prompts for a URL and applies a normalized link when text is selected', () => {
+    const { editor, setSelection } = createEditorStub()
+    const { root, buttons } = createToolbarDom({ profile: 'basic' })
+
+    registerToolbarForEditor(root, editor, 'basic')
+
+    const linkButton = buttons.find(
+      (btn) => btn.dataset[DATA_ATTR_EDITOR_COMMAND.dataset] === 'link',
+    )!
+    expect(linkButton.disabled).toBe(true)
+
+    setSelection(1, 5)
+    dispatch('selectionUpdate')
+    expect(linkButton.disabled).toBe(false)
+
+    windowPrompt.mockReturnValueOnce('https://Example.com/docs ')
+    linkButton.click()
+
+    expect(windowPrompt).toHaveBeenCalledWith('Enter link URL', '')
+    expect(extendMarkRange).toHaveBeenCalledWith('link')
+    expect(setLink).toHaveBeenCalledWith({ href: 'https://example.com/docs' })
+    expect(unsetLink).not.toHaveBeenCalled()
+  })
+
+  it('alerts the user when the supplied link is invalid', () => {
+    const { editor, setSelection } = createEditorStub()
+    const { root, buttons } = createToolbarDom({ profile: 'basic' })
+
+    registerToolbarForEditor(root, editor, 'basic')
+    const linkButton = buttons.find(
+      (btn) => btn.dataset[DATA_ATTR_EDITOR_COMMAND.dataset] === 'link',
+    )!
+
+    setSelection(2, 4)
+    dispatch('selectionUpdate')
+    windowPrompt.mockReturnValueOnce('javascript:alert(1)')
+
+    linkButton.click()
+
+    expect(windowAlert).toHaveBeenCalled()
+    expect(setLink).not.toHaveBeenCalled()
+    expect(unsetLink).not.toHaveBeenCalled()
+  })
+
+  it('removes an existing link when the prompt is cleared', () => {
+    const { editor, setSelection } = createEditorStub()
+    const { root, buttons } = createToolbarDom({ profile: 'basic' })
+
+    const editorAny = editor as any
+    editorAny.isActive = vi.fn(() => true)
+    editorAny.getAttributes = vi.fn(() => ({ href: 'https://example.com/current' }))
+
+    registerToolbarForEditor(root, editor, 'basic')
+    const linkButton = buttons.find(
+      (btn) => btn.dataset[DATA_ATTR_EDITOR_COMMAND.dataset] === 'link',
+    )!
+
+    setSelection(4, 4)
+    dispatch('selectionUpdate')
+    windowPrompt.mockReturnValueOnce('   ')
+
+    linkButton.click()
+
+    expect(windowPrompt).toHaveBeenCalledWith('Enter link URL', 'https://example.com/current')
+    expect(unsetLink).toHaveBeenCalled()
+    expect(setLink).not.toHaveBeenCalled()
+  })
+
   it('triggers file input for image command in full profile', () => {
-    const editor = createEditorStub()
+    const { editor } = createEditorStub()
     const { root, fileInput, buttons } = createToolbarDom({ profile: 'full' })
     const clickSpy = vi.spyOn(fileInput!, 'click')
 
-    registerToolbarForEditor(root, editor as any, 'full')
+    registerToolbarForEditor(root, editor, 'full')
 
     const imageButton = buttons.find(
       (btn) => btn.dataset[DATA_ATTR_EDITOR_COMMAND.dataset] === 'image',
@@ -290,7 +394,7 @@ describe('editor toolbar', () => {
   })
 
   it('uploads image and inserts node with provided alt text', async () => {
-    const editor = createEditorStub()
+    const { editor } = createEditorStub()
     const { root, fileInput, altInput } = createToolbarDom({ profile: 'full' })
 
     const file = new File([new Uint8Array([0xff, 0xd8])], 'photo.jpg', { type: 'image/jpeg' })
@@ -312,7 +416,7 @@ describe('editor toolbar', () => {
       json: async () => ({ url: '/media/photo.jpg' }),
     })
 
-    registerToolbarForEditor(root, editor as any, 'full')
+    registerToolbarForEditor(root, editor, 'full')
 
     fileInput!.dispatchEvent(new Event('change'))
     await vi.waitFor(() => {
@@ -327,7 +431,7 @@ describe('editor toolbar', () => {
   })
 
   it('prompts when alt text is empty and aborts on cancel', async () => {
-    const editor = createEditorStub()
+    const { editor } = createEditorStub()
     const { root, fileInput, altInput } = createToolbarDom({ profile: 'full' })
     altInput!.value = ''
 
@@ -348,7 +452,7 @@ describe('editor toolbar', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     const fetchMock = vi.spyOn(globalThis, 'fetch' as any)
 
-    registerToolbarForEditor(root, editor as any, 'full')
+    registerToolbarForEditor(root, editor, 'full')
 
     fileInput!.dispatchEvent(new Event('change'))
     await Promise.resolve()
@@ -359,10 +463,10 @@ describe('editor toolbar', () => {
   })
 
   it('removes listeners on unregister', () => {
-    const editor = createEditorStub()
+    const { editor } = createEditorStub()
     const { root } = createToolbarDom({ profile: 'basic' })
 
-    registerToolbarForEditor(root, editor as any, 'basic')
+    registerToolbarForEditor(root, editor, 'basic')
     unregisterToolbarForEditor(root)
 
     listeners.forEach((handlers) => {

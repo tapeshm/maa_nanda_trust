@@ -109,6 +109,49 @@ describe('admin save content route', () => {
     expect(stored.results?.[0]?.content_json).toContain('imageFigure')
   })
 
+  it('accepts anchor links with https href', async () => {
+    authState.authenticated = true
+    authState.roles = ['admin']
+    const env = createEnv()
+    const content = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: 'Visit site',
+              marks: [
+                {
+                  type: 'link',
+                  attrs: {
+                    href: 'https://example.com/docs',
+                    target: '_blank',
+                    rel: 'noopener',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const res = await app.fetch(buildRequest({ slug: 'demo', documentId: 'link-doc', content }), env as any)
+    expect(res.status).toBe(200)
+    const payload = await res.json()
+    expect(payload.ok).toBe(true)
+
+    const stored = await baseEnv.DB.prepare(
+      'SELECT content_html FROM editor_documents WHERE slug = ? AND document_id = ? LIMIT 1',
+    )
+      .bind('demo', 'link-doc')
+      .all<{ content_html: string }>()
+    const html = stored.results?.[0]?.content_html ?? ''
+    expect(html).toContain('<a href="https://example.com/docs"')
+    expect(html).toContain('rel="noopener noreferrer"')
+  })
+
   it('returns JSON payload suitable for HTMX responses', async () => {
     authState.authenticated = true
     authState.roles = ['admin']

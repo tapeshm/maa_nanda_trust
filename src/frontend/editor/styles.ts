@@ -71,7 +71,7 @@ export const MENUBAR_BUTTON_CLASSNAME = [
 export const MENUBAR_BUTTON_ACTIVE_CLASSNAME = [
   'bg-zinc-200', // Zinc-200 background for active state
   'dark:bg-zinc-700', // Zinc-700 background for active in dark mode
-  'ring-1 ring-zinc-300'
+  'ring-1 ring-zinc-300',
 ].join(' ')
 
 export const MENUBAR_BUTTON_ACTIVE_TOKENS = tokenizeClassNames(MENUBAR_BUTTON_ACTIVE_CLASSNAME)

@@ -24,13 +24,13 @@ describe('bindings availability', () => {
 })
 
 describe('app + context', () => {
-  it('responds with 200 and expected content', async () => {
+  it('renders an empty landing state when nothing is published', async () => {
     // Provide a minimal execution context to ensure it is accepted
     const ctx = { waitUntil: (_p: Promise<any>) => { } } as any
     const res = await app.fetch(new Request('http://localhost/'), env as any, ctx)
     expect(res.status).toBe(200)
     const html = await res.text()
-    expect(html).toContain('Welcome to Temple Trust')
+    expect(html).toContain('No landing page is published yet')
   })
 })
 

@@ -70,7 +70,7 @@ describe('extensionsList profile parity', () => {
     expect(expectedNodes).toEqual(
       expect.arrayContaining(['doc', 'paragraph', 'heading', 'blockquote']),
     )
-    expect(expectedMarks).toEqual(['bold', 'italic', 'strike', 'code'])
+    expect(expectedMarks).toEqual(['bold', 'italic', 'strike', 'code', 'link'])
     expect(schemaSignature.marks).toEqual(expectedMarks)
   })
 })

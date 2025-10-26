@@ -4,6 +4,8 @@ import { EDITOR_CLASSNAME } from '../../../src/frontend/editor/styles'
 const starterKit = { name: 'starter-kit' }
 const placeholderConfigured = { name: 'placeholder' }
 const placeholderConfigure = vi.fn(() => placeholderConfigured)
+const linkConfigured = { name: 'link' }
+const linkConfigure = vi.fn(() => linkConfigured)
 const imageFigureExtension = { name: 'imageFigure', type: 'node' }
 
 const editorConstructor = vi.fn()
@@ -15,6 +17,12 @@ vi.mock('@tiptap/starter-kit', () => ({
 vi.mock('@tiptap/extension-placeholder', () => ({
   default: {
     configure: placeholderConfigure,
+  },
+}))
+
+vi.mock('@tiptap/extension-link', () => ({
+  default: {
+    configure: linkConfigure,
   },
 }))
 
@@ -47,6 +55,7 @@ describe('createEditor factory profiles', () => {
     vi.resetModules()
     editorConstructor.mockClear()
     placeholderConfigure.mockClear()
+    linkConfigure.mockClear()
   })
 
   it('basic profile excludes ImageFigure extension', async () => {
@@ -55,7 +64,7 @@ describe('createEditor factory profiles', () => {
     createEditor({} as HTMLElement, 'basic')
 
     const [options] = editorConstructor.mock.calls.at(-1) ?? []
-    expect(options?.extensions).toEqual([starterKit, placeholderConfigured])
+    expect(options?.extensions).toEqual([starterKit, linkConfigured, placeholderConfigured])
   })
 
   it('full profile includes ImageFigure extension', async () => {
@@ -64,7 +73,11 @@ describe('createEditor factory profiles', () => {
     createEditor({} as HTMLElement, 'full')
 
     const [options] = editorConstructor.mock.calls.at(-1) ?? []
-    expect(options?.extensions?.slice(0, 2)).toEqual([starterKit, placeholderConfigured])
+    expect(options?.extensions?.slice(0, 3)).toEqual([
+      starterKit,
+      linkConfigured,
+      placeholderConfigured,
+    ])
     expect(options?.extensions?.at(-1)).toBe(imageFigureExtension)
   })
 

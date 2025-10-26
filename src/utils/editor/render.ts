@@ -15,6 +15,7 @@ import {
   optionalImageAttributes,
   optionalImageNode,
 } from './schemaSignature'
+import { normalizeLinkHref } from './linkValidation'
 
 type WarnFn = (reason: string, extra?: Record<string, unknown>) => void
 
@@ -30,7 +31,7 @@ const MEDIA_SRC_ABSOLUTE_PATTERN = /^https?:\/\/([^/]+)\/media\/[A-Za-z0-9/_\-.]
 const IMAGE_NODE_NAME = optionalImageNode()
 const ALLOWED_HEADING_LEVELS = new Set([1, 2, 3, 4, 5, 6])
 const SELF_CLOSING_TAGS = new Set(['br', 'hr', 'img'])
-const INLINE_TAGS = new Set(['strong', 'em', 's', 'code', 'br'])
+const INLINE_TAGS = new Set(['strong', 'em', 's', 'code', 'br', 'a'])
 // [D3:editor-tiptap.step-12:allow-figure-tags] Add figure and figcaption for imageFigure node
 const BLOCK_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'figure', 'figcaption'])
 const HTML_ENTITY_PATTERN = /[&<>"']/g
@@ -41,6 +42,11 @@ const EVENT_HANDLER_PATTERN = /\son[a-z]+\s*=\s*["']/i
 const JAVASCRIPT_PROTOCOL_PATTERN = /javascript:/i
 
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
+
+type SanitizedMark = {
+  type: string
+  attrs?: Record<string, string>
+}
 
 function resolveProfile(profile: EditorRenderContext['profile']): EditorProfile {
   if (typeof profile === 'string') {
@@ -110,10 +116,18 @@ function escapeAttribute(value: string): string {
   return escapeHtml(value)
 }
 
-function sanitizeMarks(marks: unknown, warn: WarnFn, allowedMarks: Set<string>) {
+function sanitizeMarks(
+  marks: unknown,
+  warn: WarnFn,
+  allowedMarks: Set<string>,
+  origin?: string | null,
+): SanitizedMark[] | undefined {
   if (!Array.isArray(marks)) {
     return undefined
   }
+
+  void origin
+
   const sanitized = marks
     .map((mark) => {
       if (!mark || typeof mark !== 'object') {
@@ -125,11 +139,44 @@ function sanitizeMarks(marks: unknown, warn: WarnFn, allowedMarks: Set<string>) 
         warn('invalid_mark', { type })
         return null
       }
+      if (type === 'link') {
+        return sanitizeLinkMark(mark, warn)
+      }
       return { type }
     })
     .filter(Boolean)
 
-  return sanitized.length > 0 ? sanitized : undefined
+  return sanitized.length > 0 ? (sanitized as SanitizedMark[]) : undefined
+}
+
+function sanitizeLinkMark(mark: any, warn: WarnFn): SanitizedMark | null {
+  const attrs = mark?.attrs ?? {}
+  const normalized = normalizeLinkHref(attrs.href)
+  if (!normalized) {
+    warn('invalid_link', { reason: 'href', value: attrs.href })
+    return null
+  }
+
+  const resultAttrs: Record<string, string> = {
+    href: normalized.href,
+  }
+
+  const target = typeof attrs.target === 'string' ? attrs.target.trim().toLowerCase() : ''
+  if (target === '_blank') {
+    resultAttrs.target = '_blank'
+    const rel = typeof attrs.rel === 'string' ? attrs.rel : ''
+    const tokens = new Set(rel.split(/\s+/).filter(Boolean))
+    tokens.add('noopener')
+    tokens.add('noreferrer')
+    resultAttrs.rel = Array.from(tokens).join(' ')
+  }
+
+  const title = typeof attrs.title === 'string' ? attrs.title.trim() : ''
+  if (title) {
+    resultAttrs.title = title
+  }
+
+  return { type: 'link', attrs: resultAttrs }
 }
 
 interface SanitizeOptions {
@@ -161,7 +208,7 @@ function sanitizeNode(node: any, options: SanitizeOptions): JSONContent | null {
 
   if (type === 'text') {
     const text = typeof node.text === 'string' ? node.text : ''
-    const marks = sanitizeMarks(node.marks, warn, allowedMarks)
+    const marks = sanitizeMarks(node.marks, warn, allowedMarks, origin)
     return marks ? ({ type: 'text', text, marks } as JSONContent) : ({ type: 'text', text } as JSONContent)
   }
 
@@ -276,7 +323,7 @@ function sanitizeEditorJson(jsonInput: unknown, context: EditorRenderContext): J
   return { type: 'doc', content }
 }
 
-function renderMarks(text: string, marks: { type: string }[] | undefined): string {
+function renderMarks(text: string, marks: SanitizedMark[] | undefined): string {
   if (!marks || marks.length === 0) {
     return escapeHtml(text)
   }
@@ -291,6 +338,27 @@ function renderMarks(text: string, marks: { type: string }[] | undefined): strin
         return `<s>${acc}</s>`
       case 'code':
         return `<code>${acc}</code>`
+      case 'link': {
+        const href = mark.attrs?.href
+        if (!href) {
+          return acc
+        }
+        const attributes: string[] = [`href="${escapeAttribute(href)}"`]
+        if (mark.attrs?.target === '_blank') {
+          attributes.push('target="_blank"')
+          const rel =
+            mark.attrs.rel && mark.attrs.rel.includes('noopener') && mark.attrs.rel.includes('noreferrer')
+              ? mark.attrs.rel
+              : 'noopener noreferrer'
+          attributes.push(`rel="${escapeAttribute(rel)}"`)
+        } else if (mark.attrs?.rel) {
+          attributes.push(`rel="${escapeAttribute(mark.attrs.rel)}"`)
+        }
+        if (mark.attrs?.title) {
+          attributes.push(`title="${escapeAttribute(mark.attrs.title)}"`)
+        }
+        return `<a ${attributes.join(' ')}>${acc}</a>`
+      }
       default:
         return acc
     }
@@ -398,6 +466,67 @@ function sanitizeHtmlAttributes(tag: string, attributes: string, context: Editor
   if (STYLE_ATTRIBUTE_PATTERN.test(attributes) || EVENT_HANDLER_PATTERN.test(attributes)) {
     warn('html_forbidden_attribute', { tag })
     return false
+  }
+
+  if (tag === 'a') {
+    const attrPattern = /(\w[\w-]*)\s*=\s*("[^"]*"|'[^']*')/g
+    const allowedAttrs = new Set(['href', 'target', 'rel', 'title', 'class'])
+    let match: RegExpExecArray | null
+    let href: string | null = null
+    let target: string | null = null
+    let rel: string | null = null
+
+    while ((match = attrPattern.exec(attributes)) !== null) {
+      const attrName = match[1]
+      const attrValue = match[2].slice(1, -1)
+
+      if (
+        !allowedAttrs.has(attrName) &&
+        !attrName.startsWith('data-') &&
+        !attrName.startsWith('aria-')
+      ) {
+        warn('html_forbidden_attribute', { tag, attr: attrName })
+        return false
+      }
+
+      if (JAVASCRIPT_PROTOCOL_PATTERN.test(attrValue)) {
+        warn('html_javascript_protocol', { tag, attr: attrName })
+        return false
+      }
+
+      if (attrName === 'href') {
+        const normalized = normalizeLinkHref(attrValue)
+        if (!normalized) {
+          warn('html_link_href_invalid', { href: attrValue })
+          return false
+        }
+        href = normalized.href
+      } else if (attrName === 'target') {
+        const normalizedTarget = attrValue.toLowerCase()
+        if (normalizedTarget !== '_blank' && normalizedTarget !== '_self') {
+          warn('html_link_target_invalid', { target: attrValue })
+          return false
+        }
+        target = normalizedTarget
+      } else if (attrName === 'rel') {
+        rel = attrValue
+      }
+    }
+
+    if (!href) {
+      warn('html_link_href_missing')
+      return false
+    }
+
+    if (target === '_blank') {
+      const relTokens = new Set((rel ?? '').split(/\s+/).filter(Boolean))
+      if (!relTokens.has('noopener') || !relTokens.has('noreferrer')) {
+        warn('html_link_rel_missing', { rel })
+        return false
+      }
+    }
+
+    return true
   }
 
   if (tag === 'img') {

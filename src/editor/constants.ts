@@ -25,7 +25,7 @@ export const EDITOR_OPTIONAL_IMAGE_NODE = {
 
 export const EDITOR_LEGACY_IMAGE_NODE = 'image'
 
-export const EDITOR_BASE_MARK_TYPES = ['bold', 'italic', 'strike', 'code'] as const
+export const EDITOR_BASE_MARK_TYPES = ['bold', 'italic', 'strike', 'code', 'link'] as const
 
 type DataAttributeDefinition<Attr extends `data-${string}`, Dataset extends string> = {
   attr: Attr
