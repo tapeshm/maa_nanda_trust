@@ -12,4 +12,5 @@ export interface Bindings {
   DB: D1Database
   R2: R2Bucket
   KV: KVNamespace
+  PAGES_CACHE: KVNamespace
 }

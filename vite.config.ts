@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         ui: resolve(__dirname, 'src/frontend/ui.ts'),
         editor: resolve(__dirname, 'src/frontend/editor/index.ts'),
+        'public-pages': resolve(__dirname, 'src/client/public-pages.ts'),
       },
       output: {
         entryFileNames: 'assets/[name]-[hash].js',

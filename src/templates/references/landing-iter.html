@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Maa Nanda Kansuwa Trust — Iterative Landing Concept</title>
+    <meta name="theme-color" content="#2f1b10" />
+    <style>
+      /* ===============================
+         Asset URL Hooks (set to url("...") when assets finalize)
+         =============================== */
+      :root {
+        --asset-door-left:  url("/assets/temple-door-left.png");/* HOOK: Temple door left panel — 2000–2800px tall PNG/WebP aligned to hinge */
+        --asset-door-right:  url("/assets/temple-door-right.png");/* HOOK: Temple door right panel — 2000–2800px tall PNG/WebP aligned to hinge */
+        --asset-temple-interior:  url("/assets/temple-inside.png");/* HOOK: Sanctum interior backdrop — wide 3200x1800px WebP/AVIF */
+        --asset-bell: none; /* HOOK: Hanging bell illustration — square 800x800px with transparent background */
+        --asset-donation-box: none; /* HOOK: Donation box texture — 1600x900px PNG/WebP */
+        --asset-donation-coin: none; /* HOOK: Coin artwork — circular 800x800px PNG/SVG */
+
+        /* Animation control hooks */
+        --door-open-duration: 4500ms;
+        --door-close-duration: 1800ms;
+        --door-open-easing: cubic-bezier(0.22, 0.72, 0.12, 1);
+        --door-close-easing: cubic-bezier(0.32, 0.04, 0.28, 1);
+        --door-auto-delay: 600ms;
+        --content-reveal-delay: 1000ms;
+        --content-fade-duration: 500ms;
+        --nav-collapse-duration: 600ms;
+        --nav-collapse-easing: cubic-bezier(0.22, 0.7, 0.16, 1);
+        --nav-collapse-threshold: 0.25;
+        --nav-collapse-margin: clamp(8px, 2vw, 20px);
+      }
+
+      /* ===============================
+         Temple Experience Design Tokens
+         =============================== */
+      :root {
+        --bg-deep: #0f0a07;
+        --bg-ambient: radial-gradient(
+            1200px 720px at 50% 18%,
+            rgba(255, 218, 150, 0.1),
+            transparent 65%
+          ),
+          radial-gradient(
+            800px 440px at 20% 70%,
+            rgba(255, 218, 150, 0.08),
+            transparent 70%
+          ),
+          #0f0a07;
+        --wood-base: #4b2e18;
+        --wood-highlight: #714323;
+        --wood-shadow: #2c160a;
+        --gold: #d7b26d;
+        --gold-bright: #f6d27c;
+        --sindoor: #b33a27;
+        --cream: #f8f1df;
+        --scroll-bg: linear-gradient(
+            rgba(116, 83, 52, 0.12),
+            rgba(116, 83, 52, 0.2)
+          ),
+          repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.02),
+            rgba(255, 255, 255, 0.02) 26px,
+            rgba(0, 0, 0, 0.04) 26px,
+            rgba(0, 0, 0, 0.04) 52px
+          ),
+          rgba(243, 229, 199, 0.84);
+        --scroll-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+        --nav-height: clamp(52px, 7vw, 74px);
+        --nav-link-gap: clamp(16px, 3.6vw, 36px);
+        --nav-top-gap: clamp(24px, 3vw, 44px);
+        --frame-thickness: clamp(16px, 4.4vw, 80px);
+        --content-max: min(1040px, 90vw);
+        --mobile-menu-top: clamp(18px, 6vw, 32px);
+        --mobile-menu-right: clamp(18px, 6vw, 32px);
+        --mobile-menu-width: min(320px, 88vw);
+        --mobile-menu-max-height: min(420px, 70vh);
+        --mobile-menu-bg: linear-gradient(
+            rgba(245, 230, 196, 0.98),
+            rgba(233, 214, 175, 0.94)
+          ),
+          repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.08) 22px,
+            rgba(73, 38, 16, 0.12) 22px,
+            rgba(73, 38, 16, 0.12) 44px
+          );
+        --mobile-menu-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+        --mobile-menu-rod-color: linear-gradient(180deg, #f8dba1, #c0943f);
+        --mobile-menu-tassel: radial-gradient(circle at 50% 30%, #f0ad4d, #be641c);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100svh;
+        color: var(--cream);
+        background: var(--bg-ambient);
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+          sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      section[id] {
+        scroll-margin-top: calc(var(--nav-height) + var(--nav-top-gap) + var(--nav-collapse-margin));
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px dashed var(--gold);
+        outline-offset: 4px;
+      }
+
+      .skip-link {
+        position: absolute;
+        top: -100%;
+        left: 1rem;
+        padding: 0.5rem 0.75rem;
+        background: #000;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gold);
+        z-index: 1000;
+        transition: top 0.2s ease-in-out;
+      }
+
+      .skip-link:focus {
+        top: 1rem;
+      }
+
+      .content-shell {
+        position: relative;
+        z-index: 80;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--content-fade-duration) ease;
+        padding-top: calc(var(--nav-height) + var(--nav-top-gap));
+      }
+
+      .content-shell.has-condensed-nav {
+        padding-top: calc(var(--nav-height) + clamp(14px, 2.4vw, 26px));
+      }
+
+      .content-shell.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* ===============================
+         1) Temple Door Reveal Overlay
+         =============================== */
+      .door-overlay {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        z-index: 999;
+        background: radial-gradient(
+          circle at center,
+          rgba(0, 0, 0, 0.4),
+          rgba(0, 0, 0, 0.85) 60%
+        );
+        perspective: 1200px;
+        isolation: isolate;
+        transition: opacity 1.2s ease-in-out;
+      }
+
+      .door-overlay[hidden] {
+        display: none;
+      }
+
+      .door-panel {
+        position: relative;
+        --door-panel-art: none;
+        background-color: #4b2e18;
+        background-image: var(--door-panel-art), linear-gradient(
+          135deg,
+          #5b361c 10%,
+          #30190c 60%,
+          #6f3d20 92%
+        );
+        background-size: cover;
+        background-position: center;
+        box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.8);
+        transform-origin: center;
+        transform-style: preserve-3d;
+        overflow: hidden;
+      }
+
+      .door-panel::before {
+        /* Wooden carvings hinted with layered gradients */
+        content: "";
+        position: absolute;
+        inset: 7% 11%;
+        border: 6px solid rgba(0, 0, 0, 0.35);
+        border-radius: 14px;
+        box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.45), inset 0 0 0 1.5px rgba(255, 255, 255, 0.05);
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(255, 220, 170, 0.08),
+            rgba(255, 220, 170, 0.08) 18px,
+            rgba(0, 0, 0, 0.08) 18px,
+            rgba(0, 0, 0, 0.08) 36px
+          ),
+          linear-gradient(145deg, rgba(0, 0, 0, 0.2), transparent 62%);
+      }
+
+      .door-panel--left {
+        --door-panel-art: var(--asset-door-left);
+        transform-origin: left center;
+      }
+
+      .door-panel--right {
+        --door-panel-art: var(--asset-door-right);
+        transform-origin: right center;
+      }
+
+      @keyframes door-open-left {
+        from {
+          transform: rotateY(0deg);
+        }
+        to {
+          transform: rotateY(-104deg) translateX(-1%);
+        }
+      }
+
+      @keyframes door-open-right {
+        from {
+          transform: rotateY(0deg);
+        }
+        to {
+          transform: rotateY(104deg) translateX(1%);
+        }
+      }
+
+      @keyframes door-close-left {
+        from {
+          transform: rotateY(-104deg) translateX(-1%);
+        }
+        to {
+          transform: rotateY(0deg);
+        }
+      }
+
+      @keyframes door-close-right {
+        from {
+          transform: rotateY(104deg) translateX(1%);
+        }
+        to {
+          transform: rotateY(0deg);
+        }
+      }
+
+      .door-overlay[data-door-state="opening"] .door-panel--left {
+        animation: door-open-left var(--door-open-duration) var(--door-open-easing) forwards;
+      }
+
+      .door-overlay[data-door-state="opening"] .door-panel--right {
+        animation: door-open-right var(--door-open-duration) var(--door-open-easing) forwards;
+        animation-delay: 0.12s;
+      }
+
+      .door-overlay[data-door-state="closing"] .door-panel--left {
+        animation: door-close-left var(--door-close-duration) var(--door-close-easing) forwards;
+      }
+
+      .door-overlay[data-door-state="closing"] .door-panel--right {
+        animation: door-close-right var(--door-close-duration) var(--door-close-easing) forwards;
+        animation-delay: 0.12s;
+      }
+
+      .door-overlay[data-door-state="closed"] .door-panel--left,
+      .door-overlay[data-door-state="opening"] .door-panel--left {
+        transform: rotateY(0deg);
+      }
+
+      .door-overlay[data-door-state="opened"] .door-panel--left,
+      .door-overlay[data-door-state="closing"] .door-panel--left {
+        transform: rotateY(-104deg) translateX(-1%);
+      }
+
+      .door-overlay[data-door-state="closed"] .door-panel--right,
+      .door-overlay[data-door-state="opening"] .door-panel--right {
+        transform: rotateY(0deg);
+      }
+
+      .door-overlay[data-door-state="opened"] .door-panel--right,
+      .door-overlay[data-door-state="closing"] .door-panel--right {
+        transform: rotateY(104deg) translateX(1%);
+      }
+
+      .door-enter {
+        position: absolute;
+        right: max(18px, 2vw);
+        bottom: max(18px, 2vw);
+        z-index: 2;
+        padding: 0.6rem 1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(0, 0, 0, 0.6);
+        color: var(--cream);
+        cursor: pointer;
+        font-size: 0.95rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        transition: background 0.2s ease-in-out;
+      }
+
+      .door-enter:hover {
+        background: rgba(0, 0, 0, 0.75);
+      }
+
+      .door-toggle {
+        position: fixed;
+        right: clamp(18px, 4vw, 40px);
+        bottom: clamp(18px, 4vw, 40px);
+        z-index: 150;
+        padding: 0.65rem 1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(0, 0, 0, 0.55);
+        color: var(--cream);
+        font-size: 0.95rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        cursor: pointer;
+        backdrop-filter: blur(2px);
+        transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
+      }
+
+      .door-toggle:hover {
+        background: rgba(0, 0, 0, 0.75);
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .door-overlay {
+          display: none;
+        }
+        .door-toggle {
+          display: none;
+        }
+      }
+
+      /* =======================================
+         2) Sacred Frame & Ambient Background
+         ======================================= */
+      .page-frame {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 50;
+        display: grid;
+      }
+
+      .temple-interior {
+        position: fixed;
+        inset: 0;
+        z-index: 15;
+        background-color: rgba(0, 0, 0, 0.45);
+        background-image: var(--asset-temple-interior);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.6s ease-in-out;
+      }
+
+      .incense-glow {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          circle at 50% 15%,
+          rgba(255, 207, 111, 0.2),
+          transparent 55%
+        );
+        filter: blur(70px);
+        opacity: 0.45;
+        pointer-events: none;
+        z-index: 40;
+      }
+
+      /* =======================================
+         3) Primary Navigation (Desktop)
+         ======================================= */
+      .top-nav {
+        position: fixed;
+        top: clamp(12px, 1.6vw, 22px);
+        left: 0;
+        right: 0;
+        margin-inline: auto;
+        max-width: min(1100px, 94vw);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--nav-link-gap);
+        padding: clamp(12px, 2vw, 18px) clamp(24px, 4.6vw, 48px);
+        border-radius: clamp(26px, 7vw, 42px);
+        background: rgba(14, 8, 4, 0.78);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(10px);
+        transform: translateY(0);
+        transition:
+          transform var(--nav-collapse-duration) var(--nav-collapse-easing),
+          background var(--nav-collapse-duration) var(--nav-collapse-easing),
+          border-color var(--nav-collapse-duration) var(--nav-collapse-easing),
+          box-shadow var(--nav-collapse-duration) var(--nav-collapse-easing),
+          opacity var(--nav-collapse-duration) var(--nav-collapse-easing);
+        will-change: transform;
+        z-index: 120;
+      }
+
+      .top-nav::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .top-nav a {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(8px, 1.6vw, 14px) clamp(16px, 2.8vw, 26px);
+        border-radius: 999px;
+        font-family: "Cormorant Garamond", "Times New Roman", serif;
+        font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255, 245, 224, 0.92);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+        transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .top-nav a::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(120deg, rgba(247, 224, 160, 0.35), rgba(196, 132, 48, 0.15));
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+      }
+
+      .top-nav a:hover,
+      .top-nav a:focus-visible {
+        color: #43230f;
+        background: rgba(255, 241, 210, 0.95);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 14px 28px rgba(0, 0, 0, 0.28);
+      }
+
+      .top-nav a:hover::after,
+      .top-nav a:focus-visible::after {
+        opacity: 1;
+      }
+
+      .top-nav a:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.35);
+        outline-offset: 3px;
+      }
+
+      .top-nav.is-condensed {
+        transform: translateY(0);
+        background: rgba(10, 6, 3, 0.9);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48);
+      }
+
+      .top-nav.is-condensed a {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .top-nav {
+          transition: none;
+        }
+        .top-nav a {
+          transition: none;
+        }
+      }
+
+      /* =======================================
+         Mobile Scroll Menu (Design concept: scroll rod hamburger)
+         ======================================= */
+      .scroll-menu {
+        position: fixed;
+        top: var(--mobile-menu-top);
+        right: var(--mobile-menu-right);
+        z-index: 160;
+        display: none;
+        color: #472912;
+      }
+
+      .scroll-menu-toggle {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(0, 0, 0, 0.6);
+        color: var(--cream);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        cursor: pointer;
+        transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
+      }
+
+      .scroll-menu-toggle:hover,
+      .scroll-menu-toggle:focus-visible {
+        background: rgba(0, 0, 0, 0.75);
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+
+      .scroll-menu-icon {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: clamp(36px, 8vw, 48px);
+        height: clamp(36px, 8vw, 48px);
+      }
+
+      .scroll-menu-rod {
+        width: 100%;
+        height: 0.45rem;
+        border-radius: 999px;
+        background: var(--mobile-menu-rod-color);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+      }
+
+      .scroll-menu-cord {
+        position: absolute;
+        top: 45%;
+        width: 0.45rem;
+        height: clamp(14px, 4vw, 26px);
+        background: linear-gradient(180deg, #f8dba1, #c26d24);
+        border-radius: 999px;
+      }
+
+      .scroll-menu-cord--left {
+        left: 12%;
+      }
+
+      .scroll-menu-cord--right {
+        right: 12%;
+      }
+
+      .scroll-menu-tassel {
+        position: absolute;
+        bottom: -14px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: clamp(14px, 4vw, 20px);
+        height: clamp(16px, 4.5vw, 24px);
+        border-radius: 999px 999px 6px 6px;
+        background: var(--mobile-menu-tassel);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+      }
+
+      .scroll-menu-panel {
+        position: absolute;
+        top: calc(100% + clamp(14px, 4vw, 20px));
+        right: 0;
+        width: var(--mobile-menu-width);
+        max-height: var(--mobile-menu-max-height);
+        overflow: hidden;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-6px) scaleY(0.92);
+        transform-origin: top center;
+        transition:
+          opacity 0.35s var(--nav-collapse-easing),
+          transform 0.35s var(--nav-collapse-easing);
+      }
+
+      .scroll-menu.is-open .scroll-menu-panel {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        pointer-events: auto;
+      }
+
+      .scroll-menu-scroll {
+        position: relative;
+        padding: clamp(22px, 6vw, 32px);
+        background: var(--mobile-menu-bg);
+        border-radius: clamp(20px, 6vw, 28px);
+        box-shadow: var(--mobile-menu-shadow);
+        clip-path: inset(100% 0 0 0);
+        opacity: 0;
+        transform: translateY(-6px) scaleY(0.94);
+      }
+
+      .scroll-menu.is-open .scroll-menu-scroll {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+      }
+
+      /* Rolling parchment edge */
+      .scroll-menu-roll {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -60%) scaleY(0.7);
+        opacity: 0;
+        width: 82%;
+        height: clamp(14px, 3.8vw, 20px);
+        border-radius: 999px;
+        background:
+          radial-gradient(120% 70% at 50% 0%, rgba(0,0,0,0.25), transparent 60%),
+          linear-gradient(180deg, #f1dca0, #c89b3c 60%, #8a5d1b);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.45);
+        pointer-events: none;
+      }
+
+      .scroll-menu.is-open .scroll-menu-roll {
+        transform: translate(-50%, 0%) scaleY(1);
+        opacity: 1;
+      }
+
+      /* Decorative subtle grain overlay */
+      .scroll-menu-scroll::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(73, 38, 16, 0.04),
+          rgba(73, 38, 16, 0.04) 14px,
+          rgba(255, 255, 255, 0.06) 14px,
+          rgba(255, 255, 255, 0.06) 28px
+        );
+        mix-blend-mode: multiply;
+        opacity: 0.4;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .scroll-menu-scroll::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: clamp(-18px, -4vw, -12px);
+        width: 72%;
+        height: clamp(9px, 2.6vw, 14px);
+        border-radius: 999px;
+        background: linear-gradient(180deg, #d8ae55, #8b5a1a);
+        transform: translateX(-50%);
+        box-shadow: 0 10px 16px rgba(0,0,0,0.25);
+      }
+
+      .scroll-menu-links {
+        display: grid;
+        gap: clamp(12px, 4vw, 18px);
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        text-align: center;
+      }
+
+      .scroll-menu-links a {
+        padding: 0.85rem;
+        background: rgba(73, 38, 16, 0.06);
+        border-radius: 12px;
+        color: #3a220f;
+        font-weight: 600;
+        font-family: "Cormorant Garamond", "Times New Roman", serif;
+        box-shadow: inset 0 0 0 1px rgba(73, 38, 16, 0.12);
+        transition: background 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+      }
+
+      .scroll-menu-links a:hover,
+      .scroll-menu-links a:focus-visible {
+        background: rgba(73, 38, 16, 0.16);
+        box-shadow: inset 0 0 0 1px rgba(73, 38, 16, 0.22), 0 8px 20px rgba(0,0,0,0.1);
+      }
+
+      /* Keyframes for the scroll reveal/hide */
+      @keyframes scroll-reveal {
+        0% {
+          clip-path: inset(100% 0 0 0);
+          transform: translateY(-6px) scaleY(0.96);
+          opacity: 0;
+        }
+        60% {
+          clip-path: inset(8% 0 0 0);
+          opacity: 1;
+        }
+        100% {
+          clip-path: inset(0 0 0 0);
+          transform: translateY(0) scaleY(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes scroll-hide {
+        0% {
+          clip-path: inset(0 0 0 0);
+          transform: translateY(0) scaleY(1);
+          opacity: 1;
+        }
+        100% {
+          clip-path: inset(100% 0 0 0);
+          transform: translateY(-6px) scaleY(0.94);
+          opacity: 0;
+        }
+      }
+
+      .scroll-menu.is-opening .scroll-menu-scroll {
+        animation: scroll-reveal 480ms var(--nav-collapse-easing) both;
+      }
+      .scroll-menu.is-closing .scroll-menu-scroll {
+        animation: scroll-hide 320ms ease-out both;
+      }
+
+      .scroll-menu.is-opening .scroll-menu-roll {
+        animation: scroll-roll-anim 480ms var(--nav-collapse-easing) both;
+      }
+      .scroll-menu.is-closing .scroll-menu-roll {
+        animation: scroll-roll-hide 320ms ease-out both;
+      }
+
+      @keyframes scroll-roll-anim {
+        from { transform: translate(-50%, -60%) scaleY(0.7); opacity: 0.7; }
+        60% { transform: translate(-50%, -10%) scaleY(0.95); opacity: 1; }
+        to   { transform: translate(-50%, 0%) scaleY(1); opacity: 1; }
+      }
+      @keyframes scroll-roll-hide {
+        from { transform: translate(-50%, 0%) scaleY(1); opacity: 1; }
+        to   { transform: translate(-50%, -60%) scaleY(0.7); opacity: 0; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .scroll-menu.is-opening .scroll-menu-scroll,
+        .scroll-menu.is-closing .scroll-menu-scroll,
+        .scroll-menu.is-opening .scroll-menu-roll,
+        .scroll-menu.is-closing .scroll-menu-roll {
+          animation: none !important;
+        }
+        .scroll-menu.is-open .scroll-menu-panel {
+          opacity: 1;
+          transform: none;
+        }
+        .scroll-menu.is-open .scroll-menu-scroll {
+          clip-path: inset(0 0 0 0);
+          opacity: 1;
+          transform: translateY(0) scaleY(1);
+        }
+        .scroll-menu.is-open .scroll-menu-roll {
+          transform: translate(-50%, 0%) scaleY(1);
+          opacity: 1;
+        }
+      }
+
+      /* =======================================
+         4) Hero Darshan Section
+         ======================================= */
+      main {
+        position: relative;
+        isolation: isolate;
+        z-index: 80; /* ensures scroll content sits above temple interior imagery */
+        padding-top: clamp(52px, 9vw, 140px);
+        transition: padding-top var(--nav-collapse-duration) var(--nav-collapse-easing);
+      }
+
+      .content-shell.has-condensed-nav main {
+        padding-top: clamp(40px, 7vw, 110px);
+      }
+
+      .hero {
+        min-height: calc(100svh - var(--frame-thickness) * 2);
+        display: grid;
+        place-items: center;
+        padding: clamp(64px, 12vw, 180px) 1.5rem calc(var(--frame-thickness) * 1.6);
+        text-align: center;
+        position: relative;
+      }
+
+      .hero::before {
+        /* Temple sanctum ambience */
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+            circle at 50% 30%,
+            rgba(255, 216, 124, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(circle at 50% 65%, rgba(255, 180, 80, 0.15), transparent 60%),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+        filter: blur(0.5px);
+        z-index: -1;
+        opacity: 0.95;
+      }
+
+      .hero-content {
+        max-width: var(--content-max);
+        padding: clamp(1.5rem, 4vw, 3rem);
+        background: rgba(0, 0, 0, 0.45);
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(6px);
+      }
+
+      .hero-title {
+        font-size: clamp(2.2rem, 5vw, 3.8rem);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+
+      .hero-subtitle {
+        font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+        opacity: 0.88;
+      }
+
+      .scroll-indicator {
+        position: absolute;
+        left: 50%;
+        bottom: calc(var(--frame-thickness) + 16px);
+        transform: translateX(-50%);
+        display: grid;
+        gap: 0.4rem;
+        place-items: center;
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.9;
+      }
+
+      .scroll-glyph {
+        width: 22px;
+        height: 22px;
+        border-right: 2px solid var(--cream);
+        border-bottom: 2px solid var(--cream);
+        transform: rotate(45deg);
+        animation: float-down 2.4s ease-in-out infinite;
+      }
+
+      @keyframes float-down {
+        0%,
+        100% {
+          translate: 0 0;
+        }
+        50% {
+          translate: 0 8px;
+        }
+      }
+
+      /* =======================================
+         5) Scroll Manuscript Section
+         ======================================= */
+      .scroll-wrapper {
+        position: relative;
+        margin-inline: auto;
+        margin-bottom: clamp(64px, 12vw, 140px);
+        max-width: calc(var(--content-max) + 220px);
+        padding-inline: clamp(18px, 5vw, 44px);
+      }
+
+      .scroll-bg {
+        position: relative;
+        background: var(--scroll-bg);
+        background-color: rgba(243, 229, 199, 0.78);
+        padding: clamp(36px, 6vw, 72px) clamp(24px, 5vw, 60px);
+        border-radius: 18px;
+        color: #27180b;
+        box-shadow: var(--scroll-shadow);
+        border: 1px solid rgba(105, 80, 40, 0.24);
+        backdrop-filter: blur(3px);
+      }
+
+      .scroll-bg::before,
+      .scroll-bg::after {
+        /* Brass rods */
+        content: "";
+        position: absolute;
+        left: 6%;
+        right: 6%;
+        height: 16px;
+        background: radial-gradient(circle at 50% 50%, #f7d88a, #b8883f);
+        box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.45),
+          inset 0 -2px 6px rgba(0, 0, 0, 0.35);
+        border-radius: 999px;
+      }
+
+      .scroll-bg::before {
+        top: -28px;
+      }
+
+      .scroll-bg::after {
+        bottom: -28px;
+      }
+
+      .scroll-cords {
+        position: absolute;
+        top: -46px;
+        left: 6%;
+        right: 6%;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .scroll-cords span {
+        width: clamp(6px, 1.2vw, 10px);
+        height: clamp(42px, 7vw, 76px);
+        background: linear-gradient(180deg, #f6d07c, #b0572f 65%, #7a301b);
+        border-radius: 999px;
+        box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.25);
+      }
+
+      .scroll-section + .scroll-section {
+        margin-top: clamp(28px, 3.5vw, 48px);
+      }
+
+      .scroll-eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: rgba(38, 20, 10, 0.7);
+      }
+
+      .scroll-heading {
+        font-family: "Cormorant Garamond", "Times New Roman", serif;
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+        margin: 0.2rem 0 0.6rem;
+        color: #311c0c;
+      }
+
+      .scroll-text {
+        font-size: clamp(1rem, 2.1vw, 1.2rem);
+        color: rgba(39, 24, 13, 0.88);
+        line-height: 1.7;
+      }
+
+      .scroll-grid {
+        margin-top: clamp(24px, 3vw, 32px);
+        display: grid;
+        gap: clamp(18px, 2.6vw, 28px);
+      }
+
+      @media (min-width: 900px) {
+        .scroll-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      .scroll-card {
+        background: rgba(255, 248, 226, 0.9);
+        border-radius: 16px;
+        padding: clamp(20px, 3vw, 28px);
+        box-shadow: 0 12px 24px rgba(66, 41, 20, 0.18);
+        border: 1px solid rgba(107, 74, 41, 0.2);
+      }
+
+      .scroll-card h3 {
+        margin: 0 0 0.4rem;
+        font-size: clamp(1.1rem, 2vw, 1.4rem);
+        color: #442511;
+      }
+
+      .scroll-card p {
+        margin: 0;
+        color: rgba(53, 36, 22, 0.9);
+        font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+      }
+
+      /* =======================================
+         6) Donation Box with Coin Interaction
+         ======================================= */
+      .donation-section {
+        display: grid;
+        place-items: center;
+        margin-bottom: clamp(90px, 14vw, 180px);
+        text-align: center;
+        gap: 2rem;
+      }
+
+      .donation-box {
+        position: relative;
+        width: clamp(260px, 36vw, 360px);
+        height: clamp(140px, 20vw, 200px);
+        background-image: var(--asset-donation-box),
+          linear-gradient(160deg, #673c20, #2f160a 70%);
+        background-size: cover, 100% 100%;
+        background-position: center;
+        border-radius: 22px 22px 12px 12px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.45);
+      }
+
+      .donation-box::before {
+        /* Brass top edge */
+        content: "";
+        position: absolute;
+        top: -18px;
+        left: 12px;
+        right: 12px;
+        height: 22px;
+        border-radius: 12px 12px 0 0;
+        background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+        box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.5);
+      }
+
+      .donation-slot {
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 42%;
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #0c0502, rgba(0, 0, 0, 0.2));
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18);
+      }
+
+      .donation-button {
+        position: absolute;
+        left: 50%;
+        bottom: 16%;
+        transform: translateX(-50%);
+        width: clamp(92px, 16vw, 140px);
+        height: clamp(92px, 16vw, 140px);
+        border-radius: 50%;
+        background-image: var(--asset-donation-coin),
+          radial-gradient(circle at 30% 25%, #ffe9b6, transparent 48%),
+          linear-gradient(160deg, #f7d27c, #c79645);
+        background-size: cover, 100% 100%, 100% 100%;
+        background-position: center;
+        box-shadow: 0 14px 24px rgba(0, 0, 0, 0.35),
+          inset 0 0 0 1.5px rgba(255, 255, 255, 0.45);
+        border: none;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+        font-weight: 700;
+        color: #6a3c16;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .donation-button:hover {
+        transform: translateX(-50%) translateY(-6px);
+        box-shadow: 0 20px 35px rgba(0, 0, 0, 0.45);
+      }
+
+      .donation-button:active {
+        transform: translateX(-50%) translateY(2px);
+      }
+
+      .coin {
+        position: absolute;
+        width: clamp(46px, 8vw, 64px);
+        height: clamp(46px, 8vw, 64px);
+        border-radius: 50%;
+        background-image: var(--asset-donation-coin),
+          radial-gradient(circle at 30% 25%, #ffe7b5, transparent 50%),
+          linear-gradient(160deg, #f4cd73, #c18b34);
+        background-size: cover, 100% 100%, 100% 100%;
+        background-position: center;
+        left: 50%;
+        top: -40px;
+        transform: translateX(-50%);
+        pointer-events: none;
+        opacity: 0;
+      }
+
+      .coin.animate {
+        animation: coin-drop 1.1s cubic-bezier(0.24, 0.82, 0.28, 1.1);
+      }
+
+      @keyframes coin-drop {
+        0% {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-40px) scale(0.6);
+        }
+        35% {
+          opacity: 1;
+          transform: translateX(-50%) translateY(12px) scale(1.02);
+        }
+        60% {
+          transform: translateX(-50%) translateY(18px) scale(0.96);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(-50%) translateY(66px) scale(0.85);
+        }
+      }
+
+      .donation-caption {
+        max-width: 440px;
+        color: rgba(255, 248, 226, 0.86);
+        font-size: clamp(1rem, 2vw, 1.2rem);
+      }
+
+      /* =======================================
+         7) Footer credits
+         ======================================= */
+      footer {
+        text-align: center;
+        padding-bottom: clamp(48px, 10vw, 90px);
+        opacity: 0.7;
+        font-size: 0.85rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      /* =======================================
+         Responsive Notes
+         ======================================= */
+      @media (max-width: 680px) {
+        .scroll-bg::before,
+        .scroll-bg::after,
+        .scroll-cords {
+          display: none;
+        }
+
+        .scroll-bg {
+          padding-inline: clamp(20px, 4vw, 36px);
+        }
+      }
+
+      @media (max-width: 780px) {
+        .top-nav {
+          display: none;
+        }
+
+        .scroll-menu {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <!-- Entry door overlay (Design concept: temple door opening) -->
+    <div class="door-overlay" data-door-state="closed" id="doorOverlay" aria-hidden="false">
+      <div class="door-panel door-panel--left" aria-hidden="true">
+        <!-- IMAGE SLOT: Left temple door texture (PNG/WebP 2000x2800, aligned to hinge). -->
+      </div>
+      <div class="door-panel door-panel--right" aria-hidden="true">
+        <!-- IMAGE SLOT: Right temple door texture (PNG/WebP 2000x2800, aligned to hinge). -->
+      </div>
+      <button class="door-enter" type="button" id="doorEnter" data-door-enter>
+        Enter the Sanctum
+      </button>
+    </div>
+
+    <!-- Ambient frame and glow (Design concept: carved doorway) -->
+    <div class="page-frame" aria-hidden="true">
+    </div>
+    <div class="incense-glow" aria-hidden="true"></div>
+    <div class="temple-interior" aria-hidden="true">
+      <!-- IMAGE SLOT: Controlled via --asset-temple-interior (wide sanctum interior image). -->
+    </div>
+
+      <div class="content-shell" data-content-shell>
+        <!-- Mobile scroll menu (Design concept: scroll-inspired hamburger for small screens) -->
+        <div class="scroll-menu" data-scroll-menu>
+        <button
+          type="button"
+          class="scroll-menu-toggle"
+          aria-expanded="false"
+          aria-controls="scrollMenuPanel"
+          data-scroll-toggle
+        >
+          <span class="scroll-menu-icon" aria-hidden="true">
+            <span class="scroll-menu-rod"></span>
+            <span class="scroll-menu-cord scroll-menu-cord--left"></span>
+            <span class="scroll-menu-cord scroll-menu-cord--right"></span>
+            <span class="scroll-menu-tassel"></span>
+          </span>
+          <span class="scroll-menu-label">Menu</span>
+        </button>
+        <nav
+          class="scroll-menu-panel"
+          id="scrollMenuPanel"
+          aria-label="Primary navigation"
+          hidden
+          data-scroll-panel
+        >
+          <div class="scroll-menu-scroll">
+            <div class="scroll-menu-roll" aria-hidden="true"></div>
+            <div class="scroll-menu-links">
+              <a href="#darshan">Darśan</a>
+              <a href="#seva">Sevā</a>
+              <a href="#festivals">Festivals</a>
+              <a href="#community">Community</a>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Desktop navigation (Design concept: understated sanctum bar) -->
+      <nav class="top-nav" aria-label="Primary">
+        <a href="#darshan">Darśan</a>
+        <a href="#seva">Sevā</a>
+        <a href="#festivals">Festivals</a>
+        <a href="#community">Community</a>
+      </nav>
+
+      <main id="main-content">
+        <!-- Hero darshan moment -->
+        <section class="hero" id="darshan">
+          <div class="hero-content">
+            <p class="hero-subtitle">Maa Nanda Kansuwa Trust</p>
+            <h1 class="hero-title">Enter the Divine Resonance</h1>
+            <p class="hero-subtitle">
+              Guided by centuries of Himalayan devotion, the temple opens its doors to every
+              seeker with warmth, wisdom, and seva.
+            </p>
+          </div>
+          <div class="scroll-indicator">
+            <span>Scroll to Explore</span>
+            <span class="scroll-glyph" aria-hidden="true"></span>
+          </div>
+        </section>
+
+        <!-- Scroll manuscript storytelling -->
+        <section class="scroll-wrapper" id="seva">
+          <div class="scroll-cords" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <article class="scroll-bg">
+            <div class="scroll-section">
+              <p class="scroll-eyebrow">Our Invocation</p>
+              <h2 class="scroll-heading">In Service of Maa Nanda Devi</h2>
+              <p class="scroll-text">
+                Within the Garhwal Himalayas, Maa Nanda Devi is revered as the guardian deity of
+                the mountains and the hearts of its people. The Kansuwa Trust preserves the
+                living heritage of rituals, music, and community service that has flourished
+                for generations. Each darśan celebrates the timeless sanctity of the shrine while
+                opening new pathways for seva and sustainability.
+              </p>
+            </div>
+
+            <div class="scroll-section" id="festivals">
+              <p class="scroll-eyebrow">Seasonal Rhythm</p>
+              <h2 class="scroll-heading">Festivals that Illuminate</h2>
+              <div class="scroll-grid">
+                <div class="scroll-card">
+                  <h3>Shardiya Navaratri</h3>
+                  <p>
+                    Nine sacred evenings of bhajan, aarti, and community langar celebrate the
+                    goddess&apos;s victory of light and compassion.
+                  </p>
+                </div>
+                <div class="scroll-card">
+                  <h3>Jan Bhawani Mela</h3>
+                  <p>
+                    A convergence of folk art, local artisans, and heritage storytellers that
+                    keep the oral traditions alive.
+                  </p>
+                </div>
+                <div class="scroll-card">
+                  <h3>Deepdaan Mahotsav</h3>
+                  <p>
+                    Thousands of diyas float upon the Alakananda river, each prayer supporting
+                    education and healthcare initiatives for hill communities.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="scroll-section" id="community">
+              <p class="scroll-eyebrow">Seva Today</p>
+              <h2 class="scroll-heading">Community Pathways</h2>
+              <p class="scroll-text">
+                Beyond rituals, the Trust anchors education drives, women-led self-help groups,
+                and eco-sensitive pilgrim trails. Together we nurture reverence for Maa Nanda
+                while strengthening the hands that uphold her sanctum. Your presence sustains
+                the heritage, and your support expands its circle of care.
+              </p>
+            </div>
+          </article>
+        </section>
+
+        <!-- Donation experience -->
+        <section class="donation-section" aria-labelledby="donationHeading">
+          <h2 class="hero-subtitle" id="donationHeading">
+            Offerings that Sustain Sacred Service
+          </h2>
+          <div class="donation-box" role="presentation">
+            <div class="donation-slot" aria-hidden="true"></div>
+            <div class="coin" aria-hidden="true" id="donationCoin">
+              <!-- IMAGE SLOT: Coin artwork via --asset-donation-coin. -->
+            </div>
+            <!-- Donation link (Design concept: coin button routes to donation flow after animation) -->
+            <a class="donation-button" href="/donate" id="donationButton" data-donation-link>
+              Donate
+            </a>
+          </div>
+          <p class="donation-caption">
+            Each contribution nurtures daily worship, community kitchens, and restorative
+            projects that keep the Himalayas&apos; sacred pulse alive.
+          </p>
+        </section>
+      </main>
+
+      <footer>
+        Crafted for iterative exploration — feedback guides the next darśan of design.
+      </footer>
+
+      <button type="button" class="door-toggle" data-door-toggle aria-pressed="false">
+        <span aria-hidden="true">🛕</span>
+        <span data-door-toggle-label>Close Door</span>
+      </button>
+    </div>
+
+    <!-- AUDIO SLOT: Coin drop chime ≤3s (MP3/OGG). Replace src when final asset ready. -->
+    <audio id="coinSound" preload="auto">
+      <source src="/assets/audio/coin-drop.mp3" type="audio/mpeg" />
+    </audio>
+
+    <script>
+      const select = (sel, root = document) => root.querySelector(sel);
+      const rootStyles = getComputedStyle(document.documentElement);
+      const parseTimeVar = (name, fallback) => {
+        const raw = (rootStyles.getPropertyValue(name) || "").trim();
+        if (!raw) return fallback;
+        if (raw.endsWith("ms")) {
+          const value = parseFloat(raw);
+          return Number.isNaN(value) ? fallback : value;
+        }
+        if (raw.endsWith("s")) {
+          const value = parseFloat(raw);
+          return Number.isNaN(value) ? fallback : value * 1000;
+        }
+        const numeric = parseFloat(raw);
+        return Number.isNaN(numeric) ? fallback : numeric;
+      };
+      const parseNumberVar = (name, fallback) => {
+        const raw = (rootStyles.getPropertyValue(name) || "").trim();
+        const numeric = parseFloat(raw);
+        return Number.isNaN(numeric) ? fallback : numeric;
+      };
+      const overlay = document.getElementById("doorOverlay");
+      const enter = select("[data-door-enter]");
+      const toggle = select("[data-door-toggle]");
+      const toggleLabel = select("[data-door-toggle-label]");
+      const interior = select(".temple-interior");
+      const contentShell = select("[data-content-shell]");
+      const nav = select(".top-nav");
+      const scrollMenu = select("[data-scroll-menu]");
+      const scrollToggle = select("[data-scroll-toggle]");
+      const scrollPanel = select("[data-scroll-panel]");
+      const donationButton = document.getElementById("donationButton");
+      const coin = document.getElementById("donationCoin");
+      const coinSound = document.getElementById("coinSound");
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const hasSeenDoor = sessionStorage.getItem("doorOpened") === "1";
+      const contentRevealDelay = parseTimeVar("--content-reveal-delay", 2000);
+      const doorAutoDelay = parseTimeVar("--door-auto-delay", 600);
+      const navCollapseThreshold = Math.max(0, Math.min(1, parseNumberVar("--nav-collapse-threshold", 0.25)));
+      const SCROLL_MENU_OPEN_CLASS = "is-open";
+
+      const STATES = {
+        CLOSED: "closed",
+        OPENING: "opening",
+        OPENED: "opened",
+        CLOSING: "closing",
+      };
+
+      let contentTimer = 0;
+      let scrollTick = false;
+
+      const setScrollMenuState = (open) => {
+        if (!scrollMenu || !scrollToggle || !scrollPanel) return;
+        const isOpen = scrollMenu.classList.contains(SCROLL_MENU_OPEN_CLASS);
+        const isOpening = scrollMenu.classList.contains("is-opening");
+        const isClosing = scrollMenu.classList.contains("is-closing");
+
+        scrollToggle.setAttribute("aria-expanded", String(open));
+
+        if (open) {
+          if (isOpen && !isClosing) {
+            return;
+          }
+
+          scrollPanel.removeAttribute("hidden");
+          scrollMenu.classList.remove("is-closing");
+          scrollMenu.classList.add(SCROLL_MENU_OPEN_CLASS);
+
+          if (!prefersReducedMotion) {
+            scrollMenu.classList.remove("is-opening");
+            // Force reflow so animation restarts cleanly when toggled quickly
+            void scrollMenu.offsetWidth;
+            scrollMenu.classList.add("is-opening");
+          }
+          return;
+        }
+
+        if (!isOpen && !isOpening) {
+          scrollPanel.setAttribute("hidden", "");
+          scrollMenu.classList.remove("is-opening");
+          scrollMenu.classList.remove("is-closing");
+          return;
+        }
+
+        if (prefersReducedMotion) {
+          scrollMenu.classList.remove("is-opening");
+          scrollMenu.classList.remove(SCROLL_MENU_OPEN_CLASS);
+          scrollMenu.classList.remove("is-closing");
+          scrollPanel.setAttribute("hidden", "");
+          return;
+        }
+
+        if (!isClosing) {
+          scrollMenu.classList.remove("is-opening");
+          void scrollMenu.offsetWidth;
+          scrollMenu.classList.add("is-closing");
+        }
+      };
+
+      const toggleScrollMenu = () => {
+        if (!scrollMenu) return;
+        const isOpen = scrollMenu.classList.contains(SCROLL_MENU_OPEN_CLASS);
+        setScrollMenuState(!isOpen);
+      };
+
+      const setInteriorState = (state) => {
+        if (!interior) return;
+        interior.style.opacity = state === STATES.OPENED ? "0.95" : "0";
+      };
+
+      const updateToggleState = (state) => {
+        if (!toggle || !toggleLabel) return;
+        const isClosed = state === STATES.CLOSED;
+        toggle.setAttribute("aria-pressed", String(isClosed));
+        toggleLabel.textContent = isClosed ? "Open Door" : "Close Door";
+      };
+
+      const NAV_CONDENSED_CLASS = "is-condensed";
+      const CONTENT_CONDENSED_CLASS = "has-condensed-nav";
+
+      const updateNavOnScroll = () => {
+        if (!nav) return;
+        const threshold = window.innerHeight * navCollapseThreshold;
+        const shouldCollapse = window.scrollY > threshold;
+        nav.classList.toggle(NAV_CONDENSED_CLASS, shouldCollapse);
+        contentShell?.classList.toggle(CONTENT_CONDENSED_CLASS, shouldCollapse);
+      };
+
+      const hideContent = () => {
+        if (!contentShell) return;
+        window.clearTimeout(contentTimer);
+        contentShell.classList.remove("is-visible");
+        contentShell.classList.remove(CONTENT_CONDENSED_CLASS);
+        if (nav) {
+          nav.classList.remove(NAV_CONDENSED_CLASS);
+        }
+      };
+
+      const showContent = (delay = 0) => {
+        if (!contentShell) return;
+        window.clearTimeout(contentTimer);
+        contentTimer = window.setTimeout(() => {
+          contentShell.classList.add("is-visible");
+          setScrollMenuState(false);
+          updateNavOnScroll();
+        }, delay);
+      };
+
+      scrollToggle?.addEventListener("click", () => {
+        toggleScrollMenu();
+      });
+
+      scrollPanel?.addEventListener("click", (event) => {
+        if (!(event.target instanceof HTMLElement)) return;
+        if (event.target.closest("a")) {
+          window.setTimeout(() => setScrollMenuState(false), 200);
+        }
+      });
+
+      // Cleanup open/close animation classes and hidden state
+      const handleScrollMenuAnimationEnd = (event) => {
+        if (!scrollMenu || !scrollPanel) return;
+        if (!(event.target instanceof Element)) return;
+        if (!event.target.classList.contains("scroll-menu-scroll")) return;
+
+        if (event.animationName === "scroll-reveal") {
+          scrollMenu.classList.remove("is-opening");
+          return;
+        }
+
+        if (event.animationName === "scroll-hide") {
+          scrollMenu.classList.remove("is-closing");
+          scrollMenu.classList.remove(SCROLL_MENU_OPEN_CLASS);
+          scrollPanel.setAttribute("hidden", "");
+        }
+      };
+
+      scrollPanel?.addEventListener("animationend", handleScrollMenuAnimationEnd);
+
+      window.addEventListener("click", (event) => {
+        if (!scrollMenu || !scrollPanel) return;
+        if (!scrollMenu.classList.contains(SCROLL_MENU_OPEN_CLASS)) return;
+        if (!(event.target instanceof Node)) return;
+        if (scrollMenu.contains(event.target)) return;
+        setScrollMenuState(false);
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          setScrollMenuState(false);
+        }
+      });
+
+      const playState = (state, { autoHide = false, remember = false } = {}) => {
+        if (!overlay) return;
+        if (state === overlay.dataset.doorState) return;
+
+        if (state === STATES.OPENING) {
+          hideContent();
+          overlay.hidden = false;
+          overlay.style.opacity = "1";
+          overlay.setAttribute("aria-hidden", "false");
+          overlay.dataset.doorState = STATES.CLOSED;
+          void overlay.offsetWidth;
+          overlay.dataset.doorState = STATES.OPENING;
+          setInteriorState(STATES.OPENED);
+
+          const onOpenEnd = (event) => {
+            if (!(event.target instanceof Element) || !event.target.classList.contains("door-panel--right")) {
+              return;
+            }
+            overlay.removeEventListener("animationend", onOpenEnd);
+            overlay.dataset.doorState = STATES.OPENED;
+            if (autoHide) {
+              overlay.style.opacity = "0";
+              window.setTimeout(() => {
+                overlay.hidden = true;
+                overlay.style.opacity = "";
+                overlay.setAttribute("aria-hidden", "true");
+              }, 200);
+            }
+            if (remember) {
+              sessionStorage.setItem("doorOpened", "1");
+            }
+            updateToggleState(STATES.OPENED);
+            setInteriorState(STATES.OPENED);
+            showContent(contentRevealDelay);
+          };
+
+          overlay.addEventListener("animationend", onOpenEnd);
+        }
+
+        if (state === STATES.CLOSING) {
+          hideContent();
+          overlay.hidden = false;
+          overlay.style.opacity = "1";
+          overlay.setAttribute("aria-hidden", "false");
+          overlay.dataset.doorState = STATES.OPENED;
+          void overlay.offsetWidth;
+          overlay.dataset.doorState = STATES.CLOSING;
+          setInteriorState(STATES.CLOSED);
+
+          const onCloseEnd = (event) => {
+            if (!(event.target instanceof Element) || !event.target.classList.contains("door-panel--right")) {
+              return;
+            }
+            overlay.removeEventListener("animationend", onCloseEnd);
+            overlay.dataset.doorState = STATES.CLOSED;
+            overlay.style.opacity = "";
+            updateToggleState(STATES.CLOSED);
+          };
+
+          overlay.addEventListener("animationend", onCloseEnd);
+        }
+
+        updateToggleState(state);
+      };
+
+      const initializeDoor = () => {
+        hideContent();
+
+        if (!overlay) {
+          showContent(0);
+          return;
+        }
+
+        const initialState = overlay.dataset.doorState || STATES.CLOSED;
+        updateToggleState(initialState);
+        setInteriorState(prefersReducedMotion ? STATES.OPENED : initialState);
+
+        if (prefersReducedMotion) {
+          overlay.hidden = true;
+          overlay.dataset.doorState = STATES.OPENED;
+          overlay.setAttribute("aria-hidden", "true");
+          showContent(0);
+          return;
+        }
+
+        const shouldAutoPlay = !hasSeenDoor;
+        if (shouldAutoPlay) {
+          setInteriorState(STATES.CLOSED);
+          window.setTimeout(() => {
+            playState(STATES.OPENING, { autoHide: true, remember: true });
+          }, doorAutoDelay);
+        } else {
+          overlay.hidden = true;
+          overlay.dataset.doorState = STATES.OPENED;
+          overlay.setAttribute("aria-hidden", "true");
+          setInteriorState(STATES.OPENED);
+          updateToggleState(STATES.OPENED);
+          showContent(0);
+        }
+      };
+
+      enter?.addEventListener("click", () => {
+        playState(STATES.OPENING, { autoHide: true, remember: true });
+      });
+
+      toggle?.addEventListener("click", () => {
+        if (!overlay) return;
+        const current = overlay.dataset.doorState || STATES.CLOSED;
+        if (current === STATES.OPENING || current === STATES.CLOSING) {
+          return;
+        }
+        if (current === STATES.OPENED) {
+          playState(STATES.CLOSING);
+        } else {
+          playState(STATES.OPENING, { autoHide: true });
+        }
+      });
+
+      window.addEventListener("scroll", () => {
+        if (!contentShell?.classList.contains("is-visible")) return;
+        if (scrollTick) return;
+        scrollTick = true;
+        window.requestAnimationFrame(() => {
+          updateNavOnScroll();
+          scrollTick = false;
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        if (!contentShell?.classList.contains("is-visible")) return;
+        setScrollMenuState(false);
+        updateNavOnScroll();
+      });
+
+      window.templeDoor = {
+        open: () => playState(STATES.OPENING, { autoHide: true }),
+        close: () => playState(STATES.CLOSING),
+        state: () => overlay?.dataset.doorState ?? STATES.CLOSED,
+      };
+
+      initializeDoor();
+
+      // Donation coin interaction (Design concept: coin dropping into box).
+      const donationHref =
+        donationButton instanceof HTMLAnchorElement ? donationButton.getAttribute("href") : null;
+
+      const performCoinAnimation = () => {
+        if (coin) {
+          coin.classList.remove("animate");
+          void coin.offsetWidth;
+          coin.classList.add("animate");
+        }
+        coinSound?.play?.();
+      };
+
+      donationButton?.addEventListener("click", (event) => {
+        performCoinAnimation();
+        if (!(donationButton instanceof HTMLAnchorElement) || !donationHref) {
+          return;
+        }
+        if (event instanceof MouseEvent && event.button !== 0) {
+          return;
+        }
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+          return;
+        }
+        event.preventDefault();
+        window.setTimeout(() => {
+          window.location.assign(donationHref);
+        }, 420);
+      });
+    </script>
+  </body>
+</html>

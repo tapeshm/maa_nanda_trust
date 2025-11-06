@@ -44,6 +44,7 @@ for (const slug of PAGE_SLUGS) {
     const csrfToken = ensureCsrf(c)
     const toolbar = buildPreviewToolbar(pageSlug, snapshot, csrfToken)
     c.header('Cache-Control', 'no-store')
+    //TODO: Don't hardcode signedIn=true
     return c.html(RENDERERS[pageSlug](snapshot, { signedIn: true, toolbar }))
   })
 }

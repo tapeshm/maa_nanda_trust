@@ -6,41 +6,31 @@ import { PublishRepo, type PublishSnapshot } from '../../repositories/publishRep
 import {
   computeHtmlEtag,
   getCachedHtml,
-  getLandingPointer,
   getPageVersion,
   putCachedHtml,
   PUBLIC_CACHE_CONTROL,
 } from '../../utils/pages/cache'
 import { renderPublishedHtml } from '../../utils/pages/render'
-import { renderLandingEmptyState } from '../../templates/landingTemplate'
+
+//TODO: Remove when bypass logic is removed
+import { ensureCsrf } from '../../middleware/csrf'
+import { renderToString } from 'hono/jsx/dom/server'
+import LandingPage from '../../templates/public/pages/landing'
+import AboutPage from '../../templates/public/pages/about'
 
 // [D3:pages.step-03:public-router] Public pages served from published snapshots with edge caching.
 const publicPages = new Hono<{ Bindings: Bindings }>()
 
 publicPages.get('/', async (c) => {
-  const repo = new PublishRepo(c.env)
-  const pointer = await getLandingPointer(c.env)
+  ensureCsrf(c)
+  const html = renderToString(LandingPage({}))
+  return c.html(html)
+})
 
-  if (pointer) {
-    const cached = await getCachedHtml(c.env, 'landing', pointer.id, pointer.version)
-    if (cached) {
-      return respondWithHtml(c, cached)
-    }
-
-    const snapshot = await repo.getById(pointer.id)
-    if (snapshot && snapshot.page.slug === 'landing') {
-      const rendered = await renderAndCache(c.env, 'landing', snapshot)
-      return respondWithHtml(c, rendered)
-    }
-  }
-
-  const latest = await repo.getLatestForSlug('landing')
-  if (!latest) {
-    return respondWithEmptyLanding(c)
-  }
-
-  const rendered = await renderAndCache(c.env, 'landing', latest)
-  return respondWithHtml(c, rendered)
+publicPages.get('/about', (c) => {
+  ensureCsrf(c)
+  const html = renderToString(AboutPage({}))
+  return c.html(html)
 })
 
 publicPages.get('/:slug/:id', async (c, next: Next) => {
@@ -99,11 +89,6 @@ async function respondWithHtml(c: Context<{ Bindings: Bindings }>, payload: Html
   const headers = buildCacheHeaders(etag)
   headers.forEach((value, key) => res.headers.set(key, value))
   return res
-}
-
-async function respondWithEmptyLanding(c: Context<{ Bindings: Bindings }>) {
-  c.header('Cache-Control', 'no-store')
-  return c.html(await renderLandingEmptyState({ signedIn: false }))
 }
 
 function buildCacheHeaders(etag: string): Headers {
