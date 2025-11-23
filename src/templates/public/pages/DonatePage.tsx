@@ -27,7 +27,7 @@ const DonatePage: FC<DonatePageProps> = ({ donateContent, isLoggedIn }) => (
     isLoggedIn={isLoggedIn}
   >
     <main class="py-12 md:py-20 px-4">
-      <div class="max-w-4xl mx-auto p-8 md:p-12 rounded-xl" style="background: rgba(14, 8, 4, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1);">
+      <div class="max-w-4xl mx-auto p-8 md:p-12 rounded-xl glass-panel">
 
         <section id="donate-main" class="text-center">
           <h1 class="text-3xl md:text-4xl font-serif font-light text-amber-100/90 mb-10 tracking-wider">Support Our Mission</h1>

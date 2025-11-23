@@ -39,7 +39,7 @@ const LandingPage: FC<LandingPageProps> = ({ projects, events, landingContent })
     />
 
     <main class="py-12 md:py-20 px-4">
-      <div class="max-w-6xl mx-auto p-8 md:p-12 rounded-xl" style="background: rgba(14, 8, 4, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1);">
+      <div class="max-w-6xl mx-auto p-8 md:p-12 rounded-xl glass-panel">
 
         {/* --- Introduction / Welcome --- */}
         <section class="text-center mb-16 md:mb-24">
