@@ -9,7 +9,7 @@
   },
   "logpush": false,
   "vars": {
-    "ENV": "development"
+    "ENV": "production"
   },
   // Local-only bindings for development with `wrangler dev`
   "dev": {
@@ -23,11 +23,11 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "mock-kv-id-for-prod"
+      "id": "9db2afe16b3a475f8d9e22ec82d48dde"
     },
     {
       "binding": "PAGES_CACHE",
-      "id": "mock-pages-cache-id"
+      "id": "bdd97ef7c28a479f9ebb5ef1325a45fb"
     }
   ],
   // R2 Bucket binding
@@ -43,7 +43,7 @@
     {
       "binding": "DB",
       "database_name": "d1-database",
-      "database_id": "mock-d1-id-for-prod",
+      "database_id": "73b70490-b4ed-4d3f-b70e-dd73dec0e48b",
       "preview_database_id": "mock-d1-id-for-preview"
     }
   ]

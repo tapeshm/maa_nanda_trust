@@ -31,7 +31,7 @@ async function verifyWithJwks(
   //TODO: use p-256 (ES256) for jwt verification
   const jwkSet = createLocalJWKSet(jwks as { keys: JWK[] })
   const { payload, protectedHeader } = await jwtVerify(token, jwkSet, {
-    algorithms: ['RS256'],
+    algorithms: ['RS256', 'ES256'],
     issuer: expectedIss,
     audience: expectedAud,
     clockTolerance: clockToleranceSec,
