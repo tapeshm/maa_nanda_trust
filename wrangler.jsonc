@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/cloudflare/workerd/main/src/workerd/io/worker.jsonc",
-  "name": "hono-htmx-project",
+  "name": "maa-nanda-kansuwa-trust",
   "main": "src/index.tsx",
   "compatibility_date": "2025-08-08",
   "assets": {
