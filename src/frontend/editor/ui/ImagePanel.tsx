@@ -115,12 +115,7 @@ export function attachImagePanelHandlers(
 
     const handler = (event: Event) => {
       event.preventDefault()
-      const success = editor.chain().focus().setImageSize(size).run()
-      if (success) {
-        console.log('[ImagePanel] Set size to:', size)
-      } else {
-        console.warn('[ImagePanel] Failed to set size:', size)
-      }
+      editor.chain().focus().setImageSize(size).run()
     }
 
     button.addEventListener('click', handler)
@@ -135,12 +130,7 @@ export function attachImagePanelHandlers(
 
     const handler = (event: Event) => {
       event.preventDefault()
-      const success = editor.chain().focus().setImageAlign(align).run()
-      if (success) {
-        console.log('[ImagePanel] Set align to:', align)
-      } else {
-        console.warn('[ImagePanel] Failed to set align:', align)
-      }
+      editor.chain().focus().setImageAlign(align).run()
     }
 
     button.addEventListener('click', handler)

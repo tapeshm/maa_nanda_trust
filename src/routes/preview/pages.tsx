@@ -8,6 +8,7 @@ import { PreviewRepo, type PreviewSnapshot } from '../../repositories/previewRep
 import { renderLanding } from '../../templates/landingTemplate'
 import { renderActivitiesPage } from '../../templates/activitiesTemplate'
 import { renderEventsPage } from '../../templates/eventsTemplate'
+import { renderGenericPage } from '../../templates/genericPageTemplate'
 import { PublishRepo } from '../../repositories/publishRepo'
 import { renderPublishedHtml } from '../../utils/pages/render'
 
@@ -23,6 +24,8 @@ const RENDERERS: Record<PageSlug, (snapshot: PreviewSnapshot, options: PreviewRe
   landing: (snapshot, options) => renderLanding(snapshot, options),
   activities: (snapshot, options) => renderActivitiesPage(snapshot, options),
   events: (snapshot, options) => renderEventsPage(snapshot, options),
+  about: (snapshot, options) => renderGenericPage(snapshot, options),
+  transparency: (snapshot, options) => renderGenericPage(snapshot, options),
 }
 
 for (const slug of PAGE_SLUGS) {

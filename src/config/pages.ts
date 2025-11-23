@@ -1,7 +1,7 @@
 import { EDITOR_PROFILE_BASIC, EDITOR_PROFILE_FULL } from '../editor/constants'
 
 // [D3:pages.step-01:slugs] Supported page slugs for the page management feature.
-export const PAGE_SLUGS = ['landing', 'activities', 'events'] as const
+export const PAGE_SLUGS = ['landing', 'activities', 'events', 'about', 'transparency'] as const
 export type PageSlug = (typeof PAGE_SLUGS)[number]
 
 export const PAGE_SLUG_SET = new Set<PageSlug>(PAGE_SLUGS)
@@ -16,7 +16,7 @@ export function assertPageSlug(value: string): PageSlug {
 }
 
 // [D3:pages.step-01:sections] Known section kinds for pages, mirroring the DDL contract.
-export const PAGE_SECTION_KINDS = ['welcome', 'activities', 'events'] as const
+export const PAGE_SECTION_KINDS = ['welcome', 'activities', 'events', 'content'] as const
 export type PageSectionKind = (typeof PAGE_SECTION_KINDS)[number]
 
 // [D3:pages.step-01:layouts] Activities page layout variants.
@@ -42,6 +42,8 @@ export const PAGE_EDITOR_PROFILES: Record<PageSlug, typeof EDITOR_PROFILE_BASIC 
   landing: EDITOR_PROFILE_FULL,
   activities: EDITOR_PROFILE_BASIC,
   events: EDITOR_PROFILE_BASIC,
+  about: EDITOR_PROFILE_FULL,
+  transparency: EDITOR_PROFILE_FULL,
 }
 
 // [D3:pages.step-01:payload-ids] Stable editor ids used when rendering forms; ensures consistency across admin UX.
@@ -49,6 +51,8 @@ export const PAGE_EDITOR_IDS: Record<PageSlug, string> = {
   landing: 'landing_welcome',
   activities: 'activities_intro',
   events: 'events_intro',
+  about: 'about_content',
+  transparency: 'transparency_content',
 }
 
 export const PAGE_VERSION_START = 1

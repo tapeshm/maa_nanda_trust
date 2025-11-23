@@ -270,7 +270,11 @@ export class FormSync {
         console.error('[editor] Failed to read editor state for serialization', error)
       }
     }
-    return readInitialContent(root)
+    const initial = readInitialContent(root)
+    if (typeof initial === 'string') {
+      return EMPTY_DOC
+    }
+    return initial
   }
 
   private resolveHtml(root: HTMLElement): string {
@@ -284,6 +288,10 @@ export class FormSync {
       } catch (error) {
         console.error('[editor] Failed to read editor HTML for serialization', error)
       }
+    }
+    const initial = readInitialContent(root)
+    if (typeof initial === 'string') {
+      return initial
     }
     return ''
   }

@@ -1,0 +1,26 @@
+/* Global reset and accessibility utilities */
+section[id] {
+  scroll-margin-top: calc(var(--nav-height) + var(--nav-top-gap) + var(--nav-collapse-margin));
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px dashed var(--gold);
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: #000;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gold);
+  z-index: 10000;
+  transition: top 0.2s ease-in-out;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}

@@ -10,10 +10,12 @@ export interface PublicNavLink {
 
 interface PublicTopNavProps {
   links: PublicNavLink[]
+  loginHref?: string
+  isLoggedIn?: boolean
 }
 
 // [D3:pages.step-03:top-nav] Desktop navigation bar from reference
-const PublicTopNav: FC<PublicTopNavProps> = ({ links }) => (
+const PublicTopNav: FC<PublicTopNavProps> = ({ links, loginHref = '/login', isLoggedIn = false }) => (
   <nav class="top-nav" aria-label="Primary">
     {links.map((link) => (
       <a
@@ -28,6 +30,15 @@ const PublicTopNav: FC<PublicTopNavProps> = ({ links }) => (
         {link.label}
       </a>
     ))}
+    {isLoggedIn ? (
+      <a href="/admin/dashboard" class="absolute right-8 text-sm font-bold text-amber-200/80 hover:text-amber-100 uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity">
+        Dashboard
+      </a>
+    ) : (
+      <a href="/admin/dashboard" class="absolute right-8 text-sm font-bold text-amber-200/80 hover:text-amber-100 uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity">
+        Dashboard
+      </a>
+    )}
   </nav>
 )
 

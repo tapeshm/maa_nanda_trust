@@ -13,7 +13,7 @@ export type JSONContent = TiptapJSONContent
 export interface EditorFactoryContext {
   profile: EditorProfile
   root: HTMLElement
-  initialContent: JSONContent
+  initialContent: JSONContent | string
 }
 
 export type EditorFactory = (

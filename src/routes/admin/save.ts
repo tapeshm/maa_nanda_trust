@@ -29,20 +29,22 @@ saveRoutes.post('/:slug/save', requireAuth(), requireAdmin, async (c) => {
         version: snapshot.page.version,
       })
     }
+    const redirectTarget = (rawBody?._redirect as string) || undefined
     return redirectToEditor(c, slug, {
       saved: '1',
       pageId: String(snapshot.page.id),
       version: String(snapshot.page.version),
-    })
+    }, redirectTarget)
   } catch (error: any) {
     const message = typeof error?.message === 'string' ? error.message : 'Invalid payload'
     if (htmx) {
       return c.json({ ok: false, error: message }, 400)
     }
+    const redirectTarget = (rawBody?._redirect as string) || undefined
     return redirectToEditor(c, slug, {
       error: '1',
       message,
-    })
+    }, redirectTarget)
   }
 })
 
@@ -57,8 +59,9 @@ function redirectToEditor(
   c: Context<{ Bindings: Bindings }>,
   slug: PageSlug,
   params: Record<string, string | undefined>,
+  customTarget?: string
 ) {
-  const target = new URL(`/admin/${slug}`, c.req.url)
+  const target = new URL(customTarget ?? `/admin/${slug}`, c.req.url)
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined) continue
     target.searchParams.set(key, value)

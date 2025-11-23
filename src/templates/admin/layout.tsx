@@ -5,10 +5,11 @@ import { resolveAsset } from '../../utils/assets'
 
 export const ADMIN_DASHBOARD_PANELS = [
   { slug: 'home', label: 'Home' },
-  { slug: 'about-us', label: 'About-us' },
-  { slug: 'activities', label: 'Activities' },
+  { slug: 'about-us', label: 'About Us' },
+  { slug: 'projects', label: 'Projects' },
   { slug: 'events', label: 'Events' },
-  { slug: 'settings', label: 'Settings' },
+  { slug: 'donate', label: 'Donate' },
+  { slug: 'transparency', label: 'Transparency' },
 ] as const
 
 export type AdminDashboardPanel = (typeof ADMIN_DASHBOARD_PANELS)[number]['slug']
@@ -60,6 +61,23 @@ const AdminLayout: FC<AdminLayoutProps> = ({
     )
   }
 
+  const renderSignOut = () => (
+    <li class="mt-auto">
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value={csrfToken ?? ''} />
+        <button
+          type="submit"
+          class="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white w-full text-left"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 shrink-0 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+          </svg>
+          Sign out
+        </button>
+      </form>
+    </li>
+  )
+
   return (
     <html lang="en" class="h-full bg-white dark:bg-gray-900">
       <head>
@@ -101,6 +119,7 @@ const AdminLayout: FC<AdminLayoutProps> = ({
                             ))}
                           </ul>
                         </li>
+                        {renderSignOut()}
                       </ul>
                     </nav>
                   </div>
@@ -123,6 +142,7 @@ const AdminLayout: FC<AdminLayoutProps> = ({
                       ))}
                     </ul>
                   </li>
+                  {renderSignOut()}
                 </ul>
               </nav>
             </div>
@@ -141,14 +161,7 @@ const AdminLayout: FC<AdminLayoutProps> = ({
                 <div class="flex flex-1 items-center">
                   <span class="text-sm font-semibold text-gray-500 dark:text-gray-400">Dashboard</span>
                 </div>
-                <div class="flex items-center gap-x-4">
-                  <form method="post" action="/logout" class="hidden sm:block">
-                    <input type="hidden" name="csrf_token" value={csrfToken ?? ''} />
-                    <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                      Sign out
-                    </button>
-                  </form>
-                </div>
+                {/* Sign out removed from here */}
               </div>
             </div>
 

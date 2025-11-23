@@ -13,11 +13,7 @@ export const PLACEHOLDER_TEXT = 'Start writing…'
 
 // [D3:editor-tiptap.step-02:extensions-base] Base extensions shared by all profiles.
 function createStarterKit(): AnyExtension {
-  const configure = (StarterKit as unknown as { configure?: (options: { link: false }) => AnyExtension }).configure
-  if (typeof configure === 'function') {
-    return configure.call(StarterKit, { link: false })
-  }
-  return StarterKit
+  return StarterKit.configure()
 }
 
 const baseExtensions: AnyExtension[] = [

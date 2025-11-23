@@ -43,6 +43,7 @@ export const EDITOR_CLASSNAME = [PROSE_BASE, EDITOR_CHROME].join(' ')
 // Menu bar (optional UI rendered by host components)
 export const MENUBAR_CLASSNAME = [
   'flex', // Flexbox layout
+  'flex-wrap', // Wrap items on small screens
   'items-center', // Center items vertically
   'gap-1', // Small gap between items
   'p-2', // Padding of 0.5rem

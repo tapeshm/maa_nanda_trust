@@ -9,7 +9,7 @@ import { EDITOR_CLASSNAME } from './styles'
 export function createEditor(
   element: HTMLElement,
   profile: EditorProfile,
-  content?: import('./types').JSONContent,
+  content?: import('./types').JSONContent | string,
 ): EditorInstance {
   // Progressive enhancement: ensure element is contenteditable prior to Tiptap mount
   // so users can focus and type even if hydration is delayed.

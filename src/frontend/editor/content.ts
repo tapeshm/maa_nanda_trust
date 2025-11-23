@@ -37,9 +37,12 @@ export function findPayloadScript(root: HTMLElement): HTMLScriptElement | null {
   return null
 }
 
-export function readInitialContent(root: HTMLElement): JSONContent {
+export function readInitialContent(root: HTMLElement): JSONContent | string {
   const script = findPayloadScript(root)
   const data = safeParseJSON(script?.textContent)
+  if (typeof data === 'string') {
+    return data
+  }
   if (isDocShape(data)) {
     return data
   }

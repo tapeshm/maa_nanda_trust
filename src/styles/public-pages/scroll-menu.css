@@ -1,0 +1,152 @@
+/* src/styles/public-pages/scroll-menu.css */
+
+/* Container: The clickable "rolled up" scroll */
+/* By default, hidden on larger screens via media query at bottom */
+.scroll-menu-container {
+    position: fixed;
+    top: var(--mobile-menu-top, 20px);
+    right: var(--mobile-menu-right, 20px);
+    width: 220px;
+    max-width: 85vw;
+    z-index: var(--z-mobile-menu);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+    transition: transform 0.3s ease;
+}
+
+.scroll-menu-container:hover {
+    transform: translateY(2px);
+}
+
+/* Rods (Top & Bottom) */
+.scroll-menu-rod {
+    width: 100%;
+    height: 28px;
+    background: linear-gradient(to bottom, var(--bronze-dark) 0%, var(--bronze-light) 50%, var(--bronze-dark) 100%);
+    border-radius: 14px;
+    position: relative;
+    z-index: 10;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);
+    border: 1px solid #3e2b16;
+}
+
+/* Decorative Finials */
+.scroll-menu-rod::before, .scroll-menu-rod::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 20px;
+    background: radial-gradient(circle, var(--bronze-light), var(--bronze-dark));
+    border-radius: 4px;
+    box-shadow: -1px 0 2px rgba(0,0,0,0.5);
+    border: 1px solid var(--bronze-dark);
+}
+.scroll-menu-rod::before { left: -6px; }
+.scroll-menu-rod::after { right: -6px; }
+
+/* Parchment Paper (The Menu Body) */
+.scroll-menu-parchment {
+    background-color: var(--parchment, #f3e5c2);
+    width: 92%;
+    height: 0; /* Default Closed */
+    opacity: 0;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+    box-shadow: inset 0 0 20px rgba(85, 59, 30, 0.4);
+    border-left: 1px solid rgba(0,0,0,0.1);
+    border-right: 1px solid rgba(0,0,0,0.1);
+    margin-top: -12px;
+    margin-bottom: -12px;
+    z-index: 5;
+}
+
+/* Menu Links Container */
+.scroll-menu-links {
+    padding: 30px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.4s ease;
+}
+
+/* Wax Seal (Visual Trigger) */
+.scroll-menu-seal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    background: radial-gradient(circle at 30% 30%, #ff4d4d, var(--seal-red), #4a0000);
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.6), inset 0 -2px 5px rgba(0,0,0,0.3);
+    border: 2px dashed #b53f3f;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ccadad;
+    font-weight: bold;
+    font-size: 20px;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+    transition: all 0.4s ease;
+}
+
+/* String Tie */
+.scroll-menu-string {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30%;
+    height: 100%;
+    border-left: 2px solid #8a6a4b;
+    border-right: 2px solid #8a6a4b;
+    z-index: 15;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+/* --- OPEN STATE --- */
+.scroll-menu-container.open .scroll-menu-parchment {
+    height: auto;
+    min-height: 320px;
+    opacity: 1;
+    margin-top: -8px;
+    margin-bottom: -8px;
+}
+
+.scroll-menu-container.open .scroll-menu-links {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+.scroll-menu-container.open .scroll-menu-seal {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+    pointer-events: none;
+}
+
+.scroll-menu-container.open .scroll-menu-string {
+    opacity: 0;
+}
+
+/* --- RESPONSIVE VISIBILITY --- */
+/* Ensure this matches the desktop breakpoint (780px) */
+@media (min-width: 780px) {
+    .scroll-menu-container {
+        display: none !important;
+    }
+}

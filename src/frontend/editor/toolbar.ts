@@ -306,8 +306,6 @@ async function uploadImage(
   if (!inserted) {
     throw new Error('Failed to insert image')
   }
-
-  fileInput.value = ''
 }
 
 function attachButtonHandlers(
@@ -379,6 +377,11 @@ function attachButtonHandlers(
 
   if (fileInput) {
     const changeHandler = async () => {
+      if (fileInput.dataset.uploading === 'true') {
+        return
+      }
+      fileInput.dataset.uploading = 'true'
+
       try {
         await uploadImage(editor, form, fileInput, altInput)
       } catch (error) {
@@ -387,6 +390,8 @@ function attachButtonHandlers(
         }
         console.error('[editor] image upload failed', error)
       } finally {
+        fileInput.dataset.uploading = 'false'
+        fileInput.value = '' // Ensure input is cleared so change event fires again for same file
         updateStates()
       }
     }

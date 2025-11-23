@@ -1,0 +1,207 @@
+/* src/styles/public-pages/envelope.css */
+
+/* Invitation Envelope Card */
+.envelope-wrapper {
+    position: relative;
+    /* Fixed dimensions are required because the envelope geometry 
+       is built using fixed-pixel borders (triangles). */
+    width: 320px; 
+    height: 220px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    margin: 0 auto;
+    perspective: 1000px;
+    z-index: 10;
+}
+
+.envelope-wrapper:hover {
+    transform: translateY(-5px);
+}
+
+.envelope-base {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: var(--gold-dark);
+    border-radius: 5px;
+    box-shadow: 0 15px 25px rgba(0,0,0,0.4);
+}
+
+/* Inner lining */
+.envelope-base::before {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px; right: 2px; bottom: 2px;
+    background-color: #e8dec8;
+    z-index: 0;
+}
+
+/* --- The Card (Hidden Inside) --- */
+.envelope-card-content {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    height: 90%;
+    background-color: var(--paper-color);
+    background-image: linear-gradient(to bottom right, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+    border: 2px solid var(--gold);
+    padding: 20px;
+    z-index: 1;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+}
+
+/* Rustic Paper Texture Effect (Missing from original port) */
+.envelope-card-content::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    pointer-events: none;
+}
+
+.envelope-card-content h3 {
+    margin: 0 0 10px 0;
+    font-family: var(--font-heading);
+    color: var(--gold-dark);
+    font-size: 16px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 5px;
+    width: 100%;
+}
+
+.envelope-card-content p {
+    margin: 5px 0;
+    font-size: 12px;
+    color: var(--text-color);
+    line-height: 1.4;
+    font-family: var(--font-body);
+}
+
+.envelope-card-content .date {
+    font-weight: bold;
+    color: var(--gold-dark);
+}
+
+.envelope-card-content .cta-link {
+    margin-top: 10px;
+    font-size: 10px;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text-color);
+    border: 1px solid var(--gold);
+    padding: 4px 8px;
+    transition: background 0.2s;
+    position: relative; 
+    z-index: 2; /* Ensure clickable over texture */
+}
+
+.envelope-card-content .cta-link:hover {
+    background: var(--gold);
+    color: #fff;
+}
+
+/* --- Pocket (Triangles) --- */
+.envelope-pocket {
+    position: absolute;
+    bottom: 0; left: 0; width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.envelope-pocket::before { /* Left Triangle */
+    content: ''; position: absolute; bottom: 0; left: 0;
+    width: 0; height: 0;
+    border-style: solid;
+    border-width: 110px 0 110px 160px; /* 160px width */
+    border-color: transparent transparent transparent var(--paper-texture);
+    filter: drop-shadow(2px 0 1px rgba(0,0,0,0.1));
+}
+
+.envelope-pocket::after { /* Right Triangle */
+    content: ''; position: absolute; bottom: 0; right: 0;
+    width: 0; height: 0;
+    border-style: solid;
+    border-width: 110px 160px 110px 0; /* 160px width */
+    border-color: transparent var(--paper-texture) transparent transparent;
+    filter: drop-shadow(-2px 0 1px rgba(0,0,0,0.1));
+}
+
+.envelope-pocket-bottom { /* Bottom Triangle */
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 0;
+    border-style: solid;
+    border-width: 0 160px 120px 160px; /* 160+160 = 320px width */
+    border-color: transparent transparent var(--paper-color) transparent;
+    z-index: 3;
+    filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.1));
+}
+
+/* --- Flap (Top) --- */
+.envelope-flap {
+    position: absolute; top: 0; left: 0; width: 100%; height: 0;
+    z-index: 4;
+    border-style: solid;
+    border-width: 130px 160px 0 160px; /* 160+160 = 320px width */
+    border-color: var(--paper-color) transparent transparent transparent;
+    transform-origin: top;
+    transition: transform 0.6s ease, z-index 0.6s;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+}
+
+/* --- Seal --- */
+.envelope-seal {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px; height: 40px;
+    background: radial-gradient(circle at 30% 30%, var(--gold-shine), var(--seal-gold), var(--gold-dark));
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset 0 -2px 5px rgba(0,0,0,0.2);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 5;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: #755a1e;
+    font-size: 20px;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+    border: 2px dashed #b5904b;
+    transition: opacity 0.4s;
+}
+
+/* --- Animation States --- */
+.envelope-wrapper.is-open .envelope-flap {
+    transform: rotateX(180deg);
+    z-index: 1;
+}
+
+.envelope-wrapper.is-open .envelope-seal {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.envelope-wrapper.is-open .envelope-card-content {
+    transform: translate(-50%, -130px);
+    z-index: 2;
+    transition-delay: 0.4s;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 360px) {
+    /* Update wrapper to match the new border geometry (140+140 = 280px) */
+    .envelope-wrapper { width: 280px; }
+
+    /* Scale down border geometry */
+    .envelope-pocket::before { border-width: 110px 0 110px 140px; }
+    .envelope-pocket::after { border-width: 110px 140px 110px 0; }
+    .envelope-pocket-bottom { border-width: 0 140px 110px 140px; }
+    .envelope-flap { border-width: 110px 140px 0 140px; }
+}

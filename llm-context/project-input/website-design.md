@@ -32,125 +32,149 @@ steps:
     hints:
       - Bypass the current implementation to directly render an html file for the landing page. A simple comment-out of application logic and plug in direct html rendering. Add a comment to change back to application logic later.
       - Do not create or modify any application logic. Just a quick reversible change to render a static html file.
+      - Wireframe the updated design spec while keeping the original door + scroll experience: desktop top nav, mobile hamburger, menu links (About Us, Projects, Events, Transparency), floating Donate CTA (styled as donation box/coin), hero with subtle context image and door overlay, H2 "Rajrajeshwari Mandir" immediately below the hero, intro tagline, project cards with thumbnails and read-more links, events shown as postal-envelope invitation cards, scroll-inspired content background, and a footer.
     changes:
       - create: src/template/layout-iter.tsx
       - modify: src/routes/public/pages.ts
       - create: src/templates/references/landing-iter.html
     acceptance_criteria:
-      - The landing page renders the static html file landing-iter.html.
+      - The landing page renders the static html file landing-iter.html with the navigation, hero + H2, intro tagline, projects cards, envelope-styled events cards, floating Donate CTA styled as donation box/coin, scroll manuscript feel, and footer matching the updated design spec.
     tests:
-      - path: 
-        type:
+      - path: tests/pages/landing-iter.spec.ts
+        type: integration
         cases:
+          - "Landing serves static landing-iter.html with nav, hero + H2, Donate CTA (box/coin), projects cards, events cards, and scroll styling"
   - id: step-02
     title: Website experience concept
     rationale: Set the website experience concept. In this step we iterate on the user experience concept. Layout different concepts. View them on development server and iterate based on user feedback and design ideas.
     depends_on:
       - step-01
     hints:
-      - Make the website experience unique. Since, this is a temple trust - the website should reflect the theme by design.
-      - All the design concepts should be implemented in modular and parameteric style to make iterations easier. Add explicit comments on the design concept that's implemented. Where needed always use parameters to make it easier to change the design.
-      - Minimize the use of images. Use css effects and design to create the experience.
-      - Use actual images for temple door, inside temple, donation box, bells if needed - and anywhere else where it adds value.
-      - Only add custom css where needed. Leverage tailwindcss as much as possible.
-      - Design Ideas:
-        - Instead of a standard website layout - we do it differently. The page loads with a full screen image of temple door. Then as page loads - the door opens with a smooth natural effect - to give the user experience that they are entering the temple.
-        - As the door opens - the home page will be a full screen image of the temple inside. The navigation buttons on top will be designed as if they are hanging temple bells - a nice css effect that they swing lighly when hovered and a nice effect when clicked.
-        - The content will be put on a traditional scroll like background - to give the feel of ancient scriptures. The scroll-bg will be static on the background image. The center will have high opacity for reading the content easily. Give it a texture of old manuscript paper. With top and bottom brass rods, subtle saffron cords and tassels. Keep the texture gentle and high contrast for readability.
-        - Add the donation link designed as donation box kept on a small traditional wooden table centered at the bottom of the page - floating above the scroll-bg. The donation box will have a traditional brass donation box look with a slot on top and engraved patterns. The donation button will be designed as a coin that drops into the box when clicked - with a nice sound effect.
-        - Since, the door opening effect is a unique experience - add a small button at bottom right to toggle the door opening and closing effect for repeat visitors.
-        - On smaller screens - instead of top navigation bells, use the standard design style of collapsible hamburger menu at top right. However, to fit the theme - design the hamburger icon as a scroll rod with saffron cords. When clicked, the scroll rolls out and shows the navigation links.
+      - Keep the design modular and parameterized for iteration; annotate the reference HTML with comments naming each section (door overlay, nav, hero, tagline, projects list, events list, scroll content, footer).
+      - Use Tailwind utilities as the primary styling tool; add minimal custom CSS only for postal-envelope edges, door hinges, and the donation coin animation.
+      - Minimize image usage; keep thumbnails small and use trustee headshots where needed.
+      - Apply the structured content plan while preserving the door/scroll design: top nav (bells aesthetic) with links (About Us, Projects, Events, Transparency), mobile hamburger/scroll rod variant, floating Donate button styled as a donation box/coin, hero with subtle context image and H2 "Rajrajeshwari Mandir" beneath it, intro tagline, project cards (thumbnail, title, short description, read more to project ID page), events cards styled as invitation envelopes (date, location, event name, one-line description, link), scroll manuscript background, and footer.
+      - Design ideas to retain: full-screen temple door that opens with smooth natural effect on load and via toggle; navigation styled as hanging temple bells; content on traditional scroll-like background (textured, high contrast, brass rods/cords); donation CTA as a brass donation box with coin drop/sound; door open/close toggle bottom-right; mobile hamburger styled as scroll rod that rolls out links.
     changes:
       - modify: src/templates/references/landing-iter.html
     acceptance_criteria:
-      - Keep this iterative based on user feedback and design ideas.
+      - The landing reference HTML reflects the updated page structure and preserves the temple-door/scroll design: navigation (bells style), hero with door overlay and H2 heading, intro tagline, projects cards with thumbnails/read-more links, envelope-styled events cards with date/location/name/description link, floating donation box CTA with coin effect, scroll manuscript background, footer, and a door toggle.
     tests:
-      - path: 
-        type:
+      - path: tests/pages/landing-iter.design.test.ts
+        type: integration
         cases:
+          - "Nav links, floating donation box CTA, door toggle, and footer are present on the reference HTML"
+          - "Hero with door overlay followed by H2 'Rajrajeshwari Mandir' is rendered"
+          - "Projects and events cards follow the specified card structures on scroll-textured background"
   - id: step-03
     title: Extract generic public layout + components (Tailwind SSR)
     rationale: Convert the stabilized reference HTML into generic, reusable SSR templates for all public pages (not just landing) and align markup with Tailwind v4 utilities for maintainability and consistency.
     depends_on:
       - step-02
     hints:
-      - Prefer small, focused JSX components (SSR-only) composed by a generic `PublicLayout` used across public routes.
-      - Replace bespoke CSS with Tailwind v4 utilities where feasible. Keep only necessary custom CSS (e.g., keyframes for door, coin); scope it to components.
-      - Keep behaviors progressive and minimal: door overlay, mobile menu, and donation coin remain lightweight with inline script/HTMX hooks.
-      - Insert D3 anchors in new/modified files for traceability (e.g., // [D3:pages.step-03:layout], // [D3:pages.step-03:nav], // [D3:pages.step-03:door]).
-      - Maintain accessibility: aria-labels, focus-visible, and scroll margin to avoid nav overlap.
+      - Prefer small, focused SSR JSX components composed by a generic `PublicLayout` used across public routes.
+      - Replace bespoke CSS with Tailwind v4 utilities; keep only scoped CSS for envelope edges or subtle accents.
+      - Keep behaviors progressive and minimal: mobile hamburger toggle, floating Donate CTA, and menu focus handling via lightweight inline script/HTMX hooks.
+      - Insert D3 anchors in new/modified files for traceability (e.g., // [D3:pages.step-03:layout], // [D3:pages.step-03:nav]).
+      - Maintain accessibility: aria-labels, focus-visible styles, and scroll margin to avoid nav overlap.
     changes:
       - create: src/templates/public/layout/PublicLayout.tsx
       - create: src/templates/public/layout/PublicTopNav.tsx
       - create: src/templates/public/layout/PublicMobileMenu.tsx
+      - create: src/templates/public/layout/PublicDoorToggle.tsx
+      - create: src/templates/public/layout/DonateFloatingButton.tsx
       - create: src/templates/public/layout/PublicFooter.tsx
-      - create: src/templates/public/effects/TempleDoor.tsx
       - create: src/templates/public/blocks/Hero.tsx
       - create: src/templates/public/blocks/ScrollManuscript.tsx
+      - create: src/templates/public/blocks/Introduction.tsx
+      - create: src/templates/public/blocks/ProjectsList.tsx
+      - create: src/templates/public/blocks/EventsEnvelopeCard.tsx
+      - create: src/templates/public/blocks/ProjectStats.tsx
+      - create: src/templates/public/blocks/TrusteesGrid.tsx
+      - create: src/templates/public/blocks/FocusAreas.tsx
+      - create: src/templates/public/effects/TempleDoor.tsx
       - create: src/templates/public/blocks/DonationCta.tsx
       - create: src/templates/public/pages/landing.tsx
       - create: src/templates/public/pages/about.tsx
+      - create: src/templates/public/pages/projects.tsx
+      - create: src/templates/public/pages/projectDetail.tsx
+      - create: src/templates/public/pages/events.tsx
+      - create: src/templates/public/pages/transparency.tsx
       - modify: src/routes/public/pages.ts
       - note: Do not delete src/templates/references/landing-iter.html; keep as design reference.
     acceptance_criteria:
-      - A generic `PublicLayout` composes `PublicTopNav`, `PublicMobileMenu`, and `PublicFooter`, and is used by the landing page and is suitable for other public pages.
-      - Desktop nav remains fixed at top; content keeps a visible offset below the bar during scroll (no overlap).
-      - Mobile “scroll menu” toggles open/close, closes on outside click/ESC, default closed.
-      - Door overlay effect is a reusable component (can be omitted on non-landing pages) with the same behavior as step‑02.
-      - An "About" page renders using `PublicLayout` with the ambient background, `PublicTopNav`, and a `ScrollManuscript` section (no door overlay or donation CTA required on About).
-      - Donation CTA is a reusable block linking to "/donate" with coin animation/chime and delayed navigation (non-primary clicks bypass).
-      - Tailwind utilities replace general layout/spacing/typography; remaining CSS is minimal and scoped.
+      - A generic `PublicLayout` composes `PublicTopNav`, `PublicMobileMenu`, floating Donate CTA, and `PublicFooter`, and is used by public pages.
+      - Desktop nav remains fixed at top with scroll offset; mobile hamburger defaults closed and toggles open/closed with focus-visible styles.
+      - Landing page uses `PublicLayout` with `TempleDoor` overlay (initially closed/opening on load with toggle), bell-styled nav, hero (optional background image) followed by H2 "Rajrajeshwari Mandir", scroll-manuscript content wrapper, intro tagline, projects cards (thumbnail, title, short description, read-more link to project ID), events cards styled as postal/invitation envelopes showing date, location, event name, one-line description, and link, floating donation box CTA (coin animation/chime) linking to /donate, and footer.
+      - About page renders overview text, focus areas list, and trustees grid with images/names/bios within scroll layout, plus a CTA to Transparency; no door overlay.
+      - Projects page lists project cards identical to landing projects section; project detail template renders header (name/location), description, structured stats (location, start date, status, target end date, budget vs spent so far), and team contact section; uses scroll background.
+      - Events page renders invitation-style cards with event name, location, status (upcoming/completed), and contact person within scroll layout.
+      - Transparency page renders structured regulatory data (trust name, registration number/date, property details) and download links for regulatory documents within scroll layout.
+      - Tailwind utilities replace general layout/spacing/typography; remaining CSS is minimal and scoped (door keyframes, coin animation, envelope edges).
       - Type-check, lint, format pass; tests for layout reuse and interactions are added and passing.
     tests:
       - path: tests/pages/publicLayout.ssr.test.ts
         type: integration
         cases:
-          - "PublicLayout renders top nav and footer"
+          - "PublicLayout renders top nav (bells), mobile hamburger, floating donation box CTA, and footer"
           - "Content area is offset below fixed nav on scroll"
       - path: tests/pages/landing.ssr.test.ts
         type: integration
         cases:
-          - "Landing renders with PublicLayout + Hero + ScrollManuscript"
+          - "Landing renders hero with door overlay, H2 heading, intro, projects list with read-more links, and events envelope cards on scroll background"
           - "Mobile menu is hidden by default and toggles visible"
-          - "Door overlay initial state is closed"
-          - "Donation link points to /donate and defers navigation after click"
+          - "Door overlay initial state is closed and can toggle open"
+          - "Donation box CTA floats and links to /donate"
       - path: tests/pages/about.ssr.test.ts
         type: integration
         cases:
-          - "About renders with PublicLayout + ScrollManuscript and ambient background"
-          - "Top nav present and content does not overlap on scroll"
-          - "No door overlay or donation CTA on About"
-      - path: tests/pages/landing.accessibility.test.ts
+          - "About renders overview, focus areas, and trustees grid with images"
+          - "Navigation present and content does not overlap on scroll"
+          - "CTA links to transparency page"
+      - path: tests/pages/projects.ssr.test.ts
+        type: integration
+        cases:
+          - "Projects page renders list of project cards with thumbnails and read-more links"
+          - "Project detail template renders description, stats, and team contacts"
+      - path: tests/pages/events.ssr.test.ts
+        type: integration
+        cases:
+          - "Events page shows invitation-style cards with status and contact person"
+      - path: tests/pages/transparency.ssr.test.ts
+        type: integration
+        cases:
+          - "Transparency page renders structured compliance data and download links"
+      - path: tests/pages/accessibility.test.ts
         type: unit
         cases:
-          - "Sections have scroll-margin to avoid overlapping nav"
-          - "Nav has appropriate aria-label and focus-visible styles"
+          - "Nav, hamburger, and Donate CTA expose aria-labels and focus-visible styles"
+          - "Door toggle is keyboard operable with aria-label"
   - id: step-04
-    title: Admin dashboard plan for Home and About (PublicLayout)
-    rationale: Capture a high-level, non-technical admin experience to manage global layout settings and page content for Home (landing) and About, balancing customization with simplicity. This is a planning step only; no implementation yet.
+    title: Admin dashboard plan for Home, About, Projects, Events, Transparency
+    rationale: Capture a high-level, non-technical admin experience to manage global layout settings and page content for public pages, balancing customization with simplicity. This is a planning step only; no implementation yet.
     depends_on:
       - step-03
     hints:
-      - Global settings (shared): themeColor, googleFontsHref, skipLinkText, footerText.
-      - Donation (global): includeFloatingDonation (bool), donationHref, donationLabel, donationAudioSrc; donation CTA appears on all public pages by default.
-      - Navigation (global): links as a repeater with label, href, highlighted; validation guidance for in-page anchors.
-      - Temple Door defaults (global): includeTempleDoorByDefault (bool), doorAutoOpenDelayMs; per-page override allowed.
-      - Home (page) content: hero (eyebrow, title, subtitle/description, scrollHint, heroImageKey), manuscript intro (introEyebrow, introHeading, introBody), sections (repeater: id, eyebrow, heading, body), optional cards within sections (title, body), page metadata (pageTitle, metaDescription), layout overrides (includeTempleDoor, includeFooter), donation block toggle and optional per-page label/href override.
-      - About (page) content: manuscript intro and sections (same structure as Home), page metadata, layout overrides (includeTempleDoor default off, includeFooter), donation block toggle consistent with new policy; supports sections without cards.
-      - Storage outline: singleton public_layout_settings for global config; public_page rows keyed by slug (home, about) storing page JSON (hero, intro, sections, metadata, overrides). Normalization deferred unless needed.
-      - Admin routes outline: GET/POST dashboard panels for home, about-us, and settings; server-rendered preview endpoints; publish workflow integrates with existing publish pipeline.
+      - Global settings (shared): themeColor, googleFontsHref, skipLinkText, footerText, nav links (About Us, Projects, Events, Transparency), floating Donate CTA toggle, donateHref, donateLabel.
+      - Home (page) content: hero (background image key or gradient, heading, subheading/tagline), H2 "Rajrajeshwari Mandir" text, intro body, projects list items (id, title, short description, thumbnail, read-more href), events list items (date, location, title, one-line description, link), page metadata, temple door enabled flag/timing, scroll texture toggle.
+      - About (page) content: overview text, focus areas list (label + description), trustees grid (image key, name, short bio), CTA link to Transparency, page metadata.
+      - Projects (listing) content: repeater of project cards (id/slug, title, location, status, short description, thumbnail, href). Project detail template: description, structured stats (location, start date, status, target end date, budget vs spent so far), team contacts (name, role, email/phone), optional gallery keys.
+      - Events (page) content: cards with event name, location, status (upcoming/completed), date, contact person fields.
+      - Transparency (page) content: trust name, registration number and date, property details, downloadable document links (title, href).
+      - Storage outline: singleton public_layout_settings for global config; public_page rows keyed by slug (home, about, projects, project-detail template, events, transparency) storing page JSON. Normalization deferred unless needed.
+      - Admin routes outline: GET/POST dashboard panels for home, about-us, projects, events, transparency, and settings; server-rendered preview endpoints; publish workflow integrates with existing publish pipeline.
       - Public SSR: pages read global + per-page data and render via PublicLayout; per-page overrides are minimal and explicit.
       - UX guardrails: plain language labels, help text, sensible defaults, limited overrides to avoid complexity; preview-first flow; accessible form controls.
-      - Non-goals now: media library UX beyond basic R2 key input, advanced animations configuration; can be phased later.
+      - Non-goals now: advanced animations, elaborate media workflows beyond basic R2 key input.
     changes: []
     acceptance_criteria:
-      - The spec documents a high-level plan for admin-managed global layout and page content for Home and About.
+      - The spec documents a high-level plan for admin-managed global layout and page content for Home, About, Projects, Events, and Transparency with structured fields matching the design spec.
       - The plan enumerates global settings, page sections, storage/endpoints outline, SSR integration, UX guardrails, and non-goals.
-      - No code changes are required by this step.
     tests:
-      - path:
-        type:
+      - path: docs-only
+        type: n/a
         cases:
+          - "Planning document updated with admin schemas and flows"
 ---
 
 ## Overview (Human Context)
@@ -159,3 +183,12 @@ This specification outlines the steps to iteratively design a unique and
 engaging website for the Maa Nanda Trust. The focus is on creating a visually
 appealing and culturally resonant experience that reflects the temple's
 heritage while ensuring usability and accessibility.
+
+## Updated Website Design Specification
+
+- **Global Elements:** Top navigation (bells style — About Us, Projects, Events, Transparency), mobile hamburger/scroll-rod menu, floating "Donate" box/coin CTA on all pages, scroll-inspired layout for content, and footer.
+- **Landing Page:** Hero with temple door overlay; smooth door-opening effect with toggle; H2 "Rajrajeshwari Mandir" immediately below hero; intro tagline; projects cards with thumbnail/title/description/read-more to project ID pages; events cards styled as postal/invitation envelopes showing date, location, name, one-line description, and link; donation box CTA with coin-drop feel; manuscript scroll background.
+- **About Us Page:** Header with Trust name; overview; focus areas list; CTA to Transparency; trustees grid with image, name, short bio; rendered on scroll background without door overlay.
+- **Projects Page:** Listing of project cards (same structure as landing projects); each opens a project detail template with name/location header, description, structured stats (location, start date, current status, target end date, budget vs amount spent so far), and team contacts; scroll background.
+- **Events Page:** Invitation/envelope-style cards with event name, location, status (upcoming/completed), date, and contact person details; scroll background.
+- **Transparency Page:** Structured regulatory/compliance data—trust name, registration number/date, property details, and download links for regulatory documents; scroll background.

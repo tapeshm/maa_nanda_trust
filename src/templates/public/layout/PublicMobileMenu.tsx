@@ -1,57 +1,86 @@
 /** @jsxImportSource hono/jsx */
-
 import type { FC } from 'hono/jsx'
-import type { PublicNavLink } from './PublicTopNav'
+import { type PublicNavLink } from './PublicTopNav'
+import { html } from 'hono/html'
 
 interface PublicMobileMenuProps {
   links: PublicNavLink[]
+  isLoggedIn?: boolean
 }
 
-// [D3:pages.step-03:mobile-menu] Scroll-styled mobile menu from reference
-const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links }) => (
-  <div class="scroll-menu" data-scroll-menu>
-    <button
-      type="button"
-      class="scroll-menu-toggle"
-      aria-expanded="false"
-      aria-controls="scrollMenuPanel"
-      data-scroll-toggle
-    >
-      <span class="scroll-menu-icon" aria-hidden="true">
-        <span class="scroll-menu-rod"></span>
-        <span class="scroll-menu-cord scroll-menu-cord--left"></span>
-        <span class="scroll-menu-cord scroll-menu-cord--right"></span>
-        <span class="scroll-menu-tassel"></span>
-      </span>
-      <span class="scroll-menu-label">Menu</span>
-    </button>
-    <nav
-      class="scroll-menu-panel"
-      id="scrollMenuPanel"
-      aria-label="Primary navigation"
-      hidden
-      data-scroll-panel
-    >
-      <div class="scroll-menu-scroll">
-        <div class="scroll-menu-roll" aria-hidden="true"></div>
-        <div class="scroll-menu-links">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              class={
-                link.highlighted
-                  ? 'bg-gradient-to-br from-amber-500 to-amber-700 text-white font-bold'
-                  : ''
-              }
-            >
-              {link.label}
+const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false }) => {
+  const containerId = 'mobile-scroll-container'
+
+  return (
+    <>
+      <div
+        id={containerId}
+        class="scroll-menu"
+        // The script below handles the logic, but we keep a simple inline toggle 
+        // as a fallback or for immediate interaction
+        onclick={`
+          if (!event.defaultPrevented) {
+            this.classList.toggle('open');
+          }
+        `}
+      >
+
+        {/* The String Tie (Visible only when closed) */}
+        <div class="scroll-menu-string" aria-hidden="true"></div>
+
+        {/* Top Rod */}
+        <div class="scroll-menu-rod top-rod" aria-hidden="true"></div>
+
+        {/* The Parchment (Hidden when closed, expands when open) */}
+        <nav class="scroll-menu-panel" aria-label="Primary navigation" onclick="event.stopPropagation()">
+          <div class="scroll-menu-links">
+            <div style="font-size:12px; opacity:0.6; margin-bottom:5px; letter-spacing: 0.1em;">❖ NAVIGATION ❖</div>
+            {links.map((link) => (
+              <a key={link.href} href={link.href}>
+                {link.label}
+              </a>
+            ))}
+            {isLoggedIn ? (
+              <a href="/admin/dashboard">Dashboard</a>
+            ) : (
+              <a href="/admin/dashboard">Dashboard</a>
+            )}
+            <a href="/donate" style="color: var(--sindoor); font-weight:bold; margin-top:10px;">
+              ❤ Donate
             </a>
-          ))}
-        </div>
+          </div>
+        </nav>
+
+        {/* Bottom Rod */}
+        <div class="scroll-menu-rod bottom-rod" aria-hidden="true"></div>
+
+        {/* The Wax Seal (Visible when closed, fades out when open) */}
+        <div class="scroll-menu-seal">N</div>
+
       </div>
-    </nav>
-  </div>
-)
+
+      {/* Client-side Script for Click-Outside Behavior */}
+      {html`
+        <script>
+          (function() {
+            const menu = document.getElementById('${containerId}');
+            
+            document.addEventListener('click', function(event) {
+              if (!menu) return;
+              
+              const isClickInside = menu.contains(event.target);
+              const isOpen = menu.classList.contains('open');
+
+              // If clicking OUTSIDE the menu and it is currently OPEN, close it.
+              if (!isClickInside && isOpen) {
+                menu.classList.remove('open');
+              }
+            });
+          })();
+        </script>
+      `}
+    </>
+  )
+}
 
 export default PublicMobileMenu

@@ -1,0 +1,82 @@
+/* src/styles/public-pages/tokens.css */
+
+/* Design Tokens & Asset Hooks */
+:root {
+  /* --- Asset Hooks --- */
+  --asset-door-left: url("/assets/temple-door-left.png");
+  --asset-door-right: url("/assets/temple-door-right.png");
+  --asset-temple-interior: url("/assets/temple-inside.png");
+  --asset-bell: none;
+  --asset-donation-box: none;
+  --asset-donation-coin: none;
+
+  /* --- Animation Settings --- */
+  --door-open-duration: 4500ms;
+  --door-close-duration: 1800ms;
+  --door-open-easing: cubic-bezier(0.22, 0.72, 0.12, 1);
+  --door-close-easing: cubic-bezier(0.32, 0.04, 0.28, 1);
+  --door-auto-delay: 600ms;
+  --content-reveal-delay: 1000ms;
+  --content-fade-duration: 500ms;
+  --nav-collapse-duration: 600ms;
+  --nav-collapse-easing: cubic-bezier(0.22, 0.7, 0.16, 1);
+  --nav-collapse-threshold: 0.25;
+  --nav-collapse-margin: clamp(8px, 2vw, 20px);
+
+  /* --- Palette: Ambient & Backgrounds --- */
+  --bg-deep: #0f0a07;
+  --bg-ambient: radial-gradient(
+      1200px 720px at 50% 18%,
+      rgba(255, 218, 150, 0.1),
+      transparent 65%
+    ),
+    radial-gradient(
+      800px 440px at 20% 70%,
+      rgba(255, 218, 150, 0.08),
+      transparent 70%
+    ),
+    #0f0a07;
+
+  /* --- Palette: Parchment & Paper --- */
+  --paper-color: #f7f2e8;
+  --paper-texture: #f0e6d2;
+  --cream: #f8f1df;
+  
+  /* --- Palette: Sacred Gold, Wood & Red --- */
+  --gold: #c5a059;
+  --gold-dark: #9e7e3e;
+  --gold-bright: #f6d27c;
+  --gold-shine: #e6c885;
+  
+  --wood-base: #4b2e18;
+  --wood-highlight: #714323;
+  --wood-shadow: #2c160a;
+  
+  --sindoor: #b33a27;
+  --seal-red: #b33939;
+  --seal-gold: #d4af37;
+
+  /* --- Palette: Bronze (Scroll) --- */
+  --bronze-dark: #553b1e;
+  --bronze-mid: #8c6232;
+  --bronze-light: #d4a45f;
+
+  /* --- Typography --- */
+  --font-heading: 'Cinzel', serif;
+  --font-body: 'Playfair Display', serif;
+  --text-color: #4a3b2a;
+  --ink: #3b2f2f;
+
+  /* --- Dimensions & Z-Index --- */
+  --nav-height: clamp(52px, 7vw, 74px);
+  --nav-link-gap: clamp(16px, 3.6vw, 36px);
+  --nav-top-gap: clamp(24px, 3vw, 44px);
+  --frame-thickness: clamp(16px, 4.4vw, 80px);
+  --content-max: min(1040px, 90vw);
+  
+  --mobile-menu-top: 20px;
+  --mobile-menu-right: 20px;
+
+  --z-door: 999;
+  --z-mobile-menu: 9999;
+}

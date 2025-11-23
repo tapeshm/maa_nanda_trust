@@ -11,6 +11,7 @@ import FloatingDonationButton from '../effects/FloatingDonationButton'
 export interface PublicLayoutProps {
   title: string
   navLinks: PublicNavLink[]
+  isLoggedIn?: boolean
   includeTempleDoor?: boolean
   includeFooter?: boolean
   includeFloatingDonation?: boolean
@@ -26,6 +27,7 @@ export interface PublicLayoutProps {
 const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
   title,
   navLinks,
+  isLoggedIn = false,
   includeTempleDoor = true,
   includeFooter = true,
   includeFloatingDonation = true,
@@ -79,10 +81,10 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
         {/* Content shell */}
         <div class={includeTempleDoor ? "content-shell" : "content-shell is-visible"} data-content-shell>
           {/* Mobile scroll menu */}
-          <PublicMobileMenu links={navLinks} />
+          <PublicMobileMenu links={navLinks} isLoggedIn={isLoggedIn} />
 
           {/* Desktop navigation */}
-          <PublicTopNav links={navLinks} />
+          <PublicTopNav links={navLinks} isLoggedIn={isLoggedIn} />
 
           {/* Main content */}
           <main id="main-content" class="relative isolate z-[80] pt-[clamp(52px,9vw,140px)] transition-[padding-top] duration-[var(--nav-collapse-duration)] ease-[var(--nav-collapse-easing)]">

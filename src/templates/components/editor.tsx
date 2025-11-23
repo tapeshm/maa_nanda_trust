@@ -67,7 +67,7 @@ export const EditorAssets: FC<EditorAssetsProps> = ({ entry = DEFAULT_ENTRY }) =
 
 type EditorInstanceProps = {
   spec: EditorSpec
-  payload?: JSONContent
+  payload?: JSONContent | string
   html?: string
   etag?: string
   nonce?: string

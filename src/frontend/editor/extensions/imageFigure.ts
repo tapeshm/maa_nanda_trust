@@ -178,6 +178,12 @@ export const ImageFigure = Node.create<ImageFigureOptions>({
         tag: 'img',
         getAttrs: (node) => {
           const img = node as HTMLImageElement
+
+          // Prevent parsing images that are already inside a figure
+          if (img.closest('figure.editor-figure')) {
+            return false
+          }
+
           const src = img.getAttribute('src')
           if (!src || !isAllowedImageSrc(src)) return false
 

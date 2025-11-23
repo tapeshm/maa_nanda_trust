@@ -3,21 +3,27 @@
 import { describe, it, expect } from 'vitest'
 import { renderToString } from 'hono/jsx/dom/server'
 import LandingPage from '../../src/templates/public/pages/landing'
+import { DEFAULT_LANDING_CONTENT } from '../../src/data/landing.data'
 
 describe('LandingPage', () => {
-  it('renders hero, scroll manuscript, donation CTA, and door overlay', () => {
-    const markup = renderToString(<LandingPage />)
+  it('renders dynamic content from landingContent prop', () => {
+    const markup = renderToString(<LandingPage projects={[]} events={[]} landingContent={DEFAULT_LANDING_CONTENT} />)
 
-    expect(markup).toContain('Enter the Divine Resonance')
-    expect(markup).toContain('data-door-overlay')
-    expect(markup).toContain('data-donation-button')
-    expect(markup).toContain('href="#seva"')
-    expect(markup).toContain('Deepdaan Mahotsav')
-  })
+    // Assertions for hero section
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.hero.title)
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.hero.eyebrow)
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.hero.description)
 
-  it('includes mobile menu toggle button hidden by default', () => {
-    const markup = renderToString(<LandingPage />)
-    expect(markup).toContain('data-scroll-toggle')
-    expect(markup).toContain('aria-expanded="false"')
+    // Assertions for welcome section
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.welcome.title)
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.welcome.description)
+
+    // Assertions for projects section header
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.projectsSection.title)
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.projectsSection.description)
+
+    // Assertions for events section header
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.eventsSection.title)
+    expect(markup).toContain(DEFAULT_LANDING_CONTENT.eventsSection.description)
   })
 })

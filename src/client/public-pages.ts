@@ -83,13 +83,13 @@ const setScrollMenuState = (open: boolean) => {
   const isClosing = scrollMenu.classList.contains("is-closing")
 
   scrollToggle.setAttribute("aria-expanded", String(open))
+  scrollPanel.setAttribute("aria-hidden", String(!open))
 
   if (open) {
     if (isOpen && !isClosing) {
       return
     }
 
-    scrollPanel.removeAttribute("hidden")
     scrollMenu.classList.remove("is-closing")
     scrollMenu.classList.add(SCROLL_MENU_OPEN_CLASS)
 
@@ -102,7 +102,6 @@ const setScrollMenuState = (open: boolean) => {
   }
 
   if (!isOpen && !isOpening) {
-    scrollPanel.setAttribute("hidden", "")
     scrollMenu.classList.remove("is-opening")
     scrollMenu.classList.remove("is-closing")
     return
@@ -112,7 +111,6 @@ const setScrollMenuState = (open: boolean) => {
     scrollMenu.classList.remove("is-opening")
     scrollMenu.classList.remove(SCROLL_MENU_OPEN_CLASS)
     scrollMenu.classList.remove("is-closing")
-    scrollPanel.setAttribute("hidden", "")
     return
   }
 
@@ -314,7 +312,6 @@ const handleScrollMenuAnimationEnd = (event: AnimationEvent) => {
   if (event.animationName === "scroll-hide") {
     scrollMenu.classList.remove("is-closing")
     scrollMenu.classList.remove(SCROLL_MENU_OPEN_CLASS)
-    scrollPanel.setAttribute("hidden", "")
   }
 }
 
