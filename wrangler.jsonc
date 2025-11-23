@@ -9,7 +9,10 @@
   },
   "logpush": false,
   "vars": {
-    "ENV": "production"
+    "ENV": "production",
+    "MEDIA_MAX_UPLOAD_BYTES": 5242880,
+    "CONTENT_MAX_BYTES": 262144,
+    "LOG_SAMPLE_RATE": 1.0,
   },
   // Local-only bindings for development with `wrangler dev`
   "dev": {
