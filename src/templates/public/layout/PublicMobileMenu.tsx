@@ -16,13 +16,6 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false
       <div
         id={containerId}
         class="scroll-menu"
-        // The script below handles the logic, but we keep a simple inline toggle 
-        // as a fallback or for immediate interaction
-        onclick={`
-          if (!event.defaultPrevented) {
-            this.classList.toggle('open');
-          }
-        `}
       >
 
         {/* The String Tie (Visible only when closed) */}
@@ -65,17 +58,24 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false
           (function() {
             const menu = document.getElementById('${containerId}');
             
-            document.addEventListener('click', function(event) {
-              if (!menu) return;
-              
-              const isClickInside = menu.contains(event.target);
-              const isOpen = menu.classList.contains('open');
+            if (menu) {
+              // Toggle menu on click
+              menu.addEventListener('click', function(event) {
+                if (!event.defaultPrevented) {
+                  this.classList.toggle('open');
+                }
+              });
 
-              // If clicking OUTSIDE the menu and it is currently OPEN, close it.
-              if (!isClickInside && isOpen) {
-                menu.classList.remove('open');
-              }
-            });
+              // Close menu when clicking outside
+              document.addEventListener('click', function(event) {
+                const isClickInside = menu.contains(event.target);
+                const isOpen = menu.classList.contains('open');
+
+                if (!isClickInside && isOpen) {
+                  menu.classList.remove('open');
+                }
+              });
+            }
           })();
         </script>
       `}
