@@ -34,7 +34,7 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false
         {/* The Parchment (Hidden when closed, expands when open) */}
         <nav class="scroll-menu-panel" aria-label="Primary navigation" onclick="event.stopPropagation()">
           <div class="scroll-menu-links">
-            <div style="font-size:12px; opacity:0.6; margin-bottom:5px; letter-spacing: 0.1em;">❖ NAVIGATION ❖</div>
+            <div class="mobile-nav-heading">❖ NAVIGATION ❖</div>
             {links.map((link) => (
               <a key={link.href} href={link.href}>
                 {link.label}
@@ -45,7 +45,7 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false
             ) : (
               <a href="/admin/dashboard">Dashboard</a>
             )}
-            <a href="/donate" style="color: var(--sindoor); font-weight:bold; margin-top:10px;">
+            <a href="/donate" class="mobile-nav-donate-link">
               ❤ Donate
             </a>
           </div>

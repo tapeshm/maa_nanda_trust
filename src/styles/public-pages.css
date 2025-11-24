@@ -422,6 +422,20 @@ button:focus-visible {
   .scroll-menu.open .scroll-menu-rod {
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
   }
+
+  /* --- Extracted Mobile Menu Styles --- */
+  .mobile-nav-heading {
+    font-size: 12px;
+    opacity: 0.6;
+    margin-bottom: 5px;
+    letter-spacing: 0.1em;
+  }
+
+  .mobile-nav-donate-link {
+    color: var(--sindoor);
+    font-weight: bold;
+    margin-top: 10px;
+  }
 }
 
 /* ===============================
