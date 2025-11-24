@@ -370,6 +370,26 @@ window.addEventListener("resize", () => {
   updateNavOnScroll()
 })
 
+// Mobile Scroll Menu (Simple Toggle)
+const mobileScrollContainer = document.getElementById("mobile-scroll-container")
+if (mobileScrollContainer) {
+  mobileScrollContainer.addEventListener("click", (event) => {
+    if (!event.defaultPrevented) {
+      mobileScrollContainer.classList.toggle("open")
+    }
+  })
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Node)) return
+    const isClickInside = mobileScrollContainer.contains(event.target)
+    const isOpen = mobileScrollContainer.classList.contains("open")
+
+    if (!isClickInside && isOpen) {
+      mobileScrollContainer.classList.remove("open")
+    }
+  })
+}
+
 // ==============================
 // Donation Interaction
 // ==============================

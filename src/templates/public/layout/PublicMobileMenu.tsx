@@ -51,34 +51,6 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false
         <div class="scroll-menu-seal">N</div>
 
       </div>
-
-      {/* Client-side Script for Click-Outside Behavior */}
-      {html`
-        <script>
-          (function() {
-            const menu = document.getElementById('${containerId}');
-            
-            if (menu) {
-              // Toggle menu on click
-              menu.addEventListener('click', function(event) {
-                if (!event.defaultPrevented) {
-                  this.classList.toggle('open');
-                }
-              });
-
-              // Close menu when clicking outside
-              document.addEventListener('click', function(event) {
-                const isClickInside = menu.contains(event.target);
-                const isOpen = menu.classList.contains('open');
-
-                if (!isClickInside && isOpen) {
-                  menu.classList.remove('open');
-                }
-              });
-            }
-          })();
-        </script>
-      `}
     </>
   )
 }
