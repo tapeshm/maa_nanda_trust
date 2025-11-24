@@ -370,6 +370,13 @@ window.addEventListener("resize", () => {
   updateNavOnScroll()
 })
 
+// Envelope Card Toggle
+document.querySelectorAll("[data-envelope-toggle]").forEach((envelope) => {
+  envelope.addEventListener("click", () => {
+    envelope.classList.toggle("open")
+  })
+})
+
 // Mobile Scroll Menu (Simple Toggle)
 const mobileScrollContainer = document.getElementById("mobile-scroll-container")
 if (mobileScrollContainer) {

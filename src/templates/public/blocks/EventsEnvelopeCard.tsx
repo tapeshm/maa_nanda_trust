@@ -19,7 +19,7 @@ const EventsEnvelopeCard: FC<EventsEnvelopeCardProps> = ({
   linkLabel = "Details"
 }) => {
   return (
-    <div class="envelope-wrapper" onclick="this.classList.toggle('open')">
+    <div class="envelope-wrapper" data-envelope-toggle>
       <div class="envelope">
         {/* The card inside */}
         <div class="card">
