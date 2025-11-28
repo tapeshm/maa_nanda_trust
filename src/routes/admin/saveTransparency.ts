@@ -6,6 +6,7 @@ import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertTransparencyContent } from '../../data/transparency.data'
 import type { TransparencyPageContent, Document } from '../../data/transparency'
+import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -81,6 +82,7 @@ app.post(
 
     try {
       await upsertTransparencyContent(c.env, content)
+      await invalidateCachedPublicHtml(c.env, 'transparency')
       return c.redirect('/admin/dashboard/transparency?success=true')
     } catch (e) {
       console.error('Failed to save transparency content:', e)

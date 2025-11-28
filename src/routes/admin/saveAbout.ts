@@ -6,6 +6,7 @@ import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertAboutContent } from '../../data/about.data'
 import type { AboutPageContent, AboutValue, Trustee } from '../../data/about'
+import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -134,6 +135,7 @@ app.post(
 
     try {
       await upsertAboutContent(c.env, content)
+      await invalidateCachedPublicHtml(c.env, 'about')
       return c.redirect('/admin/dashboard/about-us?success=true')
     } catch (e) {
       console.error('Failed to save about content:', e)

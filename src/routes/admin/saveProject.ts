@@ -13,6 +13,7 @@ import {
     renderFallbackHtml,
 } from '../../utils/editor/render';
 import { resolveEditorProfile } from '../../editor/constants';
+import { invalidateCachedPublicHtml } from '../../utils/pages/cache';
 
 const saveProject = new Hono<{ Bindings: Bindings }>();
 
@@ -162,6 +163,10 @@ saveProject.post('/save/project', requireAuth(), requireAdmin, async (c) => {
         };
 
         await upsertProject(c.env, project);
+
+        await invalidateCachedPublicHtml(c.env, 'projects:list');
+        await invalidateCachedPublicHtml(c.env, `projects:detail:${id}`);
+        await invalidateCachedPublicHtml(c.env, 'landing');
 
         return c.redirect('/admin/dashboard/projects');
 

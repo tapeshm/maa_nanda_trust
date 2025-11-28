@@ -6,6 +6,7 @@ import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertDonateContent } from '../../data/donate.data'
 import type { DonatePageContent } from '../../data/donate'
+import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -34,6 +35,7 @@ app.post(
 
     try {
       await upsertDonateContent(c.env, content)
+      await invalidateCachedPublicHtml(c.env, 'donate')
       return c.redirect('/admin/dashboard/donate?success=true')
     } catch (e) {
       console.error('Failed to save donate content:', e)

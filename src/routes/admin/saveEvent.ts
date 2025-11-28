@@ -13,6 +13,7 @@ import {
     renderFallbackHtml,
 } from '../../utils/editor/render';
 import { resolveEditorProfile } from '../../editor/constants';
+import { invalidateCachedPublicHtml } from '../../utils/pages/cache';
 
 const saveEvent = new Hono<{ Bindings: Bindings }>();
 
@@ -98,6 +99,10 @@ saveEvent.post('/save/event', requireAuth(), requireAdmin, async (c) => {
         };
 
         await upsertEvent(c.env, event);
+
+        await invalidateCachedPublicHtml(c.env, 'events:list');
+        await invalidateCachedPublicHtml(c.env, `events:detail:${id}`);
+        await invalidateCachedPublicHtml(c.env, 'landing');
 
         return c.redirect('/admin/dashboard/events');
 

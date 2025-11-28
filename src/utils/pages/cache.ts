@@ -1,4 +1,5 @@
 import { sha256 } from 'hono/utils/crypto'
+import type { Context } from 'hono'
 import type { Bindings } from '../../bindings'
 import type { PageSlug } from '../../config/pages'
 
@@ -7,6 +8,7 @@ const META_KEY_PREFIX = 'pages:meta'
 const PAGE_POINTER_PREFIX = 'pages:pointer'
 const LANDING_POINTER_KEY = `${PAGE_POINTER_PREFIX}:landing:current`
 const CACHE_TTL_SECONDS = 3600
+const PUBLIC_PAGE_PREFIX = 'public:page'
 
 export const PUBLIC_CACHE_CONTROL = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400'
 
@@ -136,4 +138,103 @@ function coerceEtag(meta: unknown): string | undefined {
     return typeof value === 'string' ? value : undefined
   }
   return undefined
+}
+
+export function getPublicPageKey(key: string): string {
+  return `${PUBLIC_PAGE_PREFIX}:${key}`
+}
+
+export async function getCachedPublicHtml(
+  env: Bindings,
+  key: string,
+): Promise<CachedHtmlRecord | null> {
+  const cacheKey = getPublicPageKey(key)
+  const html = await env.PAGES_CACHE.get(cacheKey)
+  if (typeof html !== 'string') {
+    return null
+  }
+  const meta = await env.PAGES_CACHE.get(`${cacheKey}:meta`)
+  const etag = coerceEtag(meta)
+  return { html, etag }
+}
+
+export async function putCachedPublicHtml(
+  env: Bindings,
+  key: string,
+  html: string,
+): Promise<string> {
+  const cacheKey = getPublicPageKey(key)
+  const etag = await computeHtmlEtag(html)
+  await env.PAGES_CACHE.put(cacheKey, html, {
+    expirationTtl: CACHE_TTL_SECONDS,
+  })
+  await env.PAGES_CACHE.put(
+    `${cacheKey}:meta`,
+    JSON.stringify({ etag }),
+    { expirationTtl: CACHE_TTL_SECONDS },
+  )
+  return etag
+}
+
+export async function invalidateCachedPublicHtml(env: Bindings, key: string): Promise<void> {
+  const cacheKey = getPublicPageKey(key)
+  await env.PAGES_CACHE.delete(cacheKey)
+  await env.PAGES_CACHE.delete(`${cacheKey}:meta`)
+}
+
+export function buildCacheHeaders(etag: string): Headers {
+  const headers = new Headers()
+  headers.set('Cache-Control', PUBLIC_CACHE_CONTROL)
+  headers.set('ETag', etag)
+  return headers
+}
+
+export function etagMatches(header: string | undefined, etag: string): boolean {
+  if (!header) return false
+  const candidates = header
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+  return candidates.includes(etag)
+}
+
+export async function serveWithCache(
+  c: Context,
+  key: string,
+  renderFn: () => Promise<string | null>,
+): Promise<Response> {
+  const auth = c.get('auth') as { userId?: string } | undefined
+  const isLoggedIn = !!auth?.userId
+
+  if (isLoggedIn) {
+    const html = await renderFn()
+    if (html === null) return c.notFound()
+    return c.html(html)
+  }
+
+  const cached = await getCachedPublicHtml(c.env as Bindings, key)
+  if (cached) {
+    const etag = cached.etag ?? (await computeHtmlEtag(cached.html))
+    if (etagMatches(c.req.header('If-None-Match'), etag)) {
+      const headers: Record<string, string> = {
+        'Cache-Control': PUBLIC_CACHE_CONTROL,
+        'ETag': etag,
+      }
+      return c.body(null, 304, headers)
+    }
+    const res = c.html(cached.html)
+    const headers = buildCacheHeaders(etag)
+    headers.forEach((value, key) => res.headers.set(key, value))
+    return res
+  }
+
+  const html = await renderFn()
+  if (html === null) return c.notFound()
+
+  const etag = await putCachedPublicHtml(c.env as Bindings, key, html)
+
+  const res = c.html(html)
+  const headers = buildCacheHeaders(etag)
+  headers.forEach((value, key) => res.headers.set(key, value))
+  return res
 }

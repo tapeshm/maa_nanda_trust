@@ -6,6 +6,7 @@ import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertLandingContent } from '../../data/landing.data'
 import type { LandingPageContent } from '../../data/landing'
+import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -55,6 +56,7 @@ app.post(
 
     try {
       await upsertLandingContent(c.env, content)
+      await invalidateCachedPublicHtml(c.env, 'landing')
       return c.redirect('/admin/dashboard/home?success=true')
     } catch (e) {
       console.error('Failed to save landing content:', e)

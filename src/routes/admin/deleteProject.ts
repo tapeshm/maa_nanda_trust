@@ -5,6 +5,7 @@ import type { Bindings } from '../../bindings';
 import { requireAuth, requireAdmin } from '../../middleware/auth';
 import { getCsrfParsedBody } from '../../middleware/csrf';
 import { deleteProject } from '../../data/projects.data';
+import { invalidateCachedPublicHtml } from '../../utils/pages/cache';
 
 const deleteProjectRoute = new Hono<{ Bindings: Bindings }>();
 
@@ -18,6 +19,9 @@ deleteProjectRoute.post('/delete/project', requireAuth(), requireAdmin, async (c
 
     try {
         await deleteProject(c.env, id);
+        await invalidateCachedPublicHtml(c.env, 'projects:list');
+        await invalidateCachedPublicHtml(c.env, `projects:detail:${id}`);
+        await invalidateCachedPublicHtml(c.env, 'landing');
         return c.redirect('/admin/dashboard/projects');
     } catch (error) {
         console.error("Error deleting project:", error);
