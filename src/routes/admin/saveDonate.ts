@@ -5,7 +5,7 @@ import type { Bindings } from '../../bindings'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertDonateContent } from '../../data/donate.data'
-import type { DonatePageContent } from '../../data/donate'
+import type { DonatePageContentRaw } from '../../data/donate'
 import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -23,19 +23,22 @@ app.post(
     
     const qrCodeUrl = (formData['qr_code_url'] as string) || ''
     
-    // Editor content extraction - checking flat keys first, then nested object
-    const appeal = (formData['content_html[appeal-editor]'] as string) || 
-                   ((formData.content_html as Record<string, string>)?.[ 'appeal-editor']) || 
-                   '';
+    const appealEn = (formData['content_html[appeal-editor-en]'] as string) || 
+                   ((formData.content_html as Record<string, string>)?.[ 'appeal-editor-en']) || '';
+                   
+    const appealHi = (formData['content_html[appeal-editor-hi]'] as string) || 
+                   ((formData.content_html as Record<string, string>)?.[ 'appeal-editor-hi']) || '';
 
-    const content: DonatePageContent = {
+    const content: DonatePageContentRaw = {
       qrCodeUrl,
-      appeal,
+      appeal: { en: appealEn, hi: appealHi },
     }
 
     try {
       await upsertDonateContent(c.env, content)
-      await invalidateCachedPublicHtml(c.env, 'donate')
+      await invalidateCachedPublicHtml(c.env, 'donate') // legacy
+      await invalidateCachedPublicHtml(c.env, 'donate:en')
+      await invalidateCachedPublicHtml(c.env, 'donate:hi')
       return c.redirect('/admin/dashboard/donate?success=true')
     } catch (e) {
       console.error('Failed to save donate content:', e)

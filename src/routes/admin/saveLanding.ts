@@ -5,21 +5,33 @@ import type { Bindings } from '../../bindings'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertLandingContent } from '../../data/landing.data'
-import type { LandingPageContent } from '../../data/landing'
+import type { LandingPageContentRaw } from '../../data/landing'
 import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
 const landingSchema = z.object({
-  hero_eyebrow: z.string(),
-  hero_title: z.string(),
-  hero_description: z.string(),
-  welcome_title: z.string(),
-  welcome_description: z.string(),
-  projects_title: z.string(),
-  projects_description: z.string(),
-  events_title: z.string(),
-  events_description: z.string(),
+  hero_eyebrow_en: z.string().default(''),
+  hero_eyebrow_hi: z.string().default(''),
+  hero_title_en: z.string().default(''),
+  hero_title_hi: z.string().default(''),
+  hero_description_en: z.string().default(''),
+  hero_description_hi: z.string().default(''),
+  
+  welcome_title_en: z.string().default(''),
+  welcome_title_hi: z.string().default(''),
+  welcome_description_en: z.string().default(''),
+  welcome_description_hi: z.string().default(''),
+  
+  projects_title_en: z.string().default(''),
+  projects_title_hi: z.string().default(''),
+  projects_description_en: z.string().default(''),
+  projects_description_hi: z.string().default(''),
+  
+  events_title_en: z.string().default(''),
+  events_title_hi: z.string().default(''),
+  events_description_en: z.string().default(''),
+  events_description_hi: z.string().default(''),
 })
 
 app.post(
@@ -34,29 +46,32 @@ app.post(
   async (c) => {
     const data = c.req.valid('form')
 
-    const content: LandingPageContent = {
+    const content: LandingPageContentRaw = {
       hero: {
-        eyebrow: data.hero_eyebrow,
-        title: data.hero_title,
-        description: data.hero_description,
+        eyebrow: { en: data.hero_eyebrow_en, hi: data.hero_eyebrow_hi },
+        title: { en: data.hero_title_en, hi: data.hero_title_hi },
+        description: { en: data.hero_description_en, hi: data.hero_description_hi },
       },
       welcome: {
-        title: data.welcome_title,
-        description: data.welcome_description,
+        title: { en: data.welcome_title_en, hi: data.welcome_title_hi },
+        description: { en: data.welcome_description_en, hi: data.welcome_description_hi },
       },
       projectsSection: {
-        title: data.projects_title,
-        description: data.projects_description,
+        title: { en: data.projects_title_en, hi: data.projects_title_hi },
+        description: { en: data.projects_description_en, hi: data.projects_description_hi },
       },
       eventsSection: {
-        title: data.events_title,
-        description: data.events_description,
+        title: { en: data.events_title_en, hi: data.events_title_hi },
+        description: { en: data.events_description_en, hi: data.events_description_hi },
       },
     }
 
     try {
       await upsertLandingContent(c.env, content)
       await invalidateCachedPublicHtml(c.env, 'landing')
+      // Invalidate both languages
+      await invalidateCachedPublicHtml(c.env, 'landing:en')
+      await invalidateCachedPublicHtml(c.env, 'landing:hi')
       return c.redirect('/admin/dashboard/home?success=true')
     } catch (e) {
       console.error('Failed to save landing content:', e)

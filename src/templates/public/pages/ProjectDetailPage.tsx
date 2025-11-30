@@ -2,23 +2,31 @@
 
 import type { FC } from 'hono/jsx'
 import PublicLayout from '../layout/PublicLayout'
-import type { PublicNavLink } from '../layout/PublicTopNav'
 import type { Project } from '../../../data/projects'
 import RichText from '../../components/RichText'
 import { resolveMediaUrl } from '../../../utils/pages/media'
+import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { getNavLinks } from '../../../config/navigation'
 
-const NAV_LINKS: PublicNavLink[] = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About Us' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/events', label: 'Events' },
-  { href: '/transparency', label: 'Transparency' },
-]
+type ProjectDetailPageProps = {
+  project: Project
+  lang?: Language
+  activePath?: string
+}
 
-const ProjectDetailPage: FC<{ project: Project }> = ({ project }) => (
+const ProjectDetailPage: FC<ProjectDetailPageProps> = ({ 
+  project,
+  lang = DEFAULT_LANGUAGE,
+  activePath = `/projects/${project.id}`
+}) => {
+  const navLinks = getNavLinks(lang);
+
+  return (
   <PublicLayout
     title={`${project.title} — Projects`}
-    navLinks={NAV_LINKS}
+    navLinks={navLinks}
+    lang={lang}
+    activePath={activePath}
   >
     <main class="py-12 md:py-20 px-4">
       <div class="max-w-4xl mx-auto p-8 md:p-12 rounded-xl glass-panel">
@@ -96,5 +104,6 @@ const ProjectDetailPage: FC<{ project: Project }> = ({ project }) => (
     </main>
   </PublicLayout>
 )
+}
 
 export default ProjectDetailPage

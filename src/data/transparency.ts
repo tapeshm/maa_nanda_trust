@@ -1,7 +1,15 @@
+import type { Localized } from '../utils/i18n';
+
 export interface Document {
   name: string;
   url: string;
   description: string;
+}
+
+export interface DocumentRaw {
+  name: Localized<string>;
+  url: string;
+  description: Localized<string>;
 }
 
 export interface TransparencyPageContent {
@@ -16,6 +24,20 @@ export interface TransparencyPageContent {
   };
   propertyDetails: string[];
   documents: Document[];
+}
+
+export interface TransparencyPageContentRaw {
+  hero: {
+    title: Localized<string>;
+    description: Localized<string>;
+  };
+  trustDetails: {
+    trustName: Localized<string>;
+    registrationNumber: string;
+    dateOfRegistration: string;
+  };
+  propertyDetails: Localized<string>[];
+  documents: DocumentRaw[];
 }
 
 export const DEFAULT_TRANSPARENCY_CONTENT: TransparencyPageContent = {

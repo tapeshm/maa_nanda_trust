@@ -1,8 +1,14 @@
 import type { JSONContent } from '@tiptap/core'
+import type { Localized } from '../utils/i18n'
 
 export interface AboutValue {
   title: string;
   description: string;
+}
+
+export interface AboutValueRaw {
+  title: Localized<string>;
+  description: Localized<string>;
 }
 
 export interface Trustee {
@@ -10,6 +16,13 @@ export interface Trustee {
   role: string;
   bio: string;
   imageUrl: string;
+}
+
+export interface TrusteeRaw {
+  name: Localized<string>;
+  role: Localized<string>;
+  bio: Localized<string>;
+  imageUrl: string; // URLs usually not localized, but could be
 }
 
 export interface AboutPageContent {
@@ -30,6 +43,27 @@ export interface AboutPageContent {
   story: {
     title: string;
     description: string; // HTML
+  };
+}
+
+export interface AboutPageContentRaw {
+  hero: {
+    title: Localized<string>;
+    description: Localized<string>;
+  };
+  mission: {
+    title: Localized<string>;
+    description: Localized<string>;
+  };
+  vision: {
+    title: Localized<string>;
+    description: Localized<string>;
+  };
+  values: AboutValueRaw[];
+  trustees: TrusteeRaw[];
+  story: {
+    title: Localized<string>;
+    description: Localized<string>;
   };
 }
 

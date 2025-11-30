@@ -7,6 +7,7 @@ import PublicMobileMenu from './PublicMobileMenu'
 import PublicFooter from './PublicFooter'
 import TempleDoor from '../effects/TempleDoor'
 import FloatingDonationButton from '../effects/FloatingDonationButton'
+import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
 
 export interface PublicLayoutProps {
   title: string
@@ -21,6 +22,8 @@ export interface PublicLayoutProps {
   themeColor?: string
   skipLinkText?: string
   googleFontsHref?: string
+  lang?: Language
+  activePath?: string
 }
 
 // [D3:pages.step-03:public-layout] Clean layout from reference HTML
@@ -37,12 +40,14 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
   themeColor = '#2f1b10',
   skipLinkText = 'Skip to content',
   googleFontsHref = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;600;700&display=swap',
+  lang = DEFAULT_LANGUAGE,
+  activePath = '/',
   children,
 }) => {
   const publicPagesAsset = resolveAsset('public-pages')
 
   return (
-    <html lang="en">
+    <html lang={lang}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -84,7 +89,7 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
           <PublicMobileMenu links={navLinks} isLoggedIn={isLoggedIn} />
 
           {/* Desktop navigation */}
-          <PublicTopNav links={navLinks} isLoggedIn={isLoggedIn} />
+          <PublicTopNav links={navLinks} isLoggedIn={isLoggedIn} lang={lang} activePath={activePath} />
 
           {/* Main content */}
           <main id="main-content" class="relative isolate z-[80] pt-[clamp(52px,9vw,140px)] transition-[padding-top] duration-[var(--nav-collapse-duration)] ease-[var(--nav-collapse-easing)]">

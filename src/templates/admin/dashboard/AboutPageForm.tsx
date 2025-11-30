@@ -1,7 +1,7 @@
 /** @jsxImportSource hono/jsx */
 
 import type { FC } from 'hono/jsx'
-import type { AboutPageContent } from '../../../data/about'
+import type { AboutPageContentRaw } from '../../../data/about'
 import { EditorInstance } from '../../components/editor'
 import { PAGE_EDITOR_PROFILES } from '../../../config/pages'
 import { EDITOR_PROFILE_FULL } from '../../../editor/constants'
@@ -10,19 +10,83 @@ import { resolveMediaUrl } from '../../../utils/pages/media'
 
 export type AboutPageFormProps = {
   csrfToken: string
-  aboutContent: AboutPageContent
+  aboutContent: AboutPageContentRaw
 }
+
+const LocalizedInput = ({ label, id, values }: { label: string, id: string, values: { en: string, hi: string } }) => (
+  <div class="sm:col-span-4">
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      {label}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <input
+          type="text"
+          name={`${id}_en`}
+          id={`${id}_en`}
+          value={values.en}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+        />
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi</label>
+        <input
+          type="text"
+          name={`${id}_hi`}
+          id={`${id}_hi`}
+          value={values.hi}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi"
+        />
+      </div>
+    </div>
+  </div>
+)
+
+const LocalizedTextarea = ({ label, id, values }: { label: string, id: string, values: { en: string, hi: string } }) => (
+  <div class="sm:col-span-6">
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      {label}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <textarea
+          id={`${id}_en`}
+          name={`${id}_en`}
+          rows={3}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+        >{values.en}</textarea>
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi</label>
+        <textarea
+          id={`${id}_hi`}
+          name={`${id}_hi`}
+          rows={3}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi"
+        >{values.hi}</textarea>
+      </div>
+    </div>
+  </div>
+)
 
 const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
   
   const valuesRowTemplate = `
     <div class="sm:col-span-4">
       <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Title</label>
-      <input type="text" name="values_title[]" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+      <div class="grid grid-cols-2 gap-2">
+        <input type="text" name="values_title_en[]" placeholder="English" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+        <input type="text" name="values_title_hi[]" placeholder="Hindi" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" />
+      </div>
     </div>
     <div class="sm:col-span-7">
       <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Description</label>
-      <input type="text" name="values_description[]" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+      <div class="grid grid-cols-2 gap-2">
+        <input type="text" name="values_description_en[]" placeholder="English" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+        <input type="text" name="values_description_hi[]" placeholder="Hindi" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" />
+      </div>
     </div>
     <div class="sm:col-span-1 flex justify-end pt-6">
         <button type="button" class="text-red-500 hover:text-red-700 p-1" onclick="this.closest('.grid').remove()">
@@ -37,15 +101,24 @@ const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
      <div class="sm:col-span-4 space-y-4">
         <div>
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Name</label>
-          <input type="text" name="trustees_name[]" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" name="trustees_name_en[]" placeholder="English" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+            <input type="text" name="trustees_name_hi[]" placeholder="Hindi" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" />
+          </div>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Role</label>
-          <input type="text" name="trustees_role[]" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+          <div class="grid grid-cols-2 gap-2">
+             <input type="text" name="trustees_role_en[]" placeholder="English" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+             <input type="text" name="trustees_role_hi[]" placeholder="Hindi" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" />
+          </div>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Bio</label>
-          <textarea name="trustees_bio[]" rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"></textarea>
+           <div class="grid grid-cols-2 gap-2">
+             <textarea name="trustees_bio_en[]" placeholder="English" rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"></textarea>
+             <textarea name="trustees_bio_hi[]" placeholder="Hindi" rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi"></textarea>
+           </div>
         </div>
     </div>
     
@@ -114,25 +187,15 @@ const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
   `;
 
   return (
-    <form method="post" action="/admin/dashboard/about-us/save" class="space-y-8 max-w-4xl" data-editor-form>
+    <form method="post" action="/admin/dashboard/about-us/save" class="space-y-8 max-w-5xl" data-editor-form>
       <input type="hidden" name="csrf_token" value={csrfToken} />
       
       {/* Hero Section */}
       <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Hero Section</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="hero_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
-            <div class="mt-1">
-              <input type="text" name="hero_title" id="hero_title" value={aboutContent.hero.title} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
-            </div>
-          </div>
-          <div class="sm:col-span-6">
-            <label for="hero_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-            <div class="mt-1">
-              <textarea id="hero_description" name="hero_description" rows={3} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">{aboutContent.hero.description}</textarea>
-            </div>
-          </div>
+          <LocalizedInput label="Title" id="hero_title" values={aboutContent.hero.title} />
+          <LocalizedTextarea label="Description" id="hero_description" values={aboutContent.hero.description} />
         </div>
       </div>
 
@@ -140,18 +203,21 @@ const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
       <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Mission</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="mission_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
-            <div class="mt-1">
-              <input type="text" name="mission_title" id="mission_title" value={aboutContent.mission.title} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
-            </div>
+          <LocalizedInput label="Title" id="mission_title" values={aboutContent.mission.title} />
+          <div class="sm:col-span-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (English)</label>
+             <EditorInstance
+              spec={{ id: 'mission-editor-en', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'mission-editor-en' }}
+              payload={aboutContent.mission.description.en} 
+              html={aboutContent.mission.description.en}
+            />
           </div>
           <div class="sm:col-span-6">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (Hindi)</label>
              <EditorInstance
-              spec={{ id: 'mission-editor', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'mission-editor' }}
-              payload={aboutContent.mission.description} 
-              html={aboutContent.mission.description}
+              spec={{ id: 'mission-editor-hi', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'mission-editor-hi' }}
+              payload={aboutContent.mission.description.hi} 
+              html={aboutContent.mission.description.hi}
             />
           </div>
         </div>
@@ -161,18 +227,8 @@ const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
       <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Vision</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="vision_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
-            <div class="mt-1">
-              <input type="text" name="vision_title" id="vision_title" value={aboutContent.vision.title} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
-            </div>
-          </div>
-          <div class="sm:col-span-6">
-            <label for="vision_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-            <div class="mt-1">
-              <textarea id="vision_description" name="vision_description" rows={3} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">{aboutContent.vision.description}</textarea>
-            </div>
-          </div>
+          <LocalizedInput label="Title" id="vision_title" values={aboutContent.vision.title} />
+          <LocalizedTextarea label="Description" id="vision_description" values={aboutContent.vision.description} />
         </div>
       </div>
 
@@ -184,11 +240,17 @@ const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-12 items-start bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg relative group">
                <div class="sm:col-span-4">
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Title</label>
-                <input type="text" name={`values_title[]`} value={value.title} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" name={`values_title_en[]`} value={value.title.en} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="English" />
+                    <input type="text" name={`values_title_hi[]`} value={value.title.hi} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" placeholder="Hindi" />
+                </div>
               </div>
               <div class="sm:col-span-7">
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Description</label>
-                <input type="text" name={`values_description[]`} value={value.description} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" name={`values_description_en[]`} value={value.description.en} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="English" />
+                    <input type="text" name={`values_description_hi[]`} value={value.description.hi} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" placeholder="Hindi" />
+                </div>
               </div>
               <div class="sm:col-span-1 flex justify-end pt-6">
                   <button type="button" class="text-red-500 hover:text-red-700 p-1" onclick="this.closest('.grid').remove()">
@@ -227,15 +289,24 @@ const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
                <div class="sm:col-span-4 space-y-4">
                   <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Name</label>
-                    <input type="text" name={`trustees_name[]`} value={trustee.name} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" name={`trustees_name_en[]`} value={trustee.name.en} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="English" />
+                        <input type="text" name={`trustees_name_hi[]`} value={trustee.name.hi} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" placeholder="Hindi" />
+                    </div>
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Role</label>
-                    <input type="text" name={`trustees_role[]`} value={trustee.role} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+                     <div class="grid grid-cols-2 gap-2">
+                        <input type="text" name={`trustees_role_en[]`} value={trustee.role.en} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="English" />
+                        <input type="text" name={`trustees_role_hi[]`} value={trustee.role.hi} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" placeholder="Hindi" />
+                     </div>
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Bio</label>
-                    <textarea name={`trustees_bio[]`} rows={3} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">{trustee.bio}</textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        <textarea name={`trustees_bio_en[]`} rows={3} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="English">{trustee.bio.en}</textarea>
+                        <textarea name={`trustees_bio_hi[]`} rows={3} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi" placeholder="Hindi">{trustee.bio.hi}</textarea>
+                    </div>
                   </div>
               </div>
               
@@ -325,18 +396,21 @@ const AboutPageForm: FC<AboutPageFormProps> = ({ csrfToken, aboutContent }) => {
       <div class="pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Our Story</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="story_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
-            <div class="mt-1">
-              <input type="text" name="story_title" id="story_title" value={aboutContent.story.title} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
-            </div>
-          </div>
+          <LocalizedInput label="Title" id="story_title" values={aboutContent.story.title} />
           <div class="sm:col-span-6">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (English)</label>
              <EditorInstance
-              spec={{ id: 'story-editor', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'story-editor' }}
-              payload={aboutContent.story.description} 
-              html={aboutContent.story.description}
+              spec={{ id: 'story-editor-en', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'story-editor-en' }}
+              payload={aboutContent.story.description.en} 
+              html={aboutContent.story.description.en}
+            />
+          </div>
+           <div class="sm:col-span-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (Hindi)</label>
+             <EditorInstance
+              spec={{ id: 'story-editor-hi', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'story-editor-hi' }}
+              payload={aboutContent.story.description.hi} 
+              html={aboutContent.story.description.hi}
             />
           </div>
         </div>

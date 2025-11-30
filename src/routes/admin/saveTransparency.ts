@@ -5,8 +5,9 @@ import type { Bindings } from '../../bindings'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertTransparencyContent } from '../../data/transparency.data'
-import type { TransparencyPageContent, Document } from '../../data/transparency'
+import type { TransparencyPageContentRaw, DocumentRaw } from '../../data/transparency'
 import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
+import type { Localized } from '../../utils/i18n'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -20,59 +21,74 @@ app.post(
   },
   async (c) => {
     const formData = await c.req.parseBody({ all: true })
+    const get = (key: string) => (formData[key] as string) || '';
     
-    const hero_title = (formData['hero_title'] as string) || ''
-    const hero_description = (formData['hero_description'] as string) || ''
-    const trust_name = (formData['trust_name'] as string) || ''
-    const registration_number = (formData['registration_number'] as string) || ''
-    const registration_date = (formData['registration_date'] as string) || ''
+    const hero_title_en = get('hero_title_en');
+    const hero_title_hi = get('hero_title_hi');
+    const hero_description_en = get('hero_description_en');
+    const hero_description_hi = get('hero_description_hi');
+    
+    const trust_name_en = get('trust_name_en');
+    const trust_name_hi = get('trust_name_hi');
+    const registration_number = get('registration_number');
+    const registration_date = get('registration_date');
+
+    // Helper for arrays
+    const toArray = (val: unknown, len: number): string[] => {
+         if (!val) return new Array(len).fill('');
+         if (Array.isArray(val)) return val.map(String);
+         return [String(val)];
+    };
 
     // Handle property details array
-    const property_details_input = formData['property_details[]']
-    let propertyDetails: string[] = []
-    if (property_details_input) {
-        const inputs = Array.isArray(property_details_input) ? property_details_input : [property_details_input];
-        propertyDetails = inputs.map(String).filter(s => s.length > 0);
-    }
-
-    // Handle documents array
-    const doc_names = formData['document_names[]']
-    const doc_urls = formData['document_urls[]']
-    const doc_descriptions = formData['document_descriptions[]']
-
-    const documents: Document[] = []
-
-    if (doc_names) {
-        const names = Array.isArray(doc_names) ? doc_names : [doc_names];
+    const propEn = formData['property_details_en[]'];
+    const propHi = formData['property_details_hi[]'];
+    
+    let propertyDetails: Localized<string>[] = [];
+    if (propEn) {
+        const inputsEn = Array.isArray(propEn) ? propEn : [propEn];
+        const len = inputsEn.length;
+        const inputsHi = toArray(propHi, len);
         
-        const toArray = (val: unknown, len: number): string[] => {
-             if (!val) return new Array(len).fill('');
-             if (Array.isArray(val)) return val.map(String);
-             return [String(val)];
-        };
-
-        const len = names.length;
-        const urls = toArray(doc_urls, len);
-        const descriptions = toArray(doc_descriptions, len);
-
-        for (let i = 0; i < len; i++) {
-            if (names[i]) {
-                documents.push({
-                    name: names[i] as string,
-                    url: urls[i] || '',
-                    description: descriptions[i] || ''
-                });
-            }
+        for(let i=0; i<len; i++) {
+            propertyDetails.push({ en: inputsEn[i] as string, hi: inputsHi[i] });
         }
     }
 
-    const content: TransparencyPageContent = {
+    // Handle documents array
+    const docNamesEn = formData['document_names_en[]'];
+    const docNamesHi = formData['document_names_hi[]'];
+    const docUrls = formData['document_urls[]'];
+    const docDescsEn = formData['document_descriptions_en[]'];
+    const docDescsHi = formData['document_descriptions_hi[]'];
+
+    const documents: DocumentRaw[] = []
+
+    if (docNamesEn) {
+        const namesEn = Array.isArray(docNamesEn) ? docNamesEn : [docNamesEn];
+        const len = namesEn.length;
+        
+        const namesHi = toArray(docNamesHi, len);
+        const urls = toArray(docUrls, len);
+        const descsEn = toArray(docDescsEn, len);
+        const descsHi = toArray(docDescsHi, len);
+
+        for (let i = 0; i < len; i++) {
+            documents.push({
+                name: { en: namesEn[i] as string, hi: namesHi[i] },
+                url: urls[i],
+                description: { en: descsEn[i], hi: descsHi[i] }
+            });
+        }
+    }
+
+    const content: TransparencyPageContentRaw = {
       hero: {
-        title: hero_title,
-        description: hero_description,
+        title: { en: hero_title_en, hi: hero_title_hi },
+        description: { en: hero_description_en, hi: hero_description_hi },
       },
       trustDetails: {
-        trustName: trust_name,
+        trustName: { en: trust_name_en, hi: trust_name_hi },
         registrationNumber: registration_number,
         dateOfRegistration: registration_date,
       },
@@ -83,6 +99,8 @@ app.post(
     try {
       await upsertTransparencyContent(c.env, content)
       await invalidateCachedPublicHtml(c.env, 'transparency')
+      await invalidateCachedPublicHtml(c.env, 'transparency:en')
+      await invalidateCachedPublicHtml(c.env, 'transparency:hi')
       return c.redirect('/admin/dashboard/transparency?success=true')
     } catch (e) {
       console.error('Failed to save transparency content:', e)

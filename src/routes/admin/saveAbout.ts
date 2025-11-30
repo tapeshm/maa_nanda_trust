@@ -5,23 +5,10 @@ import type { Bindings } from '../../bindings'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
 import { ensureCsrf } from '../../middleware/csrf'
 import { upsertAboutContent } from '../../data/about.data'
-import type { AboutPageContent, AboutValue, Trustee } from '../../data/about'
+import type { AboutPageContentRaw, AboutValueRaw, TrusteeRaw } from '../../data/about'
 import { invalidateCachedPublicHtml } from '../../utils/pages/cache'
 
 const app = new Hono<{ Bindings: Bindings }>()
-
-const aboutSchema = z.object({
-  hero_title: z.string(),
-  hero_description: z.string(),
-  mission_title: z.string(),
-  mission_description: z.string(),
-  vision_title: z.string(),
-  vision_description: z.string(),
-  story_title: z.string(),
-  story_description: z.string(),
-  // Zod validator for form data arrays is tricky with hono/zod-validator directly on parsed body if it's not JSON.
-  // We'll handle the values array manually in the handler to be safe with FormData structure.
-})
 
 app.post(
   '/dashboard/about-us/save',
@@ -34,108 +21,123 @@ app.post(
   async (c) => {
     const formData = await c.req.parseBody({ all: true })
     
-    // Manual extraction for simple fields to match schema or use schema validation if adapted
-    const hero_title = (formData['hero_title'] as string) || ''
-    const hero_description = (formData['hero_description'] as string) || ''
-    const mission_title = (formData['mission_title'] as string) || ''
-    
-    // Editor content extraction - checking flat keys first, then nested object
-    const mission_description = (formData['content_html[mission-editor]'] as string) || 
-                                ((formData.content_html as Record<string, string>)?.[ 'mission-editor']) || 
-                                '';
-    
-    const vision_title = (formData['vision_title'] as string) || ''
-    const vision_description = (formData['vision_description'] as string) || ''
-    const story_title = (formData['story_title'] as string) || ''
-    
-    // Editor content extraction
-    const story_description = (formData['content_html[story-editor]'] as string) || 
-                              ((formData.content_html as Record<string, string>)?.[ 'story-editor']) || 
-                              '';
+    // Helper
+    const get = (key: string) => (formData[key] as string) || '';
+    const getEditor = (id: string) => (formData[`content_html[${id}]`] as string) || ((formData.content_html as Record<string, string>)?.[id]) || '';
 
-    // Handle values array
-    const values_titles = formData['values_title[]']
-    const values_descriptions = formData['values_description[]']
+    // Hero
+    const hero_title_en = get('hero_title_en');
+    const hero_title_hi = get('hero_title_hi');
+    const hero_description_en = get('hero_description_en');
+    const hero_description_hi = get('hero_description_hi');
+
+    // Mission
+    const mission_title_en = get('mission_title_en');
+    const mission_title_hi = get('mission_title_hi');
+    const mission_description_en = getEditor('mission-editor-en');
+    const mission_description_hi = getEditor('mission-editor-hi');
     
-    const values: AboutValue[] = []
+    // Vision
+    const vision_title_en = get('vision_title_en');
+    const vision_title_hi = get('vision_title_hi');
+    const vision_description_en = get('vision_description_en');
+    const vision_description_hi = get('vision_description_hi');
+
+    // Story
+    const story_title_en = get('story_title_en');
+    const story_title_hi = get('story_title_hi');
+    const story_description_en = getEditor('story-editor-en');
+    const story_description_hi = getEditor('story-editor-hi');
+
+    // Helper for arrays
+    const toArray = (val: unknown, len: number): string[] => {
+         if (!val) return new Array(len).fill('');
+         if (Array.isArray(val)) return val.map(String);
+         return [String(val)];
+    };
+
+    // Values
+    const valTitlesEn = formData['values_title_en[]'];
+    const valTitlesHi = formData['values_title_hi[]'];
+    const valDescsEn = formData['values_description_en[]'];
+    const valDescsHi = formData['values_description_hi[]'];
     
-    if (values_titles && values_descriptions) {
-        const titles = Array.isArray(values_titles) ? values_titles : [values_titles]
-        const descriptions = Array.isArray(values_descriptions) ? values_descriptions : [values_descriptions]
+    const values: AboutValueRaw[] = [];
+    
+    if (valTitlesEn) {
+        const titlesEn = Array.isArray(valTitlesEn) ? valTitlesEn : [valTitlesEn];
+        const len = titlesEn.length;
         
-        for(let i = 0; i < titles.length; i++) {
-            if (titles[i] && descriptions[i]) {
-                values.push({
-                    title: titles[i] as string,
-                    description: descriptions[i] as string
-                })
-            }
+        const titlesHi = toArray(valTitlesHi, len);
+        const descsEn = toArray(valDescsEn, len);
+        const descsHi = toArray(valDescsHi, len);
+        
+        for(let i = 0; i < len; i++) {
+            values.push({
+                title: { en: titlesEn[i] as string, hi: titlesHi[i] },
+                description: { en: descsEn[i], hi: descsHi[i] }
+            })
         }
     }
 
-    // Handle trustees array
-    const trustees_names = formData['trustees_name[]']
-    const trustees_roles = formData['trustees_role[]']
-    const trustees_bios = formData['trustees_bio[]']
-    const trustees_images = formData['trustees_image_url[]']
+    // Trustees
+    const trustNamesEn = formData['trustees_name_en[]'];
+    const trustNamesHi = formData['trustees_name_hi[]'];
+    const trustRolesEn = formData['trustees_role_en[]'];
+    const trustRolesHi = formData['trustees_role_hi[]'];
+    const trustBiosEn = formData['trustees_bio_en[]'];
+    const trustBiosHi = formData['trustees_bio_hi[]'];
+    const trustImages = formData['trustees_image_url[]'];
 
-    const trustees: Trustee[] = []
+    const trustees: TrusteeRaw[] = [];
 
-    if (trustees_names) { // Assuming name is required minimum
-        const names = Array.isArray(trustees_names) ? trustees_names : [trustees_names];
-        // Normalize others to arrays of same length or empty strings if undefined
-        // Note: parseBody returns string or array of strings. If single item, it's a string.
-        
-        const toArray = (val: unknown, len: number): string[] => {
-             if (!val) return new Array(len).fill('');
-             if (Array.isArray(val)) return val.map(String);
-             return [String(val)]; // If single value but names has multiple, this might misalign if form logic is broken, but typically HTML forms send matching arrays.
-             // Actually, standard HTML forms only send keys for populated inputs. If a bio is empty, it might be missing or empty string.
-             // To be safe, we assume the client sends empty strings for empty fields or we rely on index.
-             // For robust parsing, we usually rely on the index alignment from the client side ensuring all fields are sent.
-        };
+    if (trustNamesEn) { 
+        const namesEn = Array.isArray(trustNamesEn) ? trustNamesEn : [trustNamesEn];
+        const len = namesEn.length;
 
-        const len = names.length;
-        const roles = toArray(trustees_roles, len);
-        const bios = toArray(trustees_bios, len);
-        const images = toArray(trustees_images, len);
+        const namesHi = toArray(trustNamesHi, len);
+        const rolesEn = toArray(trustRolesEn, len);
+        const rolesHi = toArray(trustRolesHi, len);
+        const biosEn = toArray(trustBiosEn, len);
+        const biosHi = toArray(trustBiosHi, len);
+        const images = toArray(trustImages, len);
 
         for (let i = 0; i < len; i++) {
-            if (names[i]) {
-                trustees.push({
-                    name: names[i] as string,
-                    role: roles[i] || '',
-                    bio: bios[i] || '',
-                    imageUrl: images[i] || ''
-                });
-            }
+            trustees.push({
+                name: { en: namesEn[i] as string, hi: namesHi[i] },
+                role: { en: rolesEn[i], hi: rolesHi[i] },
+                bio: { en: biosEn[i], hi: biosHi[i] },
+                imageUrl: images[i]
+            });
         }
     }
 
-    const content: AboutPageContent = {
+    const content: AboutPageContentRaw = {
       hero: {
-        title: hero_title,
-        description: hero_description,
+        title: { en: hero_title_en, hi: hero_title_hi },
+        description: { en: hero_description_en, hi: hero_description_hi },
       },
       mission: {
-        title: mission_title,
-        description: mission_description,
+        title: { en: mission_title_en, hi: mission_title_hi },
+        description: { en: mission_description_en, hi: mission_description_hi },
       },
       vision: {
-        title: vision_title,
-        description: vision_description,
+        title: { en: vision_title_en, hi: vision_title_hi },
+        description: { en: vision_description_en, hi: vision_description_hi },
       },
       values: values,
       trustees: trustees,
       story: {
-        title: story_title,
-        description: story_description,
+        title: { en: story_title_en, hi: story_title_hi },
+        description: { en: story_description_en, hi: story_description_hi },
       },
     }
 
     try {
       await upsertAboutContent(c.env, content)
       await invalidateCachedPublicHtml(c.env, 'about')
+      await invalidateCachedPublicHtml(c.env, 'about:en')
+      await invalidateCachedPublicHtml(c.env, 'about:hi')
       return c.redirect('/admin/dashboard/about-us?success=true')
     } catch (e) {
       console.error('Failed to save about content:', e)

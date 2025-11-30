@@ -32,89 +32,111 @@ import { getLandingContent } from '../../data/landing.data'
 import { getAboutContent } from '../../data/about.data'
 import { getTransparencyContent } from '../../data/transparency.data'
 import { getDonateContent } from '../../data/donate.data'
+import { type Language, DEFAULT_LANGUAGE } from '../../utils/i18n'
 
 const publicPages = new Hono<{ Bindings: Bindings }>()
 
 publicPages.use('*', attachAuthContext())
 
-publicPages.get('/', (c) => {
+const renderLanding = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
-  return serveWithCache(c, 'landing', async () => {
+  return serveWithCache(c, `landing:${lang}`, async () => {
     const projects = await getProjects(c.env)
     const events = await getEvents(c.env)
-    const landingContent = await getLandingContent(c.env)
-    return renderToString(LandingPage({ projects, events, landingContent }))
+    const landingContent = await getLandingContent(c.env, lang)
+    return renderToString(LandingPage({ projects, events, landingContent, lang, activePath: c.req.path }))
   })
-})
+}
 
-publicPages.get('/about', (c) => {
+const renderAbout = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
-  return serveWithCache(c, 'about', async () => {
-    const aboutContent = await getAboutContent(c.env)
-    return renderToString(AboutPage({ aboutContent }))
+  return serveWithCache(c, `about:${lang}`, async () => {
+    const aboutContent = await getAboutContent(c.env, lang)
+    return renderToString(AboutPage({ aboutContent, lang, activePath: c.req.path }))
   })
-})
+}
 
-publicPages.get('/donate', (c) => {
+const renderDonate = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
-  return serveWithCache(c, 'donate', async () => {
-    const donateContent = await getDonateContent(c.env)
-    return renderToString(DonatePage({ donateContent }))
+  return serveWithCache(c, `donate:${lang}`, async () => {
+    const donateContent = await getDonateContent(c.env, lang)
+    return renderToString(DonatePage({ donateContent, lang, activePath: c.req.path }))
   })
-})
+}
 
-publicPages.get('/events', (c) => {
+const renderTransparency = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
-  return serveWithCache(c, 'events:list', async () => {
+  return serveWithCache(c, `transparency:${lang}`, async () => {
+    const transparencyContent = await getTransparencyContent(c.env, lang)
+    return renderToString(TransparencyPage({ transparencyContent, lang, activePath: c.req.path }))
+  })
+}
+
+const renderEvents = (lang: Language) => (c: Context) => {
+  ensureCsrf(c)
+  return serveWithCache(c, `events:list:${lang}`, async () => {
     const events = await getEvents(c.env)
-    return renderToString(EventsPage({ events: events }))
+    return renderToString(EventsPage({ events: events, lang, activePath: c.req.path }))
   })
-})
+}
 
-publicPages.get('/projects', (c) => {
+const renderProjects = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
-  return serveWithCache(c, 'projects:list', async () => {
+  return serveWithCache(c, `projects:list:${lang}`, async () => {
     const projects = await getProjects(c.env)
-    return renderToString(ProjectsPage({ projects: projects }))
+    return renderToString(ProjectsPage({ projects: projects, lang, activePath: c.req.path }))
   })
-})
+}
 
-publicPages.get('/transparency', (c) => {
-  ensureCsrf(c)
-  return serveWithCache(c, 'transparency', async () => {
-    const transparencyContent = await getTransparencyContent(c.env)
-    return renderToString(TransparencyPage({ transparencyContent }))
-  })
-})
-
-publicPages.get('/projects/:id', (c) => {
+const renderProjectDetail = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
   const id = c.req.param('id')
-  return serveWithCache(c, `projects:detail:${id}`, async () => {
+  return serveWithCache(c, `projects:detail:${id}:${lang}`, async () => {
     const project = await getProjectById(c.env, id)
 
     if (!project) {
       return null
     }
 
-    return renderToString(ProjectDetailPage({ project: project }))
+    return renderToString(ProjectDetailPage({ project: project, lang, activePath: c.req.path }))
   })
-})
+}
 
-publicPages.get('/events/:id', (c) => {
+const renderEventDetail = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
   const id = c.req.param('id')
-  return serveWithCache(c, `events:detail:${id}`, async () => {
+  return serveWithCache(c, `events:detail:${id}:${lang}`, async () => {
     const event = await getEventById(c.env, id)
 
     if (!event) {
       return null
     }
 
-    return renderToString(EventDetailPage({ event: event }))
+    return renderToString(EventDetailPage({ event: event, lang, activePath: c.req.path }))
   })
-})
+}
 
+// English Routes
+publicPages.get('/', renderLanding('en'))
+publicPages.get('/about', renderAbout('en'))
+publicPages.get('/donate', renderDonate('en'))
+publicPages.get('/events', renderEvents('en'))
+publicPages.get('/projects', renderProjects('en'))
+publicPages.get('/transparency', renderTransparency('en'))
+publicPages.get('/projects/:id', renderProjectDetail('en'))
+publicPages.get('/events/:id', renderEventDetail('en'))
+
+// Hindi Routes
+publicPages.get('/hi', renderLanding('hi'))
+publicPages.get('/hi/about', renderAbout('hi'))
+publicPages.get('/hi/donate', renderDonate('hi'))
+publicPages.get('/hi/events', renderEvents('hi'))
+publicPages.get('/hi/projects', renderProjects('hi'))
+publicPages.get('/hi/transparency', renderTransparency('hi'))
+publicPages.get('/hi/projects/:id', renderProjectDetail('hi'))
+publicPages.get('/hi/events/:id', renderEventDetail('hi'))
+
+// Legacy Snapshot Routes (English only for now)
 publicPages.get('/:slug/:id', async (c, next: Next) => {
   const { slug, id } = c.req.param()
   if (!isPageSlug(slug)) {

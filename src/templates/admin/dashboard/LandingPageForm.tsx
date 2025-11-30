@@ -1,164 +1,104 @@
 import type { FC } from 'hono/jsx'
-import type { LandingPageContent } from '../../../data/landing'
+import type { LandingPageContentRaw } from '../../../data/landing'
 
 export type LandingPageFormProps = {
   csrfToken: string
-  landingContent: LandingPageContent
+  landingContent: LandingPageContentRaw
 }
+
+const LocalizedInput = ({ label, id, values }: { label: string, id: string, values: { en: string, hi: string } }) => (
+  <div class="sm:col-span-4">
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      {label}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <input
+          type="text"
+          name={`${id}_en`}
+          id={`${id}_en`}
+          value={values.en}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+        />
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi</label>
+        <input
+          type="text"
+          name={`${id}_hi`}
+          id={`${id}_hi`}
+          value={values.hi}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi"
+        />
+      </div>
+    </div>
+  </div>
+)
+
+const LocalizedTextarea = ({ label, id, values }: { label: string, id: string, values: { en: string, hi: string } }) => (
+  <div class="sm:col-span-6">
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      {label}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <textarea
+          id={`${id}_en`}
+          name={`${id}_en`}
+          rows={3}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+        >{values.en}</textarea>
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi</label>
+        <textarea
+          id={`${id}_hi`}
+          name={`${id}_hi`}
+          rows={3}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white font-hindi"
+        >{values.hi}</textarea>
+      </div>
+    </div>
+  </div>
+)
 
 const LandingPageForm: FC<LandingPageFormProps> = ({ csrfToken, landingContent }) => {
   return (
-    <form method="post" action="/admin/dashboard/home/save" class="space-y-8 max-w-4xl">
+    <form method="post" action="/admin/dashboard/home/save" class="space-y-8 max-w-5xl">
       <input type="hidden" name="csrf_token" value={csrfToken} />
       
       <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Hero Section</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="hero_eyebrow" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Eyebrow
-            </label>
-            <div class="mt-1">
-              <input
-                type="text"
-                name="hero_eyebrow"
-                id="hero_eyebrow"
-                value={landingContent.hero.eyebrow}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div class="sm:col-span-4">
-            <label for="hero_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Title
-            </label>
-            <div class="mt-1">
-              <input
-                type="text"
-                name="hero_title"
-                id="hero_title"
-                value={landingContent.hero.title}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div class="sm:col-span-6">
-            <label for="hero_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description
-            </label>
-            <div class="mt-1">
-              <textarea
-                id="hero_description"
-                name="hero_description"
-                rows={3}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              >{landingContent.hero.description}</textarea>
-            </div>
-          </div>
+          <LocalizedInput label="Eyebrow" id="hero_eyebrow" values={landingContent.hero.eyebrow} />
+          <LocalizedInput label="Title" id="hero_title" values={landingContent.hero.title} />
+          <LocalizedTextarea label="Description" id="hero_description" values={landingContent.hero.description} />
         </div>
       </div>
 
       <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Welcome Section</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="welcome_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Title
-            </label>
-            <div class="mt-1">
-              <input
-                type="text"
-                name="welcome_title"
-                id="welcome_title"
-                value={landingContent.welcome.title}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div class="sm:col-span-6">
-            <label for="welcome_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description
-            </label>
-            <div class="mt-1">
-              <textarea
-                id="welcome_description"
-                name="welcome_description"
-                rows={3}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              >{landingContent.welcome.description}</textarea>
-            </div>
-          </div>
+          <LocalizedInput label="Title" id="welcome_title" values={landingContent.welcome.title} />
+          <LocalizedTextarea label="Description" id="welcome_description" values={landingContent.welcome.description} />
         </div>
       </div>
 
       <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Projects Section</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="projects_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Title
-            </label>
-            <div class="mt-1">
-              <input
-                type="text"
-                name="projects_title"
-                id="projects_title"
-                value={landingContent.projectsSection.title}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div class="sm:col-span-6">
-            <label for="projects_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description
-            </label>
-            <div class="mt-1">
-              <textarea
-                id="projects_description"
-                name="projects_description"
-                rows={3}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              >{landingContent.projectsSection.description}</textarea>
-            </div>
-          </div>
+          <LocalizedInput label="Title" id="projects_title" values={landingContent.projectsSection.title} />
+          <LocalizedTextarea label="Description" id="projects_description" values={landingContent.projectsSection.description} />
         </div>
       </div>
 
       <div class="pb-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Events Section</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-          <div class="sm:col-span-4">
-            <label for="events_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Title
-            </label>
-            <div class="mt-1">
-              <input
-                type="text"
-                name="events_title"
-                id="events_title"
-                value={landingContent.eventsSection.title}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div class="sm:col-span-6">
-            <label for="events_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description
-            </label>
-            <div class="mt-1">
-              <textarea
-                id="events_description"
-                name="events_description"
-                rows={3}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              >{landingContent.eventsSection.description}</textarea>
-            </div>
-          </div>
+          <LocalizedInput label="Title" id="events_title" values={landingContent.eventsSection.title} />
+          <LocalizedTextarea label="Description" id="events_description" values={landingContent.eventsSection.description} />
         </div>
       </div>
 

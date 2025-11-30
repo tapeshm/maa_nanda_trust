@@ -1,19 +1,13 @@
 import type { FC } from 'hono/jsx'
 import PublicLayout from '../layout/PublicLayout'
-import type { PublicNavLink } from '../layout/PublicTopNav'
 import Hero from '../blocks/Hero'
 import EventsEnvelopeCard from '../blocks/EventsEnvelopeCard'
 import ProjectCard from '../components/ProjectCard'
 import type { Project } from '../../../data/projects'
 import type { Event } from '../../../data/events.data'
 import type { LandingPageContent } from '../../../data/landing'
-
-const NAV_LINKS: PublicNavLink[] = [
-  { href: '/about', label: 'About Us' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/events', label: 'Events' },
-  { href: '/transparency', label: 'Transparency' },
-]
+import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { getNavLinks } from '../../../config/navigation'
 
 // --- Landing Page ---
 
@@ -21,16 +15,27 @@ type LandingPageProps = {
   projects: Project[]
   events: Event[]
   landingContent: LandingPageContent
+  lang?: Language
+  activePath?: string
 }
 
-const LandingPage: FC<LandingPageProps> = ({ projects, events, landingContent }) => {
+const LandingPage: FC<LandingPageProps> = ({ 
+  projects, 
+  events, 
+  landingContent, 
+  lang = DEFAULT_LANGUAGE,
+  activePath = '/'
+}) => {
   const heroTitle = landingContent.hero.title
+  const navLinks = getNavLinks(lang);
 
   return (
   <PublicLayout
     title="Maa Nanda Kansuwa Trust"
-    navLinks={NAV_LINKS}
+    navLinks={navLinks}
     includeTempleDoor
+    lang={lang}
+    activePath={activePath}
   >
     <Hero
       eyebrow={landingContent.hero.eyebrow}

@@ -1,7 +1,7 @@
 /** @jsxImportSource hono/jsx */
 
 import type { FC } from 'hono/jsx'
-import type { DonatePageContent } from '../../../data/donate'
+import type { DonatePageContentRaw } from '../../../data/donate'
 import { EditorInstance } from '../../components/editor'
 import { PAGE_EDITOR_PROFILES } from '../../../config/pages'
 import { EDITOR_PROFILE_FULL } from '../../../editor/constants'
@@ -9,7 +9,7 @@ import { resolveMediaUrl } from '../../../utils/pages/media'
 
 export type DonatePageFormProps = {
   csrfToken: string
-  donateContent: DonatePageContent
+  donateContent: DonatePageContentRaw
 }
 
 const DonatePageForm: FC<DonatePageFormProps> = ({ csrfToken, donateContent }) => {
@@ -84,11 +84,19 @@ const DonatePageForm: FC<DonatePageFormProps> = ({ csrfToken, donateContent }) =
         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Appeal Content</h3>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
           <div class="sm:col-span-6">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (English)</label>
              <EditorInstance
-              spec={{ id: 'appeal-editor', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'appeal-editor' }}
-              payload={donateContent.appeal} 
-              html={donateContent.appeal}
+              spec={{ id: 'appeal-editor-en', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'appeal-editor-en' }}
+              payload={donateContent.appeal.en} 
+              html={donateContent.appeal.en}
+            />
+          </div>
+          <div class="sm:col-span-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (Hindi)</label>
+             <EditorInstance
+              spec={{ id: 'appeal-editor-hi', profile: PAGE_EDITOR_PROFILES.default ?? EDITOR_PROFILE_FULL, documentId: 'appeal-editor-hi' }}
+              payload={donateContent.appeal.hi} 
+              html={donateContent.appeal.hi}
             />
           </div>
         </div>

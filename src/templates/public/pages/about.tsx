@@ -2,20 +2,26 @@
 
 import type { FC } from 'hono/jsx'
 import PublicLayout from '../layout/PublicLayout'
-import type { PublicNavLink } from '../layout/PublicTopNav'
 import type { AboutPageContent, Trustee } from '../../../data/about'
 import RichText from '../../components/RichText'
 import { resolveMediaUrl } from '../../../utils/pages/media'
+import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { getNavLinks } from '../../../config/navigation'
 
-// --- Interfaces & Data ---
+// --- Data ---
 
-const NAV_LINKS: PublicNavLink[] = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About Us' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/events', label: 'Events' },
-  { href: '/transparency', label: 'Transparency' },
-]
+const LABELS = {
+  en: {
+    values: "Our Values",
+    trustees: "Our Trustees",
+    transparencyLink: "Explore our Transparency Reports"
+  },
+  hi: {
+    values: "हमारे मूल्य",
+    trustees: "हमारे न्यासी",
+    transparencyLink: "हमारी पारदर्शिता रिपोर्ट देखें"
+  }
+};
 
 // --- Components ---
 
@@ -48,12 +54,24 @@ const TrusteeCard: FC<{ trustee: Trustee }> = ({ trustee }) => {
 
 type AboutPageProps = {
   aboutContent: AboutPageContent
+  lang?: Language
+  activePath?: string
 }
 
-const AboutPage: FC<AboutPageProps> = ({ aboutContent }) => (
+const AboutPage: FC<AboutPageProps> = ({ 
+  aboutContent, 
+  lang = DEFAULT_LANGUAGE,
+  activePath = '/about'
+}) => {
+  const labels = LABELS[lang];
+  const navLinks = getNavLinks(lang);
+
+  return (
   <PublicLayout
     title="About — Maa Nanda Kansuwa Trust"
-    navLinks={NAV_LINKS}
+    navLinks={navLinks}
+    lang={lang}
+    activePath={activePath}
   >
     <main class="py-12 md:py-20 px-4">
       <div class="max-w-6xl mx-auto p-8 md:p-12 rounded-xl glass-panel">
@@ -88,7 +106,7 @@ const AboutPage: FC<AboutPageProps> = ({ aboutContent }) => (
 
         {/* --- Values Section --- */}
         <section id="focus-areas" class="mb-16 md:mb-20">
-            <h2 class="text-3xl font-serif text-center mb-10 text-amber-200/90">Our Values</h2>
+            <h2 class="text-3xl font-serif text-center mb-10 text-amber-200/90">{labels.values}</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {aboutContent.values.map((value) => (
                     <FocusAreaCard title={value.title} description={value.description} />
@@ -98,7 +116,7 @@ const AboutPage: FC<AboutPageProps> = ({ aboutContent }) => (
 
         {/* --- Trustees Section --- */}
         <section id="trustees" class="mb-16 md:mb-20">
-           <h2 class="text-3xl font-serif text-center mb-10 text-amber-200/90">Our Trustees</h2>
+           <h2 class="text-3xl font-serif text-center mb-10 text-amber-200/90">{labels.trustees}</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             {aboutContent.trustees.map((trustee) => (
               <TrusteeCard trustee={trustee} />
@@ -116,14 +134,14 @@ const AboutPage: FC<AboutPageProps> = ({ aboutContent }) => (
 
         {/* --- Transparency Link --- */}
          <div class="text-center mt-16">
-            <a href="/transparency" class="text-amber-400 hover:text-amber-200 font-semibold border border-amber-400/50 rounded-full px-6 py-2 transition-colors hover:bg-amber-400/10">
-                Explore our Transparency Reports
+            <a href={lang === 'hi' ? '/hi/transparency' : '/transparency'} class="text-amber-400 hover:text-amber-200 font-semibold border border-amber-400/50 rounded-full px-6 py-2 transition-colors hover:bg-amber-400/10">
+                {labels.transparencyLink}
             </a>
         </div>
 
       </div>
     </main>
   </PublicLayout>
-)
+)}
 
 export default AboutPage

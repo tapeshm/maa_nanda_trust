@@ -12,13 +12,13 @@ import AdminLayout, {
 } from '../../templates/admin/layout'
 import { EditorAssets } from '../../templates/components/editor'
 import LandingPageForm, { type LandingPageFormProps } from '../../templates/admin/dashboard/LandingPageForm'
-import { getLandingContent } from '../../data/landing.data'
+import { getLandingContentRaw } from '../../data/landing.data'
 import AboutPageForm, { type AboutPageFormProps } from '../../templates/admin/dashboard/AboutPageForm'
-import { getAboutContent } from '../../data/about.data'
+import { getAboutContentRaw } from '../../data/about.data'
 import TransparencyPageForm, { type TransparencyPageFormProps } from '../../templates/admin/dashboard/TransparencyPageForm'
-import { getTransparencyContent } from '../../data/transparency.data'
+import { getTransparencyContentRaw } from '../../data/transparency.data'
 import DonatePageForm, { type DonatePageFormProps } from '../../templates/admin/dashboard/DonatePageForm'
-import { getDonateContent } from '../../data/donate.data'
+import { getDonateContentRaw } from '../../data/donate.data'
 import ProjectsList from '../../templates/admin/dashboard/ProjectsList'
 import ProjectsForm from '../../templates/admin/dashboard/ProjectsForm'
 import { getProjects, getProjectById } from '../../data/projects.data'
@@ -166,7 +166,7 @@ export default adminDashboard
 async function handleHomeRequest(
   c: Context<{ Bindings: Bindings }>,
 ) {
-  const landingContent = await getLandingContent(c.env)
+  const landingContent = await getLandingContentRaw(c.env)
   const htmx = isHtmx(c)
   const csrfToken = ensureCsrf(c)
   
@@ -187,7 +187,7 @@ async function handleHomeRequest(
 async function handleAboutRequest(
   c: Context<{ Bindings: Bindings }>,
 ) {
-  const aboutContent = await getAboutContent(c.env)
+  const aboutContent = await getAboutContentRaw(c.env)
   const htmx = isHtmx(c)
   const csrfToken = ensureCsrf(c)
   
@@ -208,7 +208,7 @@ async function handleAboutRequest(
 async function handleDonateRequest(
   c: Context<{ Bindings: Bindings }>,
 ) {
-  const donateContent = await getDonateContent(c.env)
+  const donateContent = await getDonateContentRaw(c.env)
   const htmx = isHtmx(c)
   const csrfToken = ensureCsrf(c)
   
@@ -229,7 +229,7 @@ async function handleDonateRequest(
 async function handleTransparencyRequest(
   c: Context<{ Bindings: Bindings }>,
 ) {
-  const transparencyContent = await getTransparencyContent(c.env)
+  const transparencyContent = await getTransparencyContentRaw(c.env)
   const htmx = isHtmx(c)
   const csrfToken = ensureCsrf(c)
   

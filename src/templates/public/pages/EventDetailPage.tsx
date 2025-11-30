@@ -2,20 +2,24 @@
 
 import type { FC } from 'hono/jsx'
 import PublicLayout from '../layout/PublicLayout'
-import type { PublicNavLink } from '../layout/PublicTopNav'
 import type { Event } from '../../../data/events.data'
 import RichText from '../../components/RichText'
 import { resolveMediaUrl } from '../../../utils/pages/media'
+import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { getNavLinks } from '../../../config/navigation'
 
-const NAV_LINKS: PublicNavLink[] = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About Us' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/events', label: 'Events' },
-  { href: '/transparency', label: 'Transparency' },
-]
+type EventDetailPageProps = {
+  event: Event
+  lang?: Language
+  activePath?: string
+}
 
-const EventDetailPage: FC<{ event: Event }> = ({ event }) => {
+const EventDetailPage: FC<EventDetailPageProps> = ({ 
+  event,
+  lang = DEFAULT_LANGUAGE,
+  activePath = `/events/${event.id}`
+}) => {
+    const navLinks = getNavLinks(lang);
     const statusColor = {
         Upcoming: 'bg-green-500/20 text-green-300',
         Completed: 'bg-gray-500/20 text-gray-300',
@@ -25,7 +29,9 @@ const EventDetailPage: FC<{ event: Event }> = ({ event }) => {
     return (
         <PublicLayout
             title={`${event.title} — Events`}
-            navLinks={NAV_LINKS}
+            navLinks={navLinks}
+            lang={lang}
+            activePath={activePath}
         >
             <main class="py-12 md:py-20 px-4">
             <div class="max-w-4xl mx-auto p-8 md:p-12 rounded-xl glass-panel">
