@@ -86,7 +86,7 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
         {/* Content shell */}
         <div class={includeTempleDoor ? "content-shell" : "content-shell is-visible"} data-content-shell>
           {/* Mobile scroll menu */}
-          <PublicMobileMenu links={navLinks} isLoggedIn={isLoggedIn} />
+          <PublicMobileMenu links={navLinks} isLoggedIn={isLoggedIn} lang={lang} activePath={activePath} />
 
           {/* Desktop navigation */}
           <PublicTopNav links={navLinks} isLoggedIn={isLoggedIn} lang={lang} activePath={activePath} />

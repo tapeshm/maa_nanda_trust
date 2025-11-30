@@ -1,15 +1,36 @@
 /** @jsxImportSource hono/jsx */
 import type { FC } from 'hono/jsx'
 import { type PublicNavLink } from './PublicTopNav'
-import { html } from 'hono/html'
+import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
 
 interface PublicMobileMenuProps {
   links: PublicNavLink[]
   isLoggedIn?: boolean
+  lang?: Language
+  activePath?: string
 }
 
-const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false }) => {
+const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ 
+  links, 
+  isLoggedIn = false,
+  lang = DEFAULT_LANGUAGE,
+  activePath = '/'
+}) => {
   const containerId = 'mobile-scroll-container'
+
+  const getLocalizedHref = (href: string) => {
+    if (lang === 'en') return href;
+    return `/hi${href === '/' ? '' : href}`;
+  };
+
+  const toggleLabel = lang === 'en' ? 'हिंदी' : 'English';
+  
+  let toggleHref = '';
+  if (lang === 'en') {
+     toggleHref = `/hi${activePath === '/' ? '' : activePath}`;
+  } else {
+     toggleHref = activePath.replace(/^\/hi/, '') || '/';
+  }
 
   return (
     <>
@@ -29,10 +50,15 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ links, isLoggedIn = false
           <div class="scroll-menu-links">
             <div class="mobile-nav-heading">❖ NAVIGATION ❖</div>
             {links.map((link) => (
-              <a key={link.href} href={link.href}>
+              <a key={link.href} href={getLocalizedHref(link.href)}>
                 {link.label}
               </a>
             ))}
+            
+            <a href={toggleHref} class="mobile-nav-lang-link">
+              {toggleLabel}
+            </a>
+
             {isLoggedIn ? (
               <a href="/admin/dashboard">Dashboard</a>
             ) : (
