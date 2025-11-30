@@ -22,6 +22,7 @@ export function getNavigationConfig(
   
   // 1. Main Navigation Links
   const mainLinks: Link[] = [
+    { href: getLocalizedHref('/', lang), label: isHi ? 'मुखपृष्ठ' : 'Home' },
     { href: getLocalizedHref('/about', lang), label: isHi ? 'हमारे बारे में' : 'About Us' },
     { href: getLocalizedHref('/projects', lang), label: isHi ? 'परियोजनाएं' : 'Projects' },
     { href: getLocalizedHref('/events', lang), label: isHi ? 'कार्यक्रम' : 'Events' },
