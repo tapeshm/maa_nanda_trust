@@ -431,6 +431,27 @@ button:focus-visible {
     letter-spacing: 0.1em;
   }
 
+  .mobile-nav-lang-link {
+    font-size: 14px;
+    margin-top: 10px;
+    color: var(--bronze-mid);
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border: 1px solid var(--bronze-mid);
+    border-radius: 4px;
+    opacity: 0.8;
+    transition: all 0.2s;
+  }
+  
+  .mobile-nav-lang-link:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.05);
+    color: var(--bronze-dark);
+    border-color: var(--bronze-dark);
+  }
+
   .mobile-nav-donate-link {
     color: var(--sindoor);
     font-weight: bold;

@@ -1,25 +1,13 @@
 /** @jsxImportSource hono/jsx */
 import type { FC } from 'hono/jsx'
-import { type PublicNavLink } from './PublicTopNav'
-import { type Language, DEFAULT_LANGUAGE, getLocalizedHref, getLanguageToggle } from '../../../utils/i18n'
+import { type NavigationConfig } from '../../../config/navigation'
 
 interface PublicMobileMenuProps {
-  links: PublicNavLink[]
-  isLoggedIn?: boolean
-  lang?: Language
-  activePath?: string
+  config: NavigationConfig
 }
 
-const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ 
-  links, 
-  isLoggedIn = false,
-  lang = DEFAULT_LANGUAGE,
-  activePath = '/'
-}) => {
+const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ config }) => {
   const containerId = 'mobile-scroll-container'
-
-  const toggle = getLanguageToggle(lang, activePath);
-  const donateHref = getLocalizedHref('/donate', lang);
 
   return (
     <>
@@ -38,23 +26,22 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({
         <nav class="scroll-menu-panel" aria-label="Primary navigation" onclick="event.stopPropagation()">
           <div class="scroll-menu-links">
             <div class="mobile-nav-heading">❖ NAVIGATION ❖</div>
-            {links.map((link) => (
-              <a key={link.href} href={getLocalizedHref(link.href, lang)}>
+            {config.mainLinks.map((link) => (
+              <a key={link.href} href={link.href}>
                 {link.label}
               </a>
             ))}
             
-            <a href={toggle.href} class="mobile-nav-lang-link">
-              {toggle.label}
+            <a href={config.langToggle.href} class="mobile-nav-lang-link">
+              {config.langToggle.label}
             </a>
 
-            {isLoggedIn ? (
-              <a href="/admin/dashboard">Dashboard</a>
-            ) : (
-              <a href="/admin/dashboard">Dashboard</a>
-            )}
-            <a href={donateHref} class="mobile-nav-donate-link">
-              ❤ Donate
+            <a href={config.authLink.href}>
+              {config.authLink.label}
+            </a>
+
+            <a href={config.donateLink.href} class="mobile-nav-donate-link">
+              ❤ {config.donateLink.label}
             </a>
           </div>
         </nav>

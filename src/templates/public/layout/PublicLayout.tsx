@@ -2,16 +2,17 @@
 
 import type { FC, PropsWithChildren } from 'hono/jsx'
 import { resolveAsset } from '../../../utils/assets'
-import PublicTopNav, { type PublicNavLink } from './PublicTopNav'
+import PublicTopNav from './PublicTopNav'
 import PublicMobileMenu from './PublicMobileMenu'
 import PublicFooter from './PublicFooter'
 import TempleDoor from '../effects/TempleDoor'
 import FloatingDonationButton from '../effects/FloatingDonationButton'
-import { type Language, DEFAULT_LANGUAGE, getLocalizedHref } from '../../../utils/i18n'
+import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { getNavigationConfig, type Link } from '../../../config/navigation'
 
 export interface PublicLayoutProps {
   title: string
-  navLinks: PublicNavLink[]
+  navLinks?: Link[] // Deprecated but kept for compatibility if needed, though we prefer config generation
   isLoggedIn?: boolean
   includeTempleDoor?: boolean
   includeFooter?: boolean
@@ -29,7 +30,6 @@ export interface PublicLayoutProps {
 // [D3:pages.step-03:public-layout] Clean layout from reference HTML
 const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
   title,
-  navLinks,
   isLoggedIn = false,
   includeTempleDoor = true,
   includeFooter = true,
@@ -46,9 +46,16 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
 }) => {
   const publicPagesAsset = resolveAsset('public-pages')
   
+  // Generate unified navigation configuration
+  const navConfig = getNavigationConfig(lang, isLoggedIn, activePath);
+  
   const localizedDonationHref = donationHref === '/donate' 
-    ? getLocalizedHref('/donate', lang) 
+    ? navConfig.donateLink.href 
     : donationHref;
+
+  // Use localized label for Floating Button if strictly default, or rely on prop override
+  // Ideally we might want to localize the label too if it wasn't explicitly overridden.
+  // For now, we keep the prop default 'Donate' or whatever was passed.
 
   return (
     <html lang={lang}>
@@ -90,10 +97,10 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
         {/* Content shell */}
         <div class={includeTempleDoor ? "content-shell" : "content-shell is-visible"} data-content-shell>
           {/* Mobile scroll menu */}
-          <PublicMobileMenu links={navLinks} isLoggedIn={isLoggedIn} lang={lang} activePath={activePath} />
+          <PublicMobileMenu config={navConfig} />
 
           {/* Desktop navigation */}
-          <PublicTopNav links={navLinks} isLoggedIn={isLoggedIn} lang={lang} activePath={activePath} />
+          <PublicTopNav config={navConfig} />
 
           {/* Main content */}
           <main id="main-content" class="relative isolate z-[80] pt-[clamp(52px,9vw,140px)] transition-[padding-top] duration-[var(--nav-collapse-duration)] ease-[var(--nav-collapse-easing)]">
