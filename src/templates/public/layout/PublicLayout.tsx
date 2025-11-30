@@ -7,7 +7,7 @@ import PublicMobileMenu from './PublicMobileMenu'
 import PublicFooter from './PublicFooter'
 import TempleDoor from '../effects/TempleDoor'
 import FloatingDonationButton from '../effects/FloatingDonationButton'
-import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { type Language, DEFAULT_LANGUAGE, getLocalizedHref } from '../../../utils/i18n'
 
 export interface PublicLayoutProps {
   title: string
@@ -45,6 +45,10 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
   children,
 }) => {
   const publicPagesAsset = resolveAsset('public-pages')
+  
+  const localizedDonationHref = donationHref === '/donate' 
+    ? getLocalizedHref('/donate', lang) 
+    : donationHref;
 
   return (
     <html lang={lang}>
@@ -102,7 +106,7 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
 
         {/* Floating donation button */}
         {includeFloatingDonation ? (
-          <FloatingDonationButton href={donationHref} label={donationLabel} />
+          <FloatingDonationButton href={localizedDonationHref} label={donationLabel} />
         ) : null}
 
         {/* Client-side interactions */}

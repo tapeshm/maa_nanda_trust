@@ -140,3 +140,45 @@ export function resolveLocalizedObjectRaw(value: any): Localized<string> {
     }
     return { en: '', hi: '' };
 }
+
+/**
+ * Generates a localized URL path based on the target language.
+ * 
+ * @param {string} path The internal path (e.g., '/about', '/donate').
+ * @param {Language} lang The target language.
+ * @returns {string} The localized path.
+ */
+export function getLocalizedHref(path: string, lang: Language): string {
+  if (lang === 'en') return path;
+  if (path === '/') return '/hi';
+  // Ensure path starts with / if it doesn't (though it usually should)
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `/hi${normalizedPath}`;
+}
+
+/**
+ * Generates the label and URL for the language toggle button.
+ * 
+ * @param {Language} currentLang The current active language.
+ * @param {string} currentPath The current path (e.g., '/about', '/hi/about').
+ * @returns {{ label: string, href: string }} An object containing the toggle label and the target URL.
+ */
+export function getLanguageToggle(currentLang: Language, currentPath: string): { label: string, href: string } {
+  if (currentLang === 'en') {
+    return {
+      label: 'हिंदी',
+      href: getLocalizedHref(currentPath, 'hi')
+    };
+  } else {
+    // Switch to English: Remove /hi prefix
+    // We use a regex to match /hi followed by end of string or another slash
+    const href = currentPath.replace(/^\/hi(\/|$)/, '/');
+    // If replace results in empty string (e.g. /hi -> /), correct.
+    // If /hi/about -> /about.
+    // If just /hi -> / due to regex.
+    return {
+      label: 'English',
+      href: href || '/'
+    };
+  }
+}

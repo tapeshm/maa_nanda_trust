@@ -1,7 +1,7 @@
 /** @jsxImportSource hono/jsx */
 import type { FC } from 'hono/jsx'
 import { type PublicNavLink } from './PublicTopNav'
-import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { type Language, DEFAULT_LANGUAGE, getLocalizedHref, getLanguageToggle } from '../../../utils/i18n'
 
 interface PublicMobileMenuProps {
   links: PublicNavLink[]
@@ -18,19 +18,8 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({
 }) => {
   const containerId = 'mobile-scroll-container'
 
-  const getLocalizedHref = (href: string) => {
-    if (lang === 'en') return href;
-    return `/hi${href === '/' ? '' : href}`;
-  };
-
-  const toggleLabel = lang === 'en' ? 'हिंदी' : 'English';
-  
-  let toggleHref = '';
-  if (lang === 'en') {
-     toggleHref = `/hi${activePath === '/' ? '' : activePath}`;
-  } else {
-     toggleHref = activePath.replace(/^\/hi/, '') || '/';
-  }
+  const toggle = getLanguageToggle(lang, activePath);
+  const donateHref = getLocalizedHref('/donate', lang);
 
   return (
     <>
@@ -50,13 +39,13 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({
           <div class="scroll-menu-links">
             <div class="mobile-nav-heading">❖ NAVIGATION ❖</div>
             {links.map((link) => (
-              <a key={link.href} href={getLocalizedHref(link.href)}>
+              <a key={link.href} href={getLocalizedHref(link.href, lang)}>
                 {link.label}
               </a>
             ))}
             
-            <a href={toggleHref} class="mobile-nav-lang-link">
-              {toggleLabel}
+            <a href={toggle.href} class="mobile-nav-lang-link">
+              {toggle.label}
             </a>
 
             {isLoggedIn ? (
@@ -64,7 +53,7 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({
             ) : (
               <a href="/admin/dashboard">Dashboard</a>
             )}
-            <a href="/donate" class="mobile-nav-donate-link">
+            <a href={donateHref} class="mobile-nav-donate-link">
               ❤ Donate
             </a>
           </div>
