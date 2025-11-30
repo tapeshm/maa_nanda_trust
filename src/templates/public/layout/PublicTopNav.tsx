@@ -24,18 +24,6 @@ const PublicTopNav: FC<PublicTopNavProps> = ({ config }) => {
         {link.label}
       </a>
     ))}
-    
-    <div class="absolute right-8 flex items-center gap-4">
-      {/* Language Toggle */}
-      <a href={config.langToggle.href} class="text-xs font-bold text-amber-200/80 hover:text-amber-100 uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity">
-        {config.langToggle.label}
-      </a>
-
-      {/* Auth Link */}
-      <a href={config.authLink.href} class="text-xs font-bold text-amber-200/80 hover:text-amber-100 uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity">
-        {config.authLink.label}
-      </a>
-    </div>
   </nav>
 )}
 

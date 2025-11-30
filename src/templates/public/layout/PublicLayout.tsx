@@ -102,6 +102,22 @@ const PublicLayout: FC<PropsWithChildren<PublicLayoutProps>> = ({
           {/* Desktop navigation */}
           <PublicTopNav config={navConfig} />
 
+          {/* Desktop Top-Right Controls (Language & Auth) */}
+          <div class="absolute top-6 right-8 z-[130] hidden md:flex items-center gap-6">
+            <a 
+              href={navConfig.langToggle.href} 
+              class="text-xs font-bold text-amber-200/80 hover:text-amber-100 uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity"
+            >
+              {navConfig.langToggle.label}
+            </a>
+            <a 
+              href={navConfig.authLink.href} 
+              class="text-xs font-bold text-amber-200/80 hover:text-amber-100 uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity"
+            >
+              {navConfig.authLink.label}
+            </a>
+          </div>
+
           {/* Main content */}
           <main id="main-content" class="relative isolate z-[80] pt-[clamp(52px,9vw,140px)] transition-[padding-top] duration-[var(--nav-collapse-duration)] ease-[var(--nav-collapse-easing)]">
             {children}
