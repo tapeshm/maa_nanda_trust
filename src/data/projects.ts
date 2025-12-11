@@ -1,3 +1,5 @@
+import type { Localized } from '../utils/i18n';
+
 export interface Project {
   id: string;
   title: string;
@@ -16,6 +18,28 @@ export interface Project {
   };
   team: {
     role: string;
+    name: string;
+  }[];
+}
+
+export interface ProjectRaw {
+  id: string;
+  title: Localized<string>;
+  description: Localized<string>;
+  longDescription: Localized<string>;
+  imageUrl: string;
+  location: Localized<string>;
+  startDate: string;
+  status: 'Ongoing' | 'Completed' | 'Planned';
+  endDate: string;
+  budget: number;
+  spent: number;
+  contactPerson: {
+    name: string;
+    avatarUrl: string;
+  };
+  team: {
+    role: Localized<string>;
     name: string;
   }[];
 }

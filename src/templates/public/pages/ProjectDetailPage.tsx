@@ -14,12 +14,38 @@ type ProjectDetailPageProps = {
   activePath?: string
 }
 
-const ProjectDetailPage: FC<ProjectDetailPageProps> = ({ 
+const LABELS = {
+  en: {
+    projectDetails: 'Project Details',
+    location: 'Location',
+    startDate: 'Start Date',
+    status: 'Status',
+    targetEndDate: 'Target End Date',
+    financials: 'Financials',
+    keyPeople: 'Key People',
+    keyContact: 'Key Contact',
+    rolesResponsibilities: 'Roles & Responsibilities',
+  },
+  hi: {
+    projectDetails: 'परियोजना विवरण',
+    location: 'स्थान',
+    startDate: 'आरंभ तिथि',
+    status: 'स्थिति',
+    targetEndDate: 'लक्षित समाप्ति तिथि',
+    financials: 'वित्तीय विवरण',
+    keyPeople: 'प्रमुख व्यक्ति',
+    keyContact: 'मुख्य संपर्क',
+    rolesResponsibilities: 'भूमिकाएं और जिम्मेदारियां',
+  }
+};
+
+const ProjectDetailPage: FC<ProjectDetailPageProps> = ({
   project,
   lang = DEFAULT_LANGUAGE,
   activePath = `/projects/${project.id}`
 }) => {
   const navLinks = getNavLinks(lang);
+  const labels = LABELS[lang];
 
   return (
   <PublicLayout
@@ -52,26 +78,26 @@ const ProjectDetailPage: FC<ProjectDetailPageProps> = ({
 
         {/* --- Statistics --- */}
         <section class="mb-10">
-            <h2 class="text-2xl font-serif text-center mb-6 text-amber-200/90">Project Details</h2>
+            <h2 class="text-2xl font-serif text-center mb-6 text-amber-200/90">{labels.projectDetails}</h2>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-6 bg-black/20 p-6 rounded-lg">
                 <div class="stat-item">
-                    <h4 class="text-sm text-amber-400/80">Location</h4>
+                    <h4 class="text-sm text-amber-400/80">{labels.location}</h4>
                     <p class="text-white/90 font-semibold">{project.location}</p>
                 </div>
                 <div class="stat-item">
-                    <h4 class="text-sm text-amber-400/80">Start Date</h4>
+                    <h4 class="text-sm text-amber-400/80">{labels.startDate}</h4>
                     <p class="text-white/90 font-semibold">{new Date(project.startDate).toLocaleDateString()}</p>
                 </div>
                 <div class="stat-item">
-                    <h4 class="text-sm text-amber-400/80">Status</h4>
+                    <h4 class="text-sm text-amber-400/80">{labels.status}</h4>
                     <p class="text-white/90 font-semibold">{project.status}</p>
                 </div>
                 <div class="stat-item">
-                    <h4 class="text-sm text-amber-400/80">Target End Date</h4>
+                    <h4 class="text-sm text-amber-400/80">{labels.targetEndDate}</h4>
                     <p class="text-white/90 font-semibold">{project.endDate}</p>
                 </div>
                 <div class="stat-item col-span-2">
-                    <h4 class="text-sm text-amber-400/80">Financials</h4>
+                    <h4 class="text-sm text-amber-400/80">{labels.financials}</h4>
                     <div class="w-full bg-black/40 rounded-full h-4 mt-2">
                         <div class="bg-amber-400 h-4 rounded-full" style={`width: ${Math.round((project.spent / project.budget) * 100)}%`}></div>
                     </div>
@@ -82,15 +108,15 @@ const ProjectDetailPage: FC<ProjectDetailPageProps> = ({
 
         {/* --- Team --- */}
         <section>
-            <h2 class="text-2xl font-serif text-center mb-6 text-amber-200/90">Key People</h2>
+            <h2 class="text-2xl font-serif text-center mb-6 text-amber-200/90">{labels.keyPeople}</h2>
             <div class="flex flex-col items-center">
                 <div class="text-center mb-6">
                     <img src={project.contactPerson.avatarUrl} alt={project.contactPerson.name} class="w-24 h-24 rounded-full mx-auto mb-2 border-2 border-amber-400/50" />
                     <h4 class="text-white/90 font-semibold">{project.contactPerson.name}</h4>
-                    <p class="text-sm text-amber-400/80">Key Contact</p>
+                    <p class="text-sm text-amber-400/80">{labels.keyContact}</p>
                 </div>
                 <div>
-                    <h4 class="text-lg font-semibold text-center text-amber-300/90 mb-3">Roles & Responsibilities</h4>
+                    <h4 class="text-lg font-semibold text-center text-amber-300/90 mb-3">{labels.rolesResponsibilities}</h4>
                     <ul class="list-disc list-inside text-white/70 text-left max-w-md mx-auto">
                         {project.team.map(member => (
                             <li class="mb-1"><strong>{member.role}:</strong> {member.name}</li>
