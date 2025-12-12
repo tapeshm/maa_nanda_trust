@@ -48,7 +48,7 @@ const EventsPage: FC<EventsPageProps> = ({
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               {events.map((event) => (
                 <a href={lang === 'hi' ? `/hi/events/${event.id}` : `/events/${event.id}`} class="block transition-transform hover:scale-105 h-full">
-                  <EventCard event={event} />
+                  <EventCard event={event} lang={lang} />
                 </a>
               ))}
             </div>

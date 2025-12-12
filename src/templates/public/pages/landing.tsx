@@ -6,8 +6,17 @@ import ProjectCard from '../components/ProjectCard'
 import type { Project } from '../../../data/projects'
 import type { Event } from '../../../data/events.data'
 import type { LandingPageContent } from '../../../data/landing'
-import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
+import { type Language, DEFAULT_LANGUAGE, getLocalizedHref } from '../../../utils/i18n'
 import { getNavLinks } from '../../../config/navigation'
+
+const LABELS = {
+  en: {
+    viewDetails: 'View Details',
+  },
+  hi: {
+    viewDetails: 'विवरण देखें',
+  }
+};
 
 // --- Landing Page ---
 
@@ -19,15 +28,16 @@ type LandingPageProps = {
   activePath?: string
 }
 
-const LandingPage: FC<LandingPageProps> = ({ 
-  projects, 
-  events, 
-  landingContent, 
+const LandingPage: FC<LandingPageProps> = ({
+  projects,
+  events,
+  landingContent,
   lang = DEFAULT_LANGUAGE,
   activePath = '/'
 }) => {
   const heroTitle = landingContent.hero.title
   const navLinks = getNavLinks(lang);
+  const labels = LABELS[lang];
 
   return (
   <PublicLayout
@@ -64,7 +74,7 @@ const LandingPage: FC<LandingPageProps> = ({
           <p class="text-center text-white/70 mb-10 md:mb-12">{landingContent.projectsSection.description}</p>
           <div class="flex flex-wrap justify-center gap-8 md:gap-10">
             {projects.map((project) => (
-              <ProjectCard project={project} />
+              <ProjectCard project={project} lang={lang} />
             ))}
           </div>
         </section>
@@ -75,13 +85,13 @@ const LandingPage: FC<LandingPageProps> = ({
           <p class="text-center text-white/70 mb-10 md:mb-12">{landingContent.eventsSection.description}</p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-4xl mx-auto">
             {events.filter(e => e.status === 'Upcoming').slice(0, 2).map((event) => (
-              <EventsEnvelopeCard 
+              <EventsEnvelopeCard
                 title={event.title}
                 date={event.displayDate || event.startDate}
                 location={event.location}
                 description={event.description}
-                linkHref={`/events/${event.id}`}
-                linkLabel="View Details"
+                linkHref={getLocalizedHref(`/events/${event.id}`, lang)}
+                linkLabel={labels.viewDetails}
               />
             ))}
           </div>

@@ -48,7 +48,7 @@ const ProjectsPage: FC<ProjectsPageProps> = ({
             <div class="flex flex-wrap justify-center gap-8 md:gap-10">
               {projects.map((project) => (
                 <a href={lang === 'hi' ? `/hi/projects/${project.id}` : `/projects/${project.id}`}>
-                  <ProjectCard project={project} />
+                  <ProjectCard project={project} lang={lang} />
                 </a>
               ))}
             </div>

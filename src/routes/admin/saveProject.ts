@@ -5,7 +5,7 @@ import type { Bindings } from '../../bindings';
 import { requireAuth, requireAdmin } from '../../middleware/auth';
 import { getCsrfParsedBody } from '../../middleware/csrf';
 import { upsertProject } from '../../data/projects.data';
-import type { Project } from '../../data/projects';
+import type { ProjectRaw } from '../../data/projects';
 import { slugify } from '../../utils/slugify';
 import {
     normalizeEditorHtmlWhitespace,
@@ -56,13 +56,13 @@ saveProject.post('/save/project', requireAuth(), requireAdmin, async (c) => {
     try {
         let id = body.id as string;
         if (!id) {
-            const title = body.title as string;
-            if (!title) {
-                throw new Error("Title is required to generate a slug.");
+            const titleEn = body.title_en as string;
+            if (!titleEn) {
+                throw new Error("Title (English) is required to generate a slug.");
             }
-            // Auto-generate ID from title
-            id = slugify(title);
-            
+            // Auto-generate ID from English title
+            id = slugify(titleEn);
+
             // Fallback if slugify results in empty string (e.g. all special chars)
             if (!id) {
                  id = 'project-' + Date.now().toString().slice(-6);
@@ -73,52 +73,86 @@ saveProject.post('/save/project', requireAuth(), requireAdmin, async (c) => {
         // The form now sends 'imageUrl' which is populated by the client-side media picker.
         const imageUrl = (body.imageUrl as string) || '';
 
-        // --- Handle Content (Long Description) ---
-        const editorId = 'project-long-description';
-        
-        // Extract raw values - checking flat keys first for robustness with x-www-form-urlencoded
-        const rawHtml = (body[`content_html[${editorId}]`] as string) || 
-                        ((body.content_html as Record<string, string>)?.[editorId]) || 
-                        '';
+        // --- Handle Content (Long Description) - Bilingual ---
+        const profile = resolveEditorProfile('full');
 
-        const rawJson = (body[`content_json[${editorId}]`] as string) || 
-                        ((body.content_json as Record<string, string>)?.[editorId]) || 
-                        '';
+        // Process English long description
+        const editorIdEn = 'project-long-description-en';
+        const rawHtmlEn = (body[`content_html[${editorIdEn}]`] as string) ||
+                          ((body.content_html as Record<string, string>)?.[editorIdEn]) ||
+                          '';
+        const rawJsonEn = (body[`content_json[${editorIdEn}]`] as string) ||
+                          ((body.content_json as Record<string, string>)?.[editorIdEn]) ||
+                          '';
 
-        let longDescription = '';
-
-        // Parse and Validate Content
-        if (rawHtml.length > CONTENT_MAX_BYTES) {
-             console.error("Content too large");
+        let longDescriptionEn = '';
+        if (rawHtmlEn.length > CONTENT_MAX_BYTES) {
+             console.error("English content too large");
              return c.redirect('/admin/dashboard/projects?error=content_too_large');
         }
 
-        const profile = resolveEditorProfile('full');
-        const context = { profile, slug: id, documentId: editorId };
-
-        if (rawHtml) {
-            const normalizedHtml = normalizeEditorHtmlWhitespace(rawHtml);
-            if (isSafeEditorHtml(normalizedHtml, context)) {
-                longDescription = normalizedHtml;
+        const contextEn = { profile, slug: id, documentId: editorIdEn };
+        if (rawHtmlEn) {
+            const normalizedHtml = normalizeEditorHtmlWhitespace(rawHtmlEn);
+            if (isSafeEditorHtml(normalizedHtml, contextEn)) {
+                longDescriptionEn = normalizedHtml;
             } else {
-                console.warn("Unsafe HTML detected, falling back to JSON rendering");
-                // If HTML is unsafe, try rendering from JSON
-                 try {
-                    const parsedJson = JSON.parse(rawJson);
-                    longDescription = renderFallbackHtml(parsedJson, context);
+                console.warn("Unsafe English HTML detected, falling back to JSON rendering");
+                try {
+                    const parsedJson = JSON.parse(rawJsonEn);
+                    longDescriptionEn = renderFallbackHtml(parsedJson, contextEn);
                 } catch (e) {
-                    console.error("Failed to parse JSON content for fallback", e);
-                    longDescription = ''; // Fail safe
+                    console.error("Failed to parse English JSON content for fallback", e);
+                    longDescriptionEn = '';
                 }
             }
-        } else if (rawJson) {
-             // No HTML, render from JSON
+        } else if (rawJsonEn) {
              try {
-                const parsedJson = JSON.parse(rawJson);
-                longDescription = renderFallbackHtml(parsedJson, context);
+                const parsedJson = JSON.parse(rawJsonEn);
+                longDescriptionEn = renderFallbackHtml(parsedJson, contextEn);
             } catch (e) {
-                console.error("Failed to parse JSON content", e);
-                longDescription = '';
+                console.error("Failed to parse English JSON content", e);
+                longDescriptionEn = '';
+            }
+        }
+
+        // Process Hindi long description
+        const editorIdHi = 'project-long-description-hi';
+        const rawHtmlHi = (body[`content_html[${editorIdHi}]`] as string) ||
+                          ((body.content_html as Record<string, string>)?.[editorIdHi]) ||
+                          '';
+        const rawJsonHi = (body[`content_json[${editorIdHi}]`] as string) ||
+                          ((body.content_json as Record<string, string>)?.[editorIdHi]) ||
+                          '';
+
+        let longDescriptionHi = '';
+        if (rawHtmlHi.length > CONTENT_MAX_BYTES) {
+             console.error("Hindi content too large");
+             return c.redirect('/admin/dashboard/projects?error=content_too_large');
+        }
+
+        const contextHi = { profile, slug: id, documentId: editorIdHi };
+        if (rawHtmlHi) {
+            const normalizedHtml = normalizeEditorHtmlWhitespace(rawHtmlHi);
+            if (isSafeEditorHtml(normalizedHtml, contextHi)) {
+                longDescriptionHi = normalizedHtml;
+            } else {
+                console.warn("Unsafe Hindi HTML detected, falling back to JSON rendering");
+                try {
+                    const parsedJson = JSON.parse(rawJsonHi);
+                    longDescriptionHi = renderFallbackHtml(parsedJson, contextHi);
+                } catch (e) {
+                    console.error("Failed to parse Hindi JSON content for fallback", e);
+                    longDescriptionHi = '';
+                }
+            }
+        } else if (rawJsonHi) {
+             try {
+                const parsedJson = JSON.parse(rawJsonHi);
+                longDescriptionHi = renderFallbackHtml(parsedJson, contextHi);
+            } catch (e) {
+                console.error("Failed to parse Hindi JSON content", e);
+                longDescriptionHi = '';
             }
         }
 
@@ -130,26 +164,43 @@ saveProject.post('/save/project', requireAuth(), requireAdmin, async (c) => {
             return [String(val)];
         };
 
-        // Parse Team
-        const teamRoles = toArray(body['teamRole[]']);
+        // Parse Team - Bilingual roles
+        const teamRolesEn = toArray(body['teamRole_en[]']);
+        const teamRolesHi = toArray(body['teamRole_hi[]']);
         const teamNames = toArray(body['teamName[]']);
-        const team: { role: string; name: string }[] = [];
+        const team: { role: { en: string; hi: string }; name: string }[] = [];
 
-        for (let i = 0; i < Math.max(teamRoles.length, teamNames.length); i++) {
-            const role = teamRoles[i]?.trim() || '';
+        for (let i = 0; i < Math.max(teamRolesEn.length, teamRolesHi.length, teamNames.length); i++) {
+            const roleEn = teamRolesEn[i]?.trim() || '';
+            const roleHi = teamRolesHi[i]?.trim() || '';
             const name = teamNames[i]?.trim() || '';
-            if (role || name) {
-                team.push({ role, name });
+            if (roleEn || roleHi || name) {
+                team.push({
+                    role: { en: roleEn, hi: roleHi },
+                    name: name
+                });
             }
         }
 
-        const project: Omit<Project, 'createdAt' | 'updatedAt'> = {
+        const project: Omit<ProjectRaw, 'createdAt' | 'updatedAt'> = {
             id: id,
-            title: body.title as string,
-            description: body.description as string,
-            longDescription: longDescription,
+            title: {
+                en: (body.title_en as string) || '',
+                hi: (body.title_hi as string) || ''
+            },
+            description: {
+                en: (body.description_en as string) || '',
+                hi: (body.description_hi as string) || ''
+            },
+            longDescription: {
+                en: longDescriptionEn,
+                hi: longDescriptionHi
+            },
             imageUrl: imageUrl,
-            location: body.location as string,
+            location: {
+                en: (body.location_en as string) || '',
+                hi: (body.location_hi as string) || ''
+            },
             startDate: body.startDate as string,
             status: body.status as 'Ongoing' | 'Completed' | 'Planned',
             endDate: body.endDate as string,
@@ -164,9 +215,13 @@ saveProject.post('/save/project', requireAuth(), requireAdmin, async (c) => {
 
         await upsertProject(c.env, project);
 
-        await invalidateCachedPublicHtml(c.env, 'projects:list');
-        await invalidateCachedPublicHtml(c.env, `projects:detail:${id}`);
-        await invalidateCachedPublicHtml(c.env, 'landing');
+        // Invalidate cached HTML for both languages
+        await invalidateCachedPublicHtml(c.env, 'projects:list:en');
+        await invalidateCachedPublicHtml(c.env, 'projects:list:hi');
+        await invalidateCachedPublicHtml(c.env, `projects:detail:${id}:en`);
+        await invalidateCachedPublicHtml(c.env, `projects:detail:${id}:hi`);
+        await invalidateCachedPublicHtml(c.env, 'landing:en');
+        await invalidateCachedPublicHtml(c.env, 'landing:hi');
 
         return c.redirect('/admin/dashboard/projects');
 

@@ -1,14 +1,73 @@
 /** @jsxImportSource hono/jsx */
 
 import type { FC } from 'hono/jsx'
-import type { Project } from '../../../data/projects'
+import type { ProjectRaw } from '../../../data/projects'
 import * as Editor from '../../components/editor'
 import { resolveMediaUrl } from '../../../utils/pages/media'
 
 export type ProjectsFormProps = {
   csrfToken: string;
-  project?: Project;
+  project?: ProjectRaw;
 }
+
+const LocalizedInput = ({ label, id, values, required }: { label: string, id: string, values: { en: string, hi: string }, required?: boolean }) => (
+  <div class="sm:col-span-6">
+    <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+      {label} {required && <span class="text-red-500">*</span>}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <input
+          type="text"
+          name={`${id}_en`}
+          id={`${id}_en`}
+          value={values.en}
+          required={required}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10"
+        />
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+        <input
+          type="text"
+          name={`${id}_hi`}
+          id={`${id}_hi`}
+          value={values.hi}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi"
+        />
+      </div>
+    </div>
+  </div>
+)
+
+const LocalizedTextarea = ({ label, id, values }: { label: string, id: string, values: { en: string, hi: string } }) => (
+  <div class="sm:col-span-6">
+    <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+      {label}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <textarea
+          id={`${id}_en`}
+          name={`${id}_en`}
+          rows={2}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10"
+        >{values.en}</textarea>
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+        <textarea
+          id={`${id}_hi`}
+          name={`${id}_hi`}
+          rows={2}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi"
+        >{values.hi}</textarea>
+      </div>
+    </div>
+  </div>
+)
 
 const ProjectsForm: FC<ProjectsFormProps> = ({ csrfToken, project }) => {
   const isEditing = !!project;
@@ -17,7 +76,7 @@ const ProjectsForm: FC<ProjectsFormProps> = ({ csrfToken, project }) => {
 
   // Helper to get team member at index
   const getTeamMember = (index: number) => {
-    if (!project?.team || !project.team[index]) return { role: '', name: '' };
+    if (!project?.team || !project.team[index]) return { role: { en: '', hi: '' }, name: '' };
     return project.team[index];
   };
 
@@ -51,21 +110,39 @@ const ProjectsForm: FC<ProjectsFormProps> = ({ csrfToken, project }) => {
                 </div>
               )}
 
+              <LocalizedInput
+                label="Title"
+                id="title"
+                values={project?.title || { en: '', hi: '' }}
+                required
+              />
+
+              <LocalizedTextarea
+                label="Short Description"
+                id="description"
+                values={project?.description || { en: '', hi: '' }}
+              />
+
               <div class="sm:col-span-6">
-                <label for="title" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Title</label>
-                <input type="text" name="title" id="title" value={project?.title} required class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
-              </div>
-              <div class="sm:col-span-6">
-                <label for="description" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Short Description</label>
-                <textarea name="description" id="description" rows={2} class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10">{project?.description}</textarea>
-              </div>
-              <div class="sm:col-span-6">
-                <label for="longDescription" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Long Description</label>
-                <Editor.EditorInstance
-                  spec={{ id: 'project-long-description', profile: 'full' }}
-                  payload={project?.longDescription || ''}
-                  html={project?.longDescription || ''}
-                />
+                <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Long Description</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+                    <Editor.EditorInstance
+                      spec={{ id: 'project-long-description-en', profile: 'full' }}
+                      payload={project?.longDescription?.en || ''}
+                      html={project?.longDescription?.en || ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+                    <Editor.EditorInstance
+                      spec={{ id: 'project-long-description-hi', profile: 'full' }}
+                      payload={project?.longDescription?.hi || ''}
+                      html={project?.longDescription?.hi || ''}
+                    />
+                  </div>
+                </div>
               </div>
               
               {/* --- Image Upload (Data Media Picker) --- */}
@@ -164,9 +241,30 @@ const ProjectsForm: FC<ProjectsFormProps> = ({ csrfToken, project }) => {
         <div class="md:col-span-2">
             <div class="bg-white shadow-xs outline outline-gray-900/5 sm:rounded-xl dark:bg-gray-900 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10 p-8">
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-6">
-                    <div class="sm:col-span-4">
-                        <label for="location" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Location</label>
-                        <input type="text" name="location" id="location" value={project?.location} class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
+                    <div class="sm:col-span-6">
+                        <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Location</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label for="location_en" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+                            <input
+                              type="text"
+                              name="location_en"
+                              id="location_en"
+                              value={project?.location?.en || ''}
+                              class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                            />
+                          </div>
+                          <div>
+                            <label for="location_hi" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+                            <input
+                              type="text"
+                              name="location_hi"
+                              id="location_hi"
+                              value={project?.location?.hi || ''}
+                              class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi"
+                            />
+                          </div>
+                        </div>
                     </div>
                     <div class="sm:col-span-2">
                         <label for="status" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Status</label>
@@ -225,16 +323,22 @@ const ProjectsForm: FC<ProjectsFormProps> = ({ csrfToken, project }) => {
 
                     <div class="col-span-full border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Team Members</h3>
-                        <p class="text-xs text-gray-500 mb-4">Add up to 5 team members.</p>
-                        <div class="space-y-3">
+                        <p class="text-xs text-gray-500 mb-4">Add up to 5 team members. Roles are bilingual, names are not.</p>
+                        <div class="space-y-4">
                             {[0, 1, 2, 3, 4].map(i => {
                                 const member = getTeamMember(i);
                                 return (
-                                    <div class="flex gap-4">
-                                        <div class="w-1/2">
-                                            <input type="text" name="teamRole[]" placeholder="Role" value={member.role} class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Role (English)</label>
+                                            <input type="text" name="teamRole_en[]" placeholder="Role" value={member.role.en} class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
                                         </div>
-                                        <div class="w-1/2">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Role (Hindi)</label>
+                                            <input type="text" name="teamRole_hi[]" placeholder="भूमिका" value={member.role.hi} class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Name</label>
                                             <input type="text" name="teamName[]" placeholder="Name" value={member.name} class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
                                         </div>
                                     </div>

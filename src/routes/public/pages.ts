@@ -41,8 +41,8 @@ publicPages.use('*', attachAuthContext())
 const renderLanding = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
   return serveWithCache(c, `landing:${lang}`, async () => {
-    const projects = await getProjects(c.env)
-    const events = await getEvents(c.env)
+    const projects = await getProjects(c.env, lang)
+    const events = await getEvents(c.env, lang)
     const landingContent = await getLandingContent(c.env, lang)
     return renderToString(LandingPage({ projects, events, landingContent, lang, activePath: c.req.path }))
   })
@@ -75,7 +75,7 @@ const renderTransparency = (lang: Language) => (c: Context) => {
 const renderEvents = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
   return serveWithCache(c, `events:list:${lang}`, async () => {
-    const events = await getEvents(c.env)
+    const events = await getEvents(c.env, lang)
     return renderToString(EventsPage({ events: events, lang, activePath: c.req.path }))
   })
 }
@@ -83,7 +83,7 @@ const renderEvents = (lang: Language) => (c: Context) => {
 const renderProjects = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
   return serveWithCache(c, `projects:list:${lang}`, async () => {
-    const projects = await getProjects(c.env)
+    const projects = await getProjects(c.env, lang)
     return renderToString(ProjectsPage({ projects: projects, lang, activePath: c.req.path }))
   })
 }
@@ -92,7 +92,7 @@ const renderProjectDetail = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
   const id = c.req.param('id')
   return serveWithCache(c, `projects:detail:${id}:${lang}`, async () => {
-    const project = await getProjectById(c.env, id)
+    const project = await getProjectById(c.env, id, lang)
 
     if (!project) {
       return null
@@ -106,7 +106,7 @@ const renderEventDetail = (lang: Language) => (c: Context) => {
   ensureCsrf(c)
   const id = c.req.param('id')
   return serveWithCache(c, `events:detail:${id}:${lang}`, async () => {
-    const event = await getEventById(c.env, id)
+    const event = await getEventById(c.env, id, lang)
 
     if (!event) {
       return null
