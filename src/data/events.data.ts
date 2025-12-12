@@ -1,4 +1,12 @@
 import type { Bindings } from '../bindings'
+import type { Localized } from '../utils/i18n'
+import {
+  type Language,
+  DEFAULT_LANGUAGE,
+  parseLocalized,
+  parseLocalizedRaw,
+  serializeLocalized
+} from '../utils/i18n'
 
 export interface Event {
   id: string
@@ -18,31 +26,91 @@ export interface Event {
   updatedAt?: number
 }
 
-export async function getEvents(env: Bindings): Promise<Event[]> {
-  const { results } = await env.DB.prepare('SELECT * FROM events ORDER BY startDate ASC').all<Event>()
-  return results.map(e => ({
-      ...e,
-      contactPerson: typeof e.contactPerson === 'string' ? JSON.parse(e.contactPerson) : e.contactPerson,
-  }));
+export interface EventRaw {
+  id: string
+  title: Localized<string>
+  description: Localized<string>
+  longDescription: Localized<string>
+  imageUrl: string
+  location: Localized<string>
+  startDate: string // ISO 8601 YYYY-MM-DD
+  displayDate: Localized<string> // e.g. "Jan 19-25, 2026"
+  status: 'Upcoming' | 'Completed' | 'Postponed'
+  contactPerson: {
+    name: string
+    avatarUrl: string
+  }
+  createdAt?: number
+  updatedAt?: number
 }
 
-export async function getEventById(env: Bindings, id: string): Promise<Event | null> {
+export async function getEvents(env: Bindings, lang: Language = DEFAULT_LANGUAGE): Promise<Event[]> {
+  const { results } = await env.DB.prepare('SELECT * FROM events ORDER BY startDate ASC').all<any>()
+  return results.map(e => {
+    const contactPerson = typeof e.contactPerson === 'string' ? JSON.parse(e.contactPerson) : e.contactPerson;
+
+    return {
+      ...e,
+      title: parseLocalized(e.title, lang),
+      description: parseLocalized(e.description, lang),
+      longDescription: parseLocalized(e.longDescription, lang),
+      location: parseLocalized(e.location, lang),
+      displayDate: parseLocalized(e.displayDate, lang),
+      contactPerson,
+    };
+  });
+}
+
+export async function getEventById(env: Bindings, id: string, lang: Language = DEFAULT_LANGUAGE): Promise<Event | null> {
   const stmt = env.DB.prepare('SELECT * FROM events WHERE id = ? LIMIT 1');
-  const event = await stmt.bind(id).first<Event | null>();
+  const event = await stmt.bind(id).first<any>();
 
   if (!event) {
     return null;
   }
 
+  const contactPerson = typeof event.contactPerson === 'string' ? JSON.parse(event.contactPerson) : event.contactPerson;
+
   return {
     ...event,
-    contactPerson: typeof event.contactPerson === 'string' ? JSON.parse(event.contactPerson) : event.contactPerson,
+    title: parseLocalized(event.title, lang),
+    description: parseLocalized(event.description, lang),
+    longDescription: parseLocalized(event.longDescription, lang),
+    location: parseLocalized(event.location, lang),
+    displayDate: parseLocalized(event.displayDate, lang),
+    contactPerson,
   };
 }
 
-export async function upsertEvent(env: Bindings, event: Omit<Event, 'createdAt' | 'updatedAt'>): Promise<void> {
+export async function getEventByIdRaw(env: Bindings, id: string): Promise<EventRaw | null> {
+  const stmt = env.DB.prepare('SELECT * FROM events WHERE id = ? LIMIT 1');
+  const event = await stmt.bind(id).first<any>();
+
+  if (!event) {
+    return null;
+  }
+
+  const contactPerson = typeof event.contactPerson === 'string' ? JSON.parse(event.contactPerson) : event.contactPerson;
+
+  return {
+    ...event,
+    title: parseLocalizedRaw(event.title),
+    description: parseLocalizedRaw(event.description),
+    longDescription: parseLocalizedRaw(event.longDescription),
+    location: parseLocalizedRaw(event.location),
+    displayDate: parseLocalizedRaw(event.displayDate),
+    contactPerson,
+  };
+}
+
+export async function upsertEvent(env: Bindings, event: Omit<EventRaw, 'createdAt' | 'updatedAt'>): Promise<void> {
     const { id, title, description, longDescription, imageUrl, location, startDate, displayDate, status, contactPerson } = event;
-    
+
+    const titleJson = serializeLocalized(title.en, title.hi);
+    const descriptionJson = serializeLocalized(description.en, description.hi);
+    const longDescriptionJson = serializeLocalized(longDescription.en, longDescription.hi);
+    const locationJson = serializeLocalized(location.en, location.hi);
+    const displayDateJson = serializeLocalized(displayDate.en, displayDate.hi);
     const contactPersonJson = JSON.stringify(contactPerson);
 
     await env.DB.prepare(
@@ -60,7 +128,7 @@ export async function upsertEvent(env: Bindings, event: Omit<Event, 'createdAt' 
            contactPerson = excluded.contactPerson,
            updatedAt = unixepoch()`
     )
-    .bind(id, title, description, longDescription, imageUrl, location, startDate, displayDate, status, contactPersonJson)
+    .bind(id, titleJson, descriptionJson, longDescriptionJson, imageUrl, locationJson, startDate, displayDateJson, status, contactPersonJson)
     .run()
 }
 

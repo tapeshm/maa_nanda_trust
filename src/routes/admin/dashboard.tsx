@@ -21,10 +21,10 @@ import DonatePageForm, { type DonatePageFormProps } from '../../templates/admin/
 import { getDonateContentRaw } from '../../data/donate.data'
 import ProjectsList from '../../templates/admin/dashboard/ProjectsList'
 import ProjectsForm from '../../templates/admin/dashboard/ProjectsForm'
-import { getProjects, getProjectById } from '../../data/projects.data'
+import { getProjects, getProjectByIdRaw } from '../../data/projects.data'
 import EventsList from '../../templates/admin/dashboard/EventsList'
 import EventsForm from '../../templates/admin/dashboard/EventsForm'
-import { getEvents, getEventById } from '../../data/events.data'
+import { getEvents, getEventByIdRaw } from '../../data/events.data'
 
 
 type NonHomePanel = Exclude<AdminDashboardPanel, 'home' | 'projects' | 'events' | 'donate' | 'about-us' | 'transparency'>
@@ -88,7 +88,7 @@ adminDashboard.get('/dashboard/projects/new', requireAuth(), requireAdmin, (c) =
 })
 adminDashboard.get('/dashboard/projects/edit/:id', requireAuth(), requireAdmin, async (c) => {
     const id = c.req.param('id');
-    const project = await getProjectById(c.env, id);
+    const project = await getProjectByIdRaw(c.env, id);
     const csrfToken = ensureCsrf(c)
     const htmx = isHtmx(c)
 
@@ -127,7 +127,7 @@ adminDashboard.get('/dashboard/events/new', requireAuth(), requireAdmin, (c) => 
 })
 adminDashboard.get('/dashboard/events/edit/:id', requireAuth(), requireAdmin, async (c) => {
     const id = c.req.param('id');
-    const event = await getEventById(c.env, id);
+    const event = await getEventByIdRaw(c.env, id);
     const csrfToken = ensureCsrf(c)
     const htmx = isHtmx(c)
 

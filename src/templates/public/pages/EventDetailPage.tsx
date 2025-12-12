@@ -14,12 +14,32 @@ type EventDetailPageProps = {
   activePath?: string
 }
 
-const EventDetailPage: FC<EventDetailPageProps> = ({ 
+const LABELS = {
+  en: {
+    contactPerson: 'Contact Person',
+    status: {
+      Upcoming: 'Upcoming',
+      Completed: 'Completed',
+      Postponed: 'Postponed',
+    }
+  },
+  hi: {
+    contactPerson: 'संपर्क व्यक्ति',
+    status: {
+      Upcoming: 'आगामी',
+      Completed: 'पूर्ण',
+      Postponed: 'स्थगित',
+    }
+  }
+};
+
+const EventDetailPage: FC<EventDetailPageProps> = ({
   event,
   lang = DEFAULT_LANGUAGE,
   activePath = `/events/${event.id}`
 }) => {
     const navLinks = getNavLinks(lang);
+    const labels = LABELS[lang];
     const statusColor = {
         Upcoming: 'bg-green-500/20 text-green-300',
         Completed: 'bg-gray-500/20 text-gray-300',
@@ -41,7 +61,7 @@ const EventDetailPage: FC<EventDetailPageProps> = ({
                     <div class="flex flex-col md:flex-row justify-center items-center gap-4 mb-4">
                         <h1 class="text-3xl md:text-4xl font-serif font-light text-amber-100/90 tracking-wider">{event.title}</h1>
                         <span class={`text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap ${statusColor[event.status]}`}>
-                            {event.status}
+                            {labels.status[event.status]}
                         </span>
                     </div>
                     <p class="text-amber-400/80 text-lg">{event.displayDate || event.startDate} • {event.location}</p>
@@ -71,7 +91,7 @@ const EventDetailPage: FC<EventDetailPageProps> = ({
                 {/* --- Contact Person --- */}
                 {event.contactPerson && (
                     <section>
-                        <h2 class="text-2xl font-serif text-center mb-6 text-amber-200/90">Contact Person</h2>
+                        <h2 class="text-2xl font-serif text-center mb-6 text-amber-200/90">{labels.contactPerson}</h2>
                         <div class="flex flex-col items-center">
                             <div class="text-center">
                                 {event.contactPerson.avatarUrl && (
