@@ -1,14 +1,73 @@
 /** @jsxImportSource hono/jsx */
 
 import type { FC } from 'hono/jsx'
-import type { Event } from '../../../data/events.data'
+import type { EventRaw } from '../../../data/events.data'
 import * as Editor from '../../components/editor'
 import { resolveMediaUrl } from '../../../utils/pages/media'
 
 export type EventsFormProps = {
   csrfToken: string;
-  event?: Event;
+  event?: EventRaw;
 }
+
+const LocalizedInput = ({ label, id, values, required }: { label: string, id: string, values: { en: string, hi: string }, required?: boolean }) => (
+  <div class="sm:col-span-6">
+    <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+      {label} {required && <span class="text-red-500">*</span>}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <input
+          type="text"
+          name={`${id}_en`}
+          id={`${id}_en`}
+          value={values.en}
+          required={required}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10"
+        />
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+        <input
+          type="text"
+          name={`${id}_hi`}
+          id={`${id}_hi`}
+          value={values.hi}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi"
+        />
+      </div>
+    </div>
+  </div>
+)
+
+const LocalizedTextarea = ({ label, id, values }: { label: string, id: string, values: { en: string, hi: string } }) => (
+  <div class="sm:col-span-6">
+    <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+      {label}
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for={`${id}_en`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+        <textarea
+          id={`${id}_en`}
+          name={`${id}_en`}
+          rows={2}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10"
+        >{values.en}</textarea>
+      </div>
+      <div>
+        <label for={`${id}_hi`} class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+        <textarea
+          id={`${id}_hi`}
+          name={`${id}_hi`}
+          rows={2}
+          class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi"
+        >{values.hi}</textarea>
+      </div>
+    </div>
+  </div>
+)
 
 const EventsForm: FC<EventsFormProps> = ({ csrfToken, event }) => {
   const isEditing = !!event;
@@ -45,21 +104,39 @@ const EventsForm: FC<EventsFormProps> = ({ csrfToken, event }) => {
                 </div>
               )}
 
+              <LocalizedInput
+                label="Title"
+                id="title"
+                values={event?.title || { en: '', hi: '' }}
+                required
+              />
+
+              <LocalizedTextarea
+                label="Short Description"
+                id="description"
+                values={event?.description || { en: '', hi: '' }}
+              />
+
               <div class="sm:col-span-6">
-                <label for="title" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Title</label>
-                <input type="text" name="title" id="title" value={event?.title} required class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
-              </div>
-              <div class="sm:col-span-6">
-                <label for="description" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Short Description</label>
-                <textarea name="description" id="description" rows={2} class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10">{event?.description}</textarea>
-              </div>
-              <div class="sm:col-span-6">
-                <label for="longDescription" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Long Description</label>
-                <Editor.EditorInstance
-                  spec={{ id: 'event-long-description', profile: 'full' }}
-                  payload={event?.longDescription || ''}
-                  html={event?.longDescription || ''}
-                />
+                <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Long Description</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+                    <Editor.EditorInstance
+                      spec={{ id: 'event-long-description-en', profile: 'full' }}
+                      payload={event?.longDescription?.en || ''}
+                      html={event?.longDescription?.en || ''}
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+                    <Editor.EditorInstance
+                      spec={{ id: 'event-long-description-hi', profile: 'full' }}
+                      payload={event?.longDescription?.hi || ''}
+                      html={event?.longDescription?.hi || ''}
+                    />
+                  </div>
+                </div>
               </div>
               
               {/* --- Image Upload (Data Media Picker) --- */}
@@ -158,9 +235,30 @@ const EventsForm: FC<EventsFormProps> = ({ csrfToken, event }) => {
         <div class="md:col-span-2">
             <div class="bg-white shadow-xs outline outline-gray-900/5 sm:rounded-xl dark:bg-gray-900 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10 p-8">
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-6">
-                    <div class="sm:col-span-4">
-                        <label for="location" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Location</label>
-                        <input type="text" name="location" id="location" value={event?.location} class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
+                    <div class="sm:col-span-6">
+                        <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Location</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label for="location_en" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+                            <input
+                              type="text"
+                              name="location_en"
+                              id="location_en"
+                              value={event?.location?.en || ''}
+                              class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                            />
+                          </div>
+                          <div>
+                            <label for="location_hi" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+                            <input
+                              type="text"
+                              name="location_hi"
+                              id="location_hi"
+                              value={event?.location?.hi || ''}
+                              class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi"
+                            />
+                          </div>
+                        </div>
                     </div>
                     <div class="sm:col-span-2">
                         <label for="status" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Status</label>
@@ -170,13 +268,36 @@ const EventsForm: FC<EventsFormProps> = ({ csrfToken, event }) => {
                             <option selected={event?.status === 'Postponed'}>Postponed</option>
                         </select>
                     </div>
-                    <div class="sm:col-span-3">
-                        <label for="startDate" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Start Date (Sort)</label>
+                    <div class="sm:col-span-4">
+                        <label for="startDate" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Start Date (for sorting)</label>
                         <input type="date" name="startDate" id="startDate" value={event?.startDate} class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
                     </div>
-                    <div class="sm:col-span-3">
-                        <label for="displayDate" class="block text-sm font-medium leading-6 text-gray-900 dark:text-white">Display Date</label>
-                        <input type="text" name="displayDate" id="displayDate" value={event?.displayDate} placeholder="e.g. Jan 15-20, 2026" class="mt-2 block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10" />
+                    <div class="sm:col-span-6">
+                        <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Display Date (shown to users)</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label for="displayDate_en" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">English</label>
+                            <input
+                              type="text"
+                              name="displayDate_en"
+                              id="displayDate_en"
+                              value={event?.displayDate?.en || ''}
+                              placeholder="e.g. Jan 15-20, 2026"
+                              class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                            />
+                          </div>
+                          <div>
+                            <label for="displayDate_hi" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hindi (हिंदी)</label>
+                            <input
+                              type="text"
+                              name="displayDate_hi"
+                              id="displayDate_hi"
+                              value={event?.displayDate?.hi || ''}
+                              placeholder="उदा. 15-20 जनवरी, 2026"
+                              class="block w-full rounded-md border-0 bg-white px-3 py-1.5 text-base text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 dark:bg-white/5 dark:text-white dark:ring-white/10 font-hindi"
+                            />
+                          </div>
+                        </div>
                     </div>
                     
                     <div class="col-span-full border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
