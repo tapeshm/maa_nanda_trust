@@ -11,7 +11,7 @@
   --asset-donation-coin: none;
 
   /* --- Animation Settings --- */
-  --door-open-duration: 4500ms;
+  --door-open-duration: 2800ms;  /* Faster but still ceremonial */
   --door-close-duration: 1800ms;
   --door-open-easing: cubic-bezier(0.22, 0.72, 0.12, 1);
   --door-close-easing: cubic-bezier(0.32, 0.04, 0.28, 1);

@@ -13,7 +13,7 @@
   --asset-donation-coin: none;
 
   /* --- Animation Settings --- */
-  --door-open-duration: 4500ms;
+  --door-open-duration: 2800ms;  /* Faster but still ceremonial */
   --door-close-duration: 1800ms;
   --door-open-easing: cubic-bezier(0.22, 0.72, 0.12, 1);
   --door-close-easing: cubic-bezier(0.32, 0.04, 0.28, 1);
@@ -123,6 +123,18 @@
 }
 
 /* ===============================
+   1b) Hindi Typography Optimization
+   =============================== */
+:lang(hi) {
+  line-height: 1.75;
+  letter-spacing: 0.03em;
+}
+
+:lang(hi) h1, :lang(hi) h2, :lang(hi) h3 {
+  line-height: 1.3;
+}
+
+/* ===============================
    2) Base Utilities
    =============================== */
 section[id] {
@@ -136,9 +148,12 @@ button:focus-visible {
 }
 
 .glass-panel {
-  background: rgba(14, 8, 4, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(14, 8, 4, 0.82);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 218, 150, 0.12);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .skip-link {
@@ -228,11 +243,27 @@ button:focus-visible {
 
 .door-enter {
   position: absolute; right: max(18px, 2vw); bottom: max(18px, 2vw); z-index: 2;
-  padding: 0.6rem 1rem; border-radius: 999px;
+  padding: 0.8rem 1.2rem; border-radius: 999px;
   border: 1px solid var(--door-button-border); background: var(--door-button-bg); color: var(--door-button-text);
   cursor: pointer; font-size: 0.95rem; text-transform: uppercase; transition: background 0.2s ease-in-out;
+  display: flex; flex-direction: column; align-items: center;
+  animation: door-pulse 2s ease-in-out infinite;
 }
 .door-enter:hover { background: rgba(0, 0, 0, 0.75); }
+.door-enter-icon {
+  font-size: 1.2em;
+  margin-bottom: 0.25rem;
+}
+.door-enter-hint {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+  letter-spacing: 0.1em;
+}
+@keyframes door-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 218, 150, 0.4); }
+  50% { box-shadow: 0 0 20px 5px rgba(255, 218, 150, 0.2); }
+}
 
 .door-toggle {
   position: fixed; right: clamp(18px, 4vw, 40px); bottom: clamp(18px, 4vw, 40px); z-index: 150;
@@ -283,7 +314,15 @@ button:focus-visible {
 }
 .top-nav a:hover, .top-nav a:focus-visible {
   color: var(--nav-link-hover-color); background: rgba(255, 241, 210, 0.95);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 14px 28px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 14px 28px rgba(0, 0, 0, 0.28),
+    0 0 20px rgba(212, 165, 95, 0.3);  /* Golden glow */
+}
+.top-nav a[aria-current="page"],
+.top-nav a.is-active {
+  background: rgba(255, 241, 210, 0.85);
+  color: var(--nav-link-hover-color);
 }
 .top-nav.is-condensed { background: rgba(10, 6, 3, 0.9); box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48); }
 
@@ -366,13 +405,27 @@ button:focus-visible {
   }
 
   .scroll-menu-links a {
-    text-decoration: none; color: var(--text-color);
-    font-family: var(--font-heading); font-weight: 700; font-size: 16px;
-    padding-bottom: 5px; border-bottom: 2px solid transparent; transition: 0.3s;
+    display: block;
+    padding: 12px 20px;
+    min-height: 44px;  /* iOS touch target minimum */
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-color);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
   }
 
-  .scroll-menu-links a:hover {
-    color: var(--seal-red); border-color: var(--seal-red);
+  .scroll-menu-links a:hover,
+  .scroll-menu-links a:active {
+    color: var(--sindoor);
+    border-bottom-color: var(--sindoor);
+  }
+
+  .scroll-menu-links a[aria-current="page"] {
+    color: var(--gold-dark);
+    border-bottom-color: var(--gold);
   }
 
   /* --- WAX SEAL --- */
@@ -508,7 +561,17 @@ button:focus-visible {
   border-radius: 18px; color: var(--scroll-paper-text); box-shadow: var(--scroll-shadow);
   border: 1px solid rgba(105, 80, 40, 0.24); backdrop-filter: blur(3px);
 }
-.scroll-section + .scroll-section { margin-top: clamp(28px, 3vw, 48px); }
+.scroll-section + .scroll-section { margin-top: clamp(48px, 6vw, 80px); }
+.scroll-section + .scroll-section::before {
+  content: "॥";
+  display: block;
+  text-align: center;
+  color: var(--gold);
+  opacity: 0.5;
+  margin-bottom: clamp(32px, 4vw, 56px);
+  font-size: 1.2rem;
+  letter-spacing: 0.5em;
+}
 .scroll-eyebrow {
   text-transform: uppercase; letter-spacing: 0.18em; font-weight: 600; font-size: 0.8rem;
   color: rgba(38, 20, 10, 0.7);
@@ -547,6 +610,11 @@ button:focus-visible {
   position: relative; background: linear-gradient(145deg, rgba(255, 248, 226, 0.96), rgba(243, 229, 194, 0.9));
   border-radius: 16px; border: 1px solid rgba(107, 74, 41, 0.25); box-shadow: 0 12px 28px rgba(20, 10, 5, 0.35);
   color: var(--text-color); overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.project-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(20, 10, 5, 0.45), 0 0 30px rgba(212, 165, 95, 0.15);
 }
 .project-card::after {
   content: ""; position: absolute; inset: 0;
@@ -607,6 +675,59 @@ button:focus-visible {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .donation-button:hover { transform: translateX(-50%) translateY(-6px); box-shadow: 0 20px 35px rgba(0, 0, 0, 0.45); }
+
+/* ===============================
+   10) Floating Donation Button with Diya Animation
+   =============================== */
+.donation-fab {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--gold) 0%, #c3a45f 40%, #9c7534 100%);
+  color: #1d1209;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.donation-fab:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.donation-fab-flame {
+  font-size: 1.3em;
+  animation: flame-flicker 1.5s ease-in-out infinite;
+}
+
+@keyframes flame-flicker {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+  25% {
+    transform: scale(1.05) rotate(-2deg);
+    filter: brightness(1.1);
+  }
+  50% {
+    transform: scale(1.02) rotate(1deg);
+    filter: brightness(1.05);
+  }
+  75% {
+    transform: scale(1.08) rotate(-1deg);
+    filter: brightness(1.15);
+  }
+}
 
 /* ===============================
    11) Responsive

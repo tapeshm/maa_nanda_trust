@@ -14,7 +14,9 @@ const TempleDoor: FC = () => (
       <div class="door-panel door-panel--left" aria-hidden="true"></div>
       <div class="door-panel door-panel--right" aria-hidden="true"></div>
       <button class="door-enter" type="button" data-door-enter>
-        Enter the Sanctum
+        <span class="door-enter-icon" aria-hidden="true">🙏</span>
+        <span>Enter the Sanctum</span>
+        <span class="door-enter-hint">Touch to open</span>
       </button>
     </div>
     <button
