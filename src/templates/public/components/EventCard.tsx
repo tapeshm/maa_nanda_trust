@@ -23,6 +23,21 @@ const LABELS = {
   }
 };
 
+function formatEventDate(startDate: string, displayDate: string | undefined, lang: Language): string {
+  if (displayDate) return displayDate;
+
+  try {
+    const date = new Date(startDate);
+    return date.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return startDate;
+  }
+}
+
 const EventCard: FC<{ event: Event; lang?: Language }> = ({ event, lang = DEFAULT_LANGUAGE }) => {
     const labels = LABELS[lang];
     const statusColor = {
@@ -39,7 +54,7 @@ const EventCard: FC<{ event: Event; lang?: Language }> = ({ event, lang = DEFAUL
                     {labels.status[event.status]}
                 </span>
             </div>
-            <p class="text-sm text-white/70 mb-1">{event.displayDate || event.startDate}</p>
+            <p class="text-sm text-white/70 mb-1">{formatEventDate(event.startDate, event.displayDate, lang)}</p>
             <p class="text-sm text-white/70 mb-4">{event.location}</p>
             <p class="text-sm text-white/60 leading-relaxed">{event.description}</p>
 

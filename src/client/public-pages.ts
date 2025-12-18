@@ -54,7 +54,7 @@ const coinSound = document.getElementById("coinSound") as HTMLAudioElement | nul
 const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches
-const hasSeenDoor = sessionStorage.getItem("doorOpened") === "1"
+const hasSeenDoor = localStorage.getItem("doorOpened") === "1" || sessionStorage.getItem("doorOpened") === "1"
 const contentRevealDelay = parseTimeVar("--content-reveal-delay", 2000)
 const doorAutoDelay = parseTimeVar("--door-auto-delay", 600)
 const navCollapseThreshold = Math.max(
@@ -206,6 +206,7 @@ const playState = (state: DoorState, options: DoorOptions = {}) => {
         }, 200)
       }
       if (remember) {
+        localStorage.setItem("doorOpened", "1")
         sessionStorage.setItem("doorOpened", "1")
       }
       updateToggleState(STATES.OPENED)
