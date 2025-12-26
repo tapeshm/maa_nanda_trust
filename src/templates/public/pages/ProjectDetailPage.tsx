@@ -101,7 +101,7 @@ const ProjectDetailPage: FC<ProjectDetailPageProps> = ({
                     <div class="w-full bg-black/40 rounded-full h-4 mt-2">
                         <div class="bg-amber-400 h-4 rounded-full" style={`width: ${Math.round((project.spent / project.budget) * 100)}%`}></div>
                     </div>
-                    <p class="text-xs text-white/70 mt-1">{`$${project.spent.toLocaleString()} / $${project.budget.toLocaleString()}`}</p>
+                    <p class="text-xs text-white/70 mt-1">{`₹${project.spent.toLocaleString('en-IN')} / ₹${project.budget.toLocaleString('en-IN')}`}</p>
                 </div>
             </div>
         </section>
