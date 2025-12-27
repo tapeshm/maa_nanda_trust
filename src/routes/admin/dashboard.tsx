@@ -149,11 +149,18 @@ adminDashboard.get('/dashboard/events/edit/:id', requireAuth(), requireAdmin, as
 
 // --- Donation Records panel routes ---
 adminDashboard.get('/dashboard/donation-records', requireAuth(), requireAdmin, async (c) => {
-    const records = await getAllDonationRecords(c.env)
     const csrfToken = ensureCsrf(c)
     const htmx = isHtmx(c)
     const success = c.req.query('success')
-    const error = c.req.query('error')
+    let error = c.req.query('error')
+
+    let records: Awaited<ReturnType<typeof getAllDonationRecords>> = []
+    try {
+        records = await getAllDonationRecords(c.env)
+    } catch (e) {
+        console.error('Failed to fetch donation records:', e)
+        error = 'Database table may not exist. Please run the migration first.'
+    }
 
     const content = <DonationRecordsPanel records={records} csrfToken={csrfToken} success={success} error={error} />
     if (htmx) return c.html(content)
