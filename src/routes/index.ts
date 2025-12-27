@@ -15,8 +15,10 @@ import saveProject from './admin/saveProject'
 import deleteProject from './admin/deleteProject'
 import saveEvent from './admin/saveEvent'
 import deleteEvent from './admin/deleteEvent'
+import donationRecords from './admin/donationRecords'
 import previewPages from './preview/pages'
 import publicPages from './public/pages'
+import saveDonorInfo from './public/saveDonorInfo'
 import media from './media'
 
 /**
@@ -41,9 +43,11 @@ adminAggregate.route('/', saveProject)
 adminAggregate.route('/', deleteProject)
 adminAggregate.route('/', saveEvent)
 adminAggregate.route('/', deleteEvent)
+adminAggregate.route('/', donationRecords)
 
 routes.route('/admin', adminAggregate)
 routes.route('/preview', previewPages)
+routes.route('/', saveDonorInfo)
 routes.route('/', publicPages)
 routes.route('/media', media)
 routes.route('/', content)

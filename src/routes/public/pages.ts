@@ -56,12 +56,22 @@ const renderAbout = (lang: Language) => (c: Context) => {
   })
 }
 
-const renderDonate = (lang: Language) => (c: Context) => {
-  ensureCsrf(c)
-  return serveWithCache(c, `donate:${lang}`, async () => {
-    const donateContent = await getDonateContent(c.env, lang)
-    return renderToString(DonatePage({ donateContent, lang, activePath: c.req.path }))
-  })
+const renderDonate = (lang: Language) => async (c: Context) => {
+  const csrfToken = ensureCsrf(c)
+  const formSuccess = c.req.query('success') === 'true'
+  const formError = c.req.query('error') === 'true'
+  const donateContent = await getDonateContent(c.env, lang)
+  const html = renderToString(
+    DonatePage({
+      donateContent,
+      lang,
+      activePath: c.req.path,
+      csrfToken,
+      formSuccess,
+      formError
+    })
+  )
+  return c.html(html)
 }
 
 const renderTransparency = (lang: Language) => (c: Context) => {
