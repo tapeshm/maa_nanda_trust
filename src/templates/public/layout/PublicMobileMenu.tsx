@@ -50,7 +50,11 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ config }) => {
         <div class="scroll-menu-rod bottom-rod" aria-hidden="true"></div>
 
         {/* The Wax Seal (Visible when closed, fades out when open) */}
-        <div class="scroll-menu-seal">N</div>
+        <div class="scroll-menu-seal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="scroll-menu-seal-icon">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </div>
 
       </div>
     </>
