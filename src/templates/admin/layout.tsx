@@ -9,6 +9,7 @@ export const ADMIN_DASHBOARD_PANELS = [
   { slug: 'projects', label: 'Projects' },
   { slug: 'events', label: 'Events' },
   { slug: 'donate', label: 'Donate' },
+  { slug: 'donation-records', label: 'Donation Records' },
   { slug: 'transparency', label: 'Transparency' },
 ] as const
 

@@ -7,6 +7,7 @@ import type { DonatePageContent } from '../../../data/donate'
 import RichText from '../../components/RichText'
 import { type Language, DEFAULT_LANGUAGE } from '../../../utils/i18n'
 import { getNavLinks } from '../../../config/navigation'
+import DonorInfoForm from './DonorInfoForm'
 
 const LABELS = {
   en: {
@@ -25,12 +26,18 @@ type DonatePageProps = {
   donateContent: DonatePageContent
   lang?: Language
   activePath?: string
+  csrfToken: string
+  formSuccess?: boolean
+  formError?: boolean
 }
 
-const DonatePage: FC<DonatePageProps> = ({ 
-  donateContent, 
+const DonatePage: FC<DonatePageProps> = ({
+  donateContent,
   lang = DEFAULT_LANGUAGE,
-  activePath = '/donate'
+  activePath = '/donate',
+  csrfToken,
+  formSuccess = false,
+  formError = false
 }) => {
   const labels = LABELS[lang];
   const navLinks = getNavLinks(lang);
@@ -68,6 +75,14 @@ const DonatePage: FC<DonatePageProps> = ({
                 <p class="text-white/50 italic">Donation details coming soon.</p>
              </div>
           )}
+
+          {/* Donor Information Form */}
+          <DonorInfoForm
+            lang={lang}
+            csrfToken={csrfToken}
+            success={formSuccess}
+            error={formError}
+          />
 
         </div>
       </main>

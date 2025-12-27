@@ -25,6 +25,9 @@ import { getProjects, getProjectByIdRaw } from '../../data/projects.data'
 import EventsList from '../../templates/admin/dashboard/EventsList'
 import EventsForm from '../../templates/admin/dashboard/EventsForm'
 import { getEvents, getEventByIdRaw } from '../../data/events.data'
+import DonationRecordsPanel from '../../templates/admin/dashboard/DonationRecordsPanel'
+import DonationRecordEditForm from '../../templates/admin/dashboard/DonationRecordEditForm'
+import { getAllDonationRecords, getDonationRecordById } from '../../data/donationRecords.data'
 
 
 type NonHomePanel = Exclude<AdminDashboardPanel, 'home' | 'projects' | 'events' | 'donate' | 'about-us' | 'transparency'>
@@ -45,6 +48,10 @@ const PANEL_COPY: Record<AdminDashboardPanel, { heading: string; description: st
   donate: {
     heading: 'Donate',
     description: 'Manage donation page content and QR code.',
+  },
+  'donation-records': {
+    heading: 'Donation Records',
+    description: 'View and manage donor information and donation amounts.',
   },
   projects: {
     heading: 'Projects',
@@ -134,12 +141,40 @@ adminDashboard.get('/dashboard/events/edit/:id', requireAuth(), requireAdmin, as
     if (!event) {
         return c.notFound();
     }
-    
+
     const content = <EventsForm csrfToken={csrfToken} event={event} />
     if (htmx) return c.html(content)
     return c.html(<AdminLayout title={`Edit: ${event.title}`} activePanel="events" csrfToken={csrfToken} extraHead={<EditorAssets />}>{content}</AdminLayout>)
 })
 
+// --- Donation Records panel routes ---
+adminDashboard.get('/dashboard/donation-records', requireAuth(), requireAdmin, async (c) => {
+    const records = await getAllDonationRecords(c.env)
+    const csrfToken = ensureCsrf(c)
+    const htmx = isHtmx(c)
+    const success = c.req.query('success')
+    const error = c.req.query('error')
+
+    const content = <DonationRecordsPanel records={records} csrfToken={csrfToken} success={success} error={error} />
+    if (htmx) return c.html(content)
+    return c.html(<AdminLayout title="Donation Records" activePanel="donation-records" csrfToken={csrfToken}>{content}</AdminLayout>)
+})
+
+adminDashboard.get('/dashboard/donation-records/edit/:id', requireAuth(), requireAdmin, async (c) => {
+    const id = c.req.param('id')
+    const record = await getDonationRecordById(c.env, id)
+    const csrfToken = ensureCsrf(c)
+    const htmx = isHtmx(c)
+    const error = c.req.query('error')
+
+    if (!record) {
+        return c.notFound()
+    }
+
+    const content = <DonationRecordEditForm record={record} csrfToken={csrfToken} error={error} />
+    if (htmx) return c.html(content)
+    return c.html(<AdminLayout title="Edit Donation Record" activePanel="donation-records" csrfToken={csrfToken}>{content}</AdminLayout>)
+})
 
 // --- Generic panel handler ---
 adminDashboard.get('/dashboard/:panel', requireAuth(), requireAdmin, async (c) => {
