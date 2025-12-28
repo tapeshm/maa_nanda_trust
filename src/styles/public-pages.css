@@ -375,6 +375,32 @@ button:focus-visible {
   .scroll-menu-rod::before { left: -8px; }
   .scroll-menu-rod::after { right: -8px; }
 
+  /* Menu Label on Rod */
+  .scroll-menu-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--parchment, #f3e5c2);
+    text-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.8),
+      0 -1px 0 rgba(255, 255, 255, 0.1);
+    z-index: 11;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+
+  /* Hide label when menu is open */
+  .scroll-menu.open .scroll-menu-label {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
   /* --- PARCHMENT PANEL --- */
   .scroll-menu-panel {
     background-color: var(--paper-color);
