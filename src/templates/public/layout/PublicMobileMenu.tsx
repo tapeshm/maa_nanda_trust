@@ -19,8 +19,10 @@ const PublicMobileMenu: FC<PublicMobileMenuProps> = ({ config }) => {
         {/* The String Tie (Visible only when closed) */}
         <div class="scroll-menu-string" aria-hidden="true"></div>
 
-        {/* Top Rod */}
-        <div class="scroll-menu-rod top-rod" aria-hidden="true"></div>
+        {/* Top Rod with Menu Label */}
+        <div class="scroll-menu-rod top-rod" aria-hidden="true">
+          <span class="scroll-menu-label">MENU</span>
+        </div>
 
         {/* The Parchment (Hidden when closed, expands when open) */}
         <nav class="scroll-menu-panel" aria-label="Primary navigation" onclick="event.stopPropagation()">
